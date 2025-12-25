@@ -11,6 +11,8 @@ GCompare is a modern, efficient file comparison tool written in Rust using the G
 *   **File History**: Remembers previously opened files for quick access via a combo box.
 *   **Custom UI Components**: Built with specialized GTK4 widgets including `GTextView` with line numbers and `GButton` with theming support.
 
+![figure_01.png](docs/images/figure_01.png)
+
 ## Prerequisites
 
 *   Rust (latest stable)
