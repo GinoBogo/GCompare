@@ -1,0 +1,120 @@
+/* GButton Styles */
+.gbutton {
+    font-weight: bold;
+}
+
+.gbutton-default {
+    background: #f0f0f0;
+    color: #000000;
+}
+
+.gbutton-default:hover {
+    background: #dcdcdc;
+}
+
+.gbutton-default:active {
+    background: #c8c8c8;
+}
+
+.gbutton-primary {
+    background: #007bff;
+    color: #ffffff;
+}
+
+.gbutton-primary:hover {
+    background: #0069d9;
+}
+
+.gbutton-primary:active {
+    background: #005cbf;
+}
+
+.gbutton-secondary {
+    background: #6c757d;
+    color: #ffffff;
+}
+
+.gbutton-secondary:hover {
+    background: #5a6268;
+}
+
+.gbutton-secondary:active {
+    background: #545b62;
+}
+
+.gbutton-highlight {
+    background: #fafad2;
+    color: #000000;
+}
+
+.gbutton-highlight:hover {
+    background: #f8f8c0;
+}
+
+.gbutton-highlight:active {
+    background: #f6f6ae;
+}
+
+.gbutton-lightblue {
+    background: #add8e6;
+    color: #000000;
+}
+
+.gbutton-lightblue:hover {
+    background: #9acbdd;
+}
+
+.gbutton-lightblue:active {
+    background: #87c0d4;
+}
+
+.gbutton-lightgreen {
+    background: #90ee90;
+    color: #000000;
+}
+
+.gbutton-lightgreen:hover {
+    background: #80e080;
+}
+
+.gbutton-lightgreen:active {
+    background: #70d270;
+}
+
+/* GTextView Styles */
+.line-numbers {
+    background-color: #f0f0f0;
+    color: #888888;
+    padding-right: 5px;
+}
+
+/* GDiffMap Styles */
+.map-cursor {
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid black;
+}
+
+.diff-map {
+    background-color: #ffffff;
+    color: #ffffff;
+}
+
+.diff-map-separator {
+    color: #cccccc;
+}
+
+.diff-map-remove {
+    color: #990000;
+}
+
+.diff-map-add {
+    color: #009900;
+}
+
+.diff-text-remove {
+    color: #ffcccc;
+}
+
+.diff-text-add {
+    color: #ccffcc;
+}
