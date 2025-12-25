@@ -14,8 +14,8 @@ pub struct ControlPanelWidget {
     container: GtkBox,
     pub compare_button: GButton,
     pub reload_button: GButton,
-    _previous_button: GButton,
-    _next_button: GButton,
+    pub previous_button: GButton,
+    pub next_button: GButton,
     _options_button: GButton,
 }
 
@@ -52,8 +52,8 @@ impl ControlPanelWidget {
             container,
             compare_button,
             reload_button,
-            _previous_button: previous_button,
-            _next_button: next_button,
+            previous_button,
+            next_button,
             _options_button: options_button,
         }
     }

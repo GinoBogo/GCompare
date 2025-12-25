@@ -221,6 +221,52 @@ impl GDiffMap {
         }
     }
 
+    /// Navigate to the next difference and return the line number to scroll to
+    pub fn next_difference(&self, current_line: usize) -> Option<usize> {
+        let imp = self.imp();
+        let lines_a = imp.diff_lines_a.borrow();
+        let lines_b = imp.diff_lines_b.borrow();
+
+        // Combine and sort all difference lines
+        let mut all_diff_lines: Vec<usize> =
+            lines_a.iter().chain(lines_b.iter()).copied().collect();
+        all_diff_lines.sort_unstable();
+        all_diff_lines.dedup();
+
+        // Find the next difference after current_line
+        for &line in all_diff_lines.iter() {
+            if line > current_line {
+                return Some(line);
+            }
+        }
+
+        // Wrap around to first difference if no next found
+        all_diff_lines.first().copied()
+    }
+
+    /// Navigate to the previous difference and return the line number to scroll to
+    pub fn previous_difference(&self, current_line: usize) -> Option<usize> {
+        let imp = self.imp();
+        let lines_a = imp.diff_lines_a.borrow();
+        let lines_b = imp.diff_lines_b.borrow();
+
+        // Combine and sort all difference lines
+        let mut all_diff_lines: Vec<usize> =
+            lines_a.iter().chain(lines_b.iter()).copied().collect();
+        all_diff_lines.sort_unstable();
+        all_diff_lines.dedup();
+
+        // Find the previous difference before current_line
+        for &line in all_diff_lines.iter().rev() {
+            if line < current_line {
+                return Some(line);
+            }
+        }
+
+        // Wrap around to last difference if no previous found
+        all_diff_lines.last().copied()
+    }
+
     fn draw_diff_lines(&self, da: &DrawingArea, cr: &gtk::cairo::Context, width: f64, height: f64) {
         let imp = self.imp();
         let info = imp.text_info.get();

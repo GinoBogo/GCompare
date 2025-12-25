@@ -11,14 +11,14 @@ use similar::ChangeTag;
 use std::cell::Cell;
 use std::rc::Rc;
 
-use crate::libs::widgets::gdiffmap::GDiffMap;
-use crate::libs::widgets::gstatusbar::GStatusBar;
 use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::diff_service::DiffService;
 use crate::libs::services::file_service::FileService;
 use crate::libs::state::ApplicationState;
 use crate::libs::ui::comparison_panels::ComparisonPanelsWidget;
 use crate::libs::ui::control_panel::ControlPanelWidget;
+use crate::libs::widgets::gdiffmap::GDiffMap;
+use crate::libs::widgets::gstatusbar::GStatusBar;
 
 /// Main application controller that coordinates all components.
 pub struct AppController {
@@ -400,6 +400,10 @@ impl AppController {
         let diff_service = self.diff_service.clone();
         let diff_map = comparison_panels.diff_map().clone();
 
+        // Create additional clones for navigation buttons
+        let diff_map_nav_prev = diff_map.clone();
+        let diff_map_nav_next = diff_map.clone();
+
         control_panel.compare_button.connect_clicked(move |_| {
             let buffer_a = panel_a_text_view.content_view().buffer();
             let buffer_b = panel_b_text_view.content_view().buffer();
@@ -480,8 +484,55 @@ impl AppController {
             diff_map.set_diff_lines(lines_a, lines_b);
         });
 
-        // control_panel._previous_button.connect_clicked(...);
-        // control_panel._next_button.connect_clicked(...);
+        // Setup navigation buttons
+        let panel_a_text_view_nav = comparison_panels.panel_a_text_view().clone();
+        let diff_map_nav = diff_map_nav_prev;
+
+        control_panel.previous_button.connect_clicked(move |_| {
+            // Get current line from panel A
+            if let Some(adj) = panel_a_text_view_nav.content_view().vadjustment() {
+                let y = adj.value().max(0.0) as i32;
+                let (start_iter, _) = panel_a_text_view_nav.content_view().line_at_y(y);
+                let current_line = start_iter.line() as usize;
+
+                if let Some(target_line) = diff_map_nav.previous_difference(current_line) {
+                    // Calculate scroll position for target line
+                    let buffer = panel_a_text_view_nav.content_view().buffer();
+                    if let Some(line_iter) = buffer.iter_at_line(target_line as i32) {
+                        let line_y = panel_a_text_view_nav
+                            .content_view()
+                            .line_yrange(&line_iter)
+                            .0 as f64;
+                        adj.set_value(line_y);
+                    }
+                }
+            }
+        });
+
+        let panel_a_text_view_nav_next = comparison_panels.panel_a_text_view().clone();
+        let diff_map_nav_next = diff_map_nav_next;
+
+        control_panel.next_button.connect_clicked(move |_| {
+            // Get current line from panel A
+            if let Some(adj) = panel_a_text_view_nav_next.content_view().vadjustment() {
+                let y = adj.value().max(0.0) as i32;
+                let (start_iter, _) = panel_a_text_view_nav_next.content_view().line_at_y(y);
+                let current_line = start_iter.line() as usize;
+
+                if let Some(target_line) = diff_map_nav_next.next_difference(current_line) {
+                    // Calculate scroll position for target line
+                    let buffer = panel_a_text_view_nav_next.content_view().buffer();
+                    if let Some(line_iter) = buffer.iter_at_line(target_line as i32) {
+                        let line_y = panel_a_text_view_nav_next
+                            .content_view()
+                            .line_yrange(&line_iter)
+                            .0 as f64;
+                        adj.set_value(line_y);
+                    }
+                }
+            }
+        });
+
         // control_panel._options_button.connect_clicked(...);
 
         // TODO: Connect Sync Scroll Toggle Button
