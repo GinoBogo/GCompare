@@ -5,7 +5,7 @@
 //! * Version: 1.0
 
 pub mod app_controller;
-pub mod gtheme;
+pub mod theme;
 pub mod services;
 pub mod state;
 pub mod ui;

@@ -48,7 +48,7 @@ mod imp {
             obj.set_spacing(5);
 
             // Initialize theme
-            crate::libs::gtheme::init();
+            crate::libs::theme::init();
 
             // Create gutter (line numbers) components
 
