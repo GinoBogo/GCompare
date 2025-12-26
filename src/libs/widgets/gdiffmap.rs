@@ -271,7 +271,10 @@ impl GDiffMap {
         let imp = self.imp();
         let info = imp.text_info.get();
         let max_total_lines = info.a.total_lines.max(info.b.total_lines).max(1) as f64;
-        let scale_y = height / max_total_lines;
+
+        let gap = 5.0;
+        let usable_height = (height - gap * 2.0).max(0.0);
+        let scale_y = usable_height / max_total_lines;
 
         let style_context = da.style_context();
 
@@ -316,7 +319,7 @@ impl GDiffMap {
             color_a.alpha() as f64,
         );
         for &line in imp.diff_lines_a.borrow().iter() {
-            let y = line as f64 * scale_y;
+            let y = gap + (line as f64 * scale_y);
             cr.rectangle(0.0, y, width / 2.0, scale_y.max(1.0));
             let _ = cr.fill();
         }
@@ -330,7 +333,7 @@ impl GDiffMap {
             color_b.alpha() as f64,
         );
         for &line in imp.diff_lines_b.borrow().iter() {
-            let y = line as f64 * scale_y;
+            let y = gap + (line as f64 * scale_y);
             cr.rectangle(width / 2.0, y, width / 2.0, scale_y.max(1.0));
             let _ = cr.fill();
         }
