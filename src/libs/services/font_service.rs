@@ -6,6 +6,19 @@
 
 use std::process::Command;
 
+/// Font information with alias detection
+#[derive(Debug, Clone)]
+pub struct FontInfo {
+    pub name: String,
+    pub is_alias: bool,
+}
+
+impl FontInfo {
+    pub fn new(name: String, is_alias: bool) -> Self {
+        Self { name, is_alias }
+    }
+}
+
 /// Service for managing font detection and selection.
 #[derive(Clone)]
 pub struct FontService;
@@ -17,7 +30,7 @@ impl FontService {
     }
 
     /// Get a list of available monospace fonts on the system.
-    pub fn get_monospace_fonts(&self) -> Vec<String> {
+    pub fn get_monospace_fonts(&self) -> Vec<FontInfo> {
         let mut fonts = Vec::new();
         
         // First try to get monospace fonts specifically
@@ -47,8 +60,8 @@ impl FontService {
                                    !clean_name.to_lowercase().contains("sembd") && // Semi Bold
                                    !clean_name.to_lowercase().contains("cond") && // Condensed
                                    !clean_name.to_lowercase().contains("ext") {  // Extended
-                                    if !fonts.contains(&clean_name.to_string()) {
-                                        fonts.push(clean_name.to_string());
+                                    if !fonts.iter().any(|f: &FontInfo| f.name == clean_name) {
+                                        fonts.push(FontInfo::new(clean_name.to_string(), false));
                                     }
                                 }
                             }
@@ -83,8 +96,8 @@ impl FontService {
                                 font_name.to_lowercase().contains("code") ||
                                 font_name.to_lowercase().contains("console") ||
                                 font_name.to_lowercase().contains("terminal")) &&
-                               !fonts.contains(&font_name.to_string()) {
-                                fonts.push(font_name.to_string());
+                               !fonts.iter().any(|f: &FontInfo| f.name == font_name) {
+                                fonts.push(FontInfo::new(font_name.to_string(), false));
                             }
                         }
                     }
@@ -92,28 +105,42 @@ impl FontService {
             }
         }
 
-        // Sort fonts alphabetically
-        fonts.sort();
+        // Add common font aliases that are not installed but map to available fonts
+        let common_aliases = vec![
+            ("Courier", "Courier"),
+            ("Courier New", "Courier New"),
+            ("Consolas", "Consolas"),
+            ("Menlo", "Menlo"),
+        ];
+
+        for (alias, _) in common_aliases {
+            if !fonts.iter().any(|f| f.name == alias) {
+                fonts.push(FontInfo::new(alias.to_string(), true));
+            }
+        }
+
+        // Sort fonts alphabetically (aliases will be mixed in)
+        fonts.sort_by(|a, b| a.name.cmp(&b.name));
         
         // If no fonts were detected, fall back to common monospace fonts
         if fonts.is_empty() {
             fonts.extend_from_slice(&[
-                "Monospace".to_string(),
-                "Courier New".to_string(),
-                "Consolas".to_string(),
-                "Menlo".to_string(),
-                "DejaVu Sans Mono".to_string(),
-                "Liberation Mono".to_string(),
-                "Ubuntu Mono".to_string(),
-                "Source Code Pro".to_string(),
-                "Fira Code".to_string(),
-                "Hack".to_string(),
-                "JetBrains Mono".to_string(),
-                "IBM Plex Mono".to_string(),
-                "Noto Sans Mono".to_string(),
-                "Hack Nerd Font Mono".to_string(),
-                "Adwaita Mono".to_string(),
-                "Nimbus Mono PS".to_string(),
+                FontInfo::new("Monospace".to_string(), true),
+                FontInfo::new("Courier New".to_string(), true),
+                FontInfo::new("Consolas".to_string(), true),
+                FontInfo::new("Menlo".to_string(), true),
+                FontInfo::new("DejaVu Sans Mono".to_string(), true),
+                FontInfo::new("Liberation Mono".to_string(), true),
+                FontInfo::new("Ubuntu Mono".to_string(), true),
+                FontInfo::new("Source Code Pro".to_string(), true),
+                FontInfo::new("Fira Code".to_string(), true),
+                FontInfo::new("Hack".to_string(), true),
+                FontInfo::new("JetBrains Mono".to_string(), true),
+                FontInfo::new("IBM Plex Mono".to_string(), true),
+                FontInfo::new("Noto Sans Mono".to_string(), true),
+                FontInfo::new("Hack Nerd Font Mono".to_string(), true),
+                FontInfo::new("Adwaita Mono".to_string(), true),
+                FontInfo::new("Nimbus Mono PS".to_string(), true),
             ]);
         }
 
