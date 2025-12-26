@@ -11,6 +11,7 @@ use similar::ChangeTag;
 use std::cell::Cell;
 use std::rc::Rc;
 
+use crate::libs::dialogs::goptionsdlg::GOptionsDlg;
 use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::diff_service::DiffService;
 use crate::libs::services::file_service::FileService;
@@ -77,7 +78,7 @@ impl AppController {
 
         // Create UI components
         let mut control_panel = ControlPanelWidget::new();
-        let (comparison_panels, diff_map) = ComparisonPanelsWidget::new(self.state.config());
+        let (comparison_panels, diff_map) = ComparisonPanelsWidget::new(&self.state.config());
         let status_bar = GStatusBar::new();
 
         // Add components to main grid
@@ -605,7 +606,53 @@ impl AppController {
             }
         });
 
-        // control_panel._options_button.connect_clicked(...);
+        // Options button click handler
+        let window_clone = window.clone();
+        let state_clone = self.state.clone();
+        let config_service_clone = self.config_service.clone();
+        let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
+        let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
+        control_panel.options_button.connect_clicked(move |_| {
+            let current_config = state_clone.config();
+            let dialog = GOptionsDlg::new(
+                &window_clone,
+                &current_config.font_family,
+                current_config.font_size as f64,
+            );
+            
+            let state_clone_apply = state_clone.clone();
+            let config_service_apply = config_service_clone.clone();
+            let panel_a_text_view_apply = panel_a_text_view.clone();
+            let panel_b_text_view_apply = panel_b_text_view.clone();
+            dialog.show(move |result| {
+                if let Some((font_family, font_size)) = result {
+                    // Apply font changes to text views
+                    let css_provider = gtk::CssProvider::new();
+                    let css = format!("textview {{ font-family: \"{}\"; font-size: {}pt; }}", font_family, font_size);
+                    css_provider.load_from_data(&css);
+                    
+                    // Apply to both text views (content and gutter)
+                    panel_a_text_view_apply.content_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    panel_a_text_view_apply.gutter_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    
+                    panel_b_text_view_apply.content_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    panel_b_text_view_apply.gutter_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    
+                    // Update the in-memory state with new font settings
+                    // This is crucial - without this, the font settings get overwritten when window closes
+                    let mut updated_config = state_clone_apply.config().clone();
+                    updated_config.font_family = font_family.clone();
+                    updated_config.font_size = font_size as i32;
+                    
+                    // Update the state in memory
+                    state_clone_apply.update_config(updated_config.clone());
+                    
+                    // Save config to disk
+                    config_service_apply.save_config(&updated_config);
+                    println!("Font updated and saved: {} {}", font_family, font_size);
+                }
+            });
+        });
 
         // TODO: Connect Sync Scroll Toggle Button
         // control_panel.sync_scroll_check_button.connect_toggled(move |btn| {

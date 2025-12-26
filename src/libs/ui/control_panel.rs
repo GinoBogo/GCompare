@@ -16,7 +16,7 @@ pub struct ControlPanelWidget {
     pub reload_button: GButton,
     pub previous_button: GButton,
     pub next_button: GButton,
-    _options_button: GButton,
+    pub options_button: GButton,
 }
 
 impl ControlPanelWidget {
@@ -54,7 +54,7 @@ impl ControlPanelWidget {
             reload_button,
             previous_button,
             next_button,
-            _options_button: options_button,
+            options_button,
         }
     }
 

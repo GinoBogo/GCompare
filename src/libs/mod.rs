@@ -10,5 +10,6 @@ pub mod services;
 pub mod state;
 pub mod ui;
 pub mod widgets;
+pub mod dialogs;
 
 pub use app_controller::AppController;

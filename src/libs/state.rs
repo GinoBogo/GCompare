@@ -39,18 +39,23 @@ impl Default for AppConfig {
 
 /// Centralized application state management.
 pub struct ApplicationState {
-    config: AppConfig,
+    config: std::cell::RefCell<AppConfig>,
 }
 
 impl ApplicationState {
     /// Create a new application state with the given configuration.
     pub fn new(config: AppConfig) -> Self {
-        Self { config }
+        Self { config: std::cell::RefCell::new(config) }
     }
 
     /// Get current configuration.
-    pub fn config(&self) -> &AppConfig {
-        &self.config
+    pub fn config(&self) -> std::cell::Ref<'_, AppConfig> {
+        self.config.borrow()
+    }
+
+    /// Update the configuration.
+    pub fn update_config(&self, config: AppConfig) {
+        *self.config.borrow_mut() = config;
     }
 
     /// Update configuration from UI state.
@@ -60,6 +65,7 @@ impl ApplicationState {
         path_combo_a: &ComboBoxText,
         path_combo_b: &ComboBoxText,
     ) -> AppConfig {
+        let current_config = self.config.borrow();
         // Helper function to get current path from combo box
         let get_current_path = |combo: &ComboBoxText| {
             combo
@@ -91,17 +97,17 @@ impl ApplicationState {
             window_width: window.default_width(),
             window_height: window.default_height(),
             window_maximized: window.is_maximized(),
-            font_family: self.config.font_family.clone(),
-            font_size: self.config.font_size,
+            font_family: current_config.font_family.clone(),
+            font_size: current_config.font_size,
             file_a_history: update_history(
-                self.config.file_a_history.clone(),
+                current_config.file_a_history.clone(),
                 get_current_path(path_combo_a),
             ),
             file_b_history: update_history(
-                self.config.file_b_history.clone(),
+                current_config.file_b_history.clone(),
                 get_current_path(path_combo_b),
             ),
-            sync_scroll: self.config.sync_scroll,
+            sync_scroll: current_config.sync_scroll,
         }
     }
 }
