@@ -130,6 +130,7 @@ impl AppController {
         let panel_a_text_view_reload = panel_a_text_view.clone();
         let panel_b_text_view_reload = panel_b_text_view.clone();
         let status_bar_clone = status_bar.clone();
+        let diff_map = comparison_panels.diff_map().clone();
 
         control_panel.reload_button.connect_clicked(move |_| {
             let (bytes_a, lines_a) =
@@ -140,6 +141,9 @@ impl AppController {
             // Update status bar with file information
             status_bar_clone.set_status_a_file_info(bytes_a, lines_a);
             status_bar_clone.set_status_b_file_info(bytes_b, lines_b);
+
+            // Clear diff map
+            diff_map.clear_diff_lines();
         });
 
         // Setup Open Buttons

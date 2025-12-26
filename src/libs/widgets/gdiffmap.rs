@@ -221,6 +221,11 @@ impl GDiffMap {
         }
     }
 
+    /// Clear all diff lines from the map
+    pub fn clear_diff_lines(&self) {
+        self.set_diff_lines(Vec::new(), Vec::new());
+    }
+
     /// Navigate to the next difference and return the line number to scroll to
     pub fn next_difference(&self, current_line: usize) -> Option<usize> {
         let imp = self.imp();
