@@ -115,10 +115,14 @@
     color: #ffcc00;
 }
 
-.diff-text-remove {
-    color: #ffcccc;
+.diff-bg-remove {
+    background-color: #ffcccc;
 }
 
-.diff-text-add {
-    color: #ccffcc;
+.diff-bg-add {
+    background-color: #ccffcc;
+}
+
+.diff-bg-empty {
+    background-color: #fffacd;
 }

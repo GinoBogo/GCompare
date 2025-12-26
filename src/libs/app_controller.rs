@@ -431,27 +431,44 @@ impl AppController {
             let buffer_a = panel_a_text_view.content_view().buffer();
             let buffer_b = panel_b_text_view.content_view().buffer();
 
-            // Helper to get color from CSS class
+            // Helper to get color from CSS class (future use)
             let style_context = panel_a_text_view.content_view().style_context();
-            let get_theme_color = |class_name: &str| {
+            let _get_theme_color = |class_name: &str| {
                 style_context.add_class(class_name);
                 let color = style_context.color();
                 style_context.remove_class(class_name);
                 color
             };
 
+            // Helper to get background color from CSS class
+            let get_theme_bg_color = |class_name: &str| {
+                style_context.add_class(class_name);
+                // Use a fallback approach since direct background color access is complex
+                // For now, use predefined colors that match our CSS
+                let bg_color = match class_name {
+                    "diff-bg-remove" => gtk::gdk::RGBA::new(1.0, 0.8, 0.8, 1.0), // Light red
+                    "diff-bg-add" => gtk::gdk::RGBA::new(0.8, 1.0, 0.8, 1.0),    // Light green
+                    "diff-bg-empty" => gtk::gdk::RGBA::new(1.0, 0.98, 0.86, 1.0), // Light yellow
+                    _ => gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0),                // White default
+                };
+                style_context.remove_class(class_name);
+                bg_color
+            };
+
             // Create tags for highlighting if they don't exist
             let create_tag = |buffer: &gtk::TextBuffer, name: &str, css_class: &str| {
                 if buffer.tag_table().lookup(name).is_none() {
                     let tag = gtk::TextTag::new(Some(name));
-                    let rgba = get_theme_color(css_class);
+                    let rgba = get_theme_bg_color(css_class);
                     tag.set_background_rgba(Some(&rgba));
                     buffer.tag_table().add(&tag);
                 }
             };
 
-            create_tag(&buffer_a, "diff_remove", "diff-text-remove");
-            create_tag(&buffer_b, "diff_add", "diff-text-add");
+            create_tag(&buffer_a, "diff_remove", "diff-bg-remove");
+            create_tag(&buffer_b, "diff_add", "diff-bg-add");
+            create_tag(&buffer_a, "diff_empty", "diff-bg-empty");
+            create_tag(&buffer_b, "diff_empty", "diff-bg-empty");
 
             // Get content
             let (start_a, end_a) = buffer_a.bounds();
@@ -486,18 +503,23 @@ impl AppController {
                     ChangeTag::Delete => {
                         // Check if content is empty or whitespace-only
                         let is_empty_or_whitespace = change.content.trim().is_empty();
-                        
+
                         if is_empty_or_whitespace {
                             empty_lines_a.push(current_line_a);
+                            buffer_a.insert_with_tags_by_name(
+                                &mut buffer_a.end_iter(),
+                                &change.content,
+                                &["diff_empty"],
+                            );
                         } else {
                             lines_a.push(current_line_a);
+                            buffer_a.insert_with_tags_by_name(
+                                &mut buffer_a.end_iter(),
+                                &change.content,
+                                &["diff_remove"],
+                            );
                         }
-                        
-                        buffer_a.insert_with_tags_by_name(
-                            &mut buffer_a.end_iter(),
-                            &change.content,
-                            &["diff_remove"],
-                        );
+
                         current_line_a += 1;
                         // For simple alignment, we might want to insert newlines in B,
                         // but for now we just highlight the deletion in A.
@@ -505,18 +527,23 @@ impl AppController {
                     ChangeTag::Insert => {
                         // Check if content is empty or whitespace-only
                         let is_empty_or_whitespace = change.content.trim().is_empty();
-                        
+
                         if is_empty_or_whitespace {
                             empty_lines_b.push(current_line_b);
+                            buffer_b.insert_with_tags_by_name(
+                                &mut buffer_b.end_iter(),
+                                &change.content,
+                                &["diff_empty"],
+                            );
                         } else {
                             lines_b.push(current_line_b);
+                            buffer_b.insert_with_tags_by_name(
+                                &mut buffer_b.end_iter(),
+                                &change.content,
+                                &["diff_add"],
+                            );
                         }
-                        
-                        buffer_b.insert_with_tags_by_name(
-                            &mut buffer_b.end_iter(),
-                            &change.content,
-                            &["diff_add"],
-                        );
+
                         current_line_b += 1;
                     }
                 }
@@ -526,11 +553,7 @@ impl AppController {
             diff_map.set_empty_lines(empty_lines_a, empty_lines_b);
 
             // Update status bar with diff information
-            status_bar_compare.update_status_from_buffers(
-                &buffer_a,
-                &buffer_b,
-                &diff_map,
-            );
+            status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map);
         });
 
         // Setup navigation buttons
