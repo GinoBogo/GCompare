@@ -5,6 +5,7 @@
 //! * Version: 1.0
 
 use gtk::prelude::*;
+use gtk::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{Box as GtkBox, Label, Orientation};
 
 /// Status bar widget for displaying application status information.
@@ -81,16 +82,6 @@ impl GStatusBar {
         &self.container
     }
 
-    /// Update the status bar A label.
-    pub fn _set_status_a(&self, status: &str) {
-        self.status_bar_a.set_text(status);
-    }
-
-    /// Update the status bar B label.
-    pub fn _set_status_b(&self, status: &str) {
-        self.status_bar_b.set_text(status);
-    }
-
     /// Update the status bar A label with file information.
     pub fn set_status_a_file_info(&self, bytes: usize, lines: usize) {
         let status = format!("{} bytes, {} lines", bytes, lines);
@@ -101,5 +92,100 @@ impl GStatusBar {
     pub fn set_status_b_file_info(&self, bytes: usize, lines: usize) {
         let status = format!("{} bytes, {} lines", bytes, lines);
         self.status_bar_b.set_text(&status);
+    }
+
+    /// Update the status bar A label with file and diff information.
+    pub fn set_status_a_complete(
+        &self,
+        bytes: usize,
+        lines: usize,
+        regular_diffs: usize,
+        empty_diffs: usize,
+    ) {
+        let status = match (regular_diffs, empty_diffs) {
+            (0, 0) => format!("{} bytes, {} lines", bytes, lines),
+            (0, empty) => format!(
+                "{} bytes, {} lines, {} empty line{}",
+                bytes,
+                lines,
+                empty,
+                if empty == 1 { "" } else { "s" }
+            ),
+            (regular, 0) => format!(
+                "{} bytes, {} lines, {} differing line{}",
+                bytes,
+                lines,
+                regular,
+                if regular == 1 { "" } else { "s" }
+            ),
+            (regular, empty) => format!(
+                "{} bytes, {} lines, {} differing, {} empty",
+                bytes, lines, regular, empty
+            ),
+        };
+        self.status_bar_a.set_text(&status);
+    }
+
+    /// Update the status bar B label with file and diff information.
+    pub fn set_status_b_complete(
+        &self,
+        bytes: usize,
+        lines: usize,
+        regular_diffs: usize,
+        empty_diffs: usize,
+    ) {
+        let status = match (regular_diffs, empty_diffs) {
+            (0, 0) => format!("{} bytes, {} lines", bytes, lines),
+            (0, empty) => format!(
+                "{} bytes, {} lines, {} empty line{}",
+                bytes,
+                lines,
+                empty,
+                if empty == 1 { "" } else { "s" }
+            ),
+            (regular, 0) => format!(
+                "{} bytes, {} lines, {} differing line{}",
+                bytes,
+                lines,
+                regular,
+                if regular == 1 { "" } else { "s" }
+            ),
+            (regular, empty) => format!(
+                "{} bytes, {} lines, {} differing, {} empty",
+                bytes, lines, regular, empty
+            ),
+        };
+        self.status_bar_b.set_text(&status);
+    }
+
+    /// Update status with current buffer and diff information
+    pub fn update_status_from_buffers(
+        &self,
+        panel_a_buffer: &gtk::TextBuffer,
+        panel_b_buffer: &gtk::TextBuffer,
+        diff_map: &crate::libs::widgets::gdiffmap::GDiffMap,
+    ) {
+        // Update file info for panel A
+        let (start_a, end_a) = panel_a_buffer.bounds();
+        let text_a = panel_a_buffer.text(&start_a, &end_a, true);
+        let bytes_a = text_a.len();
+        let lines_a = panel_a_buffer.line_count() as usize;
+
+        // Update file info for panel B
+        let (start_b, end_b) = panel_b_buffer.bounds();
+        let text_b = panel_b_buffer.text(&start_b, &end_b, true);
+        let bytes_b = text_b.len();
+        let lines_b = panel_b_buffer.line_count() as usize;
+
+        // Get diff line counts (separate regular and empty)
+        let imp = diff_map.imp();
+        let regular_diffs_a = imp.diff_lines_a.borrow().len();
+        let empty_diffs_a = imp.empty_lines_a.borrow().len();
+        let regular_diffs_b = imp.diff_lines_b.borrow().len();
+        let empty_diffs_b = imp.empty_lines_b.borrow().len();
+
+        // Update status bars
+        self.set_status_a_complete(bytes_a, lines_a, regular_diffs_a, empty_diffs_a);
+        self.set_status_b_complete(bytes_b, lines_b, regular_diffs_b, empty_diffs_b);
     }
 }

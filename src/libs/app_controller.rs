@@ -219,6 +219,8 @@ impl AppController {
         let panel_a_buffer_for_changed = panel_a_buffer.clone();
         let panel_a_text_view_for_changed = panel_a_text_view.clone();
         let diff_map_a = diff_map.clone();
+        let status_bar_a = status_bar.clone();
+        let panel_b_buffer_for_status = panel_b_text_view.content_view().buffer().clone();
         panel_a_buffer.connect_changed(move |_| {
             let line_count = panel_a_buffer_for_changed.line_count() as usize;
             let imp = diff_map_a.imp();
@@ -252,6 +254,13 @@ impl AppController {
                 line_count,
                 visible_lines,
             );
+
+            // Update status bar with current info
+            status_bar_a.update_status_from_buffers(
+                &panel_a_buffer_for_changed,
+                &panel_b_buffer_for_status,
+                &diff_map_a,
+            );
         });
 
         // Panel B text changes
@@ -260,6 +269,8 @@ impl AppController {
         let panel_b_buffer_for_changed = panel_b_buffer.clone();
         let panel_b_text_view_for_changed = panel_b_text_view.clone();
         let diff_map_b = diff_map.clone();
+        let status_bar_b = status_bar.clone();
+        let panel_a_buffer_for_status = panel_a_text_view.content_view().buffer().clone();
         panel_b_buffer.connect_changed(move |_| {
             let line_count = panel_b_buffer_for_changed.line_count() as usize;
             let imp = diff_map_b.imp();
@@ -292,6 +303,13 @@ impl AppController {
                 info.b.upper_line,
                 line_count,
                 visible_lines,
+            );
+
+            // Update status bar with current info
+            status_bar_b.update_status_from_buffers(
+                &panel_a_buffer_for_status,
+                &panel_b_buffer_for_changed,
+                &diff_map_b,
             );
         });
 
@@ -403,6 +421,7 @@ impl AppController {
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
         let diff_service = self.diff_service.clone();
         let diff_map = comparison_panels.diff_map().clone();
+        let status_bar_compare = status_bar.clone();
 
         // Create additional clones for navigation buttons
         let diff_map_nav_prev = diff_map.clone();
@@ -448,8 +467,10 @@ impl AppController {
             buffer_a.set_text("");
             buffer_b.set_text("");
 
-            let mut lines_a = Vec::new();
-            let mut lines_b = Vec::new();
+            let mut lines_a: Vec<usize> = Vec::new();
+            let mut lines_b: Vec<usize> = Vec::new();
+            let mut empty_lines_a: Vec<usize> = Vec::new();
+            let mut empty_lines_b: Vec<usize> = Vec::new();
             let mut current_line_a = 0;
             let mut current_line_b = 0;
 
@@ -463,7 +484,15 @@ impl AppController {
                         current_line_b += 1;
                     }
                     ChangeTag::Delete => {
-                        lines_a.push(current_line_a);
+                        // Check if content is empty or whitespace-only
+                        let is_empty_or_whitespace = change.content.trim().is_empty();
+                        
+                        if is_empty_or_whitespace {
+                            empty_lines_a.push(current_line_a);
+                        } else {
+                            lines_a.push(current_line_a);
+                        }
+                        
                         buffer_a.insert_with_tags_by_name(
                             &mut buffer_a.end_iter(),
                             &change.content,
@@ -474,7 +503,15 @@ impl AppController {
                         // but for now we just highlight the deletion in A.
                     }
                     ChangeTag::Insert => {
-                        lines_b.push(current_line_b);
+                        // Check if content is empty or whitespace-only
+                        let is_empty_or_whitespace = change.content.trim().is_empty();
+                        
+                        if is_empty_or_whitespace {
+                            empty_lines_b.push(current_line_b);
+                        } else {
+                            lines_b.push(current_line_b);
+                        }
+                        
                         buffer_b.insert_with_tags_by_name(
                             &mut buffer_b.end_iter(),
                             &change.content,
@@ -486,6 +523,14 @@ impl AppController {
             }
 
             diff_map.set_diff_lines(lines_a, lines_b);
+            diff_map.set_empty_lines(empty_lines_a, empty_lines_b);
+
+            // Update status bar with diff information
+            status_bar_compare.update_status_from_buffers(
+                &buffer_a,
+                &buffer_b,
+                &diff_map,
+            );
         });
 
         // Setup navigation buttons

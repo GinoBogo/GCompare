@@ -111,6 +111,10 @@
     color: #009900;
 }
 
+.diff-map-empty {
+    color: #ffcc00;
+}
+
 .diff-text-remove {
     color: #ffcccc;
 }

@@ -62,6 +62,8 @@ mod imp {
         pub is_dragging: Cell<bool>,
         pub diff_lines_a: RefCell<Vec<usize>>,
         pub diff_lines_b: RefCell<Vec<usize>>,
+        pub empty_lines_a: RefCell<Vec<usize>>,
+        pub empty_lines_b: RefCell<Vec<usize>>,
     }
 
     #[glib::object_subclass]
@@ -221,9 +223,22 @@ impl GDiffMap {
         }
     }
 
+    pub fn set_empty_lines(&self, empty_a: Vec<usize>, empty_b: Vec<usize>) {
+        let imp = self.imp();
+        *imp.empty_lines_a.borrow_mut() = empty_a;
+        *imp.empty_lines_b.borrow_mut() = empty_b;
+
+        if let Some(overlay) = self.child().and_downcast::<Overlay>() {
+            if let Some(drawing_area) = overlay.child() {
+                drawing_area.queue_draw();
+            }
+        }
+    }
+
     /// Clear all diff lines from the map
     pub fn clear_diff_lines(&self) {
         self.set_diff_lines(Vec::new(), Vec::new());
+        self.set_empty_lines(Vec::new(), Vec::new());
     }
 
     /// Navigate to the next difference and return the line number to scroll to
@@ -338,6 +353,27 @@ impl GDiffMap {
             color_b.alpha() as f64,
         );
         for &line in imp.diff_lines_b.borrow().iter() {
+            let y = gap + (line as f64 * scale_y);
+            cr.rectangle(width / 2.0, y, width / 2.0, scale_y.max(1.0));
+            let _ = cr.fill();
+        }
+
+        // Draw A empty/whitespace lines (Left to Half) - Yellow
+        let color_empty = get_color("diff-map-empty");
+        cr.set_source_rgba(
+            color_empty.red() as f64,
+            color_empty.green() as f64,
+            color_empty.blue() as f64,
+            color_empty.alpha() as f64,
+        );
+        for &line in imp.empty_lines_a.borrow().iter() {
+            let y = gap + (line as f64 * scale_y);
+            cr.rectangle(0.0, y, width / 2.0, scale_y.max(1.0));
+            let _ = cr.fill();
+        }
+
+        // Draw B empty/whitespace lines (Half to Right) - Yellow
+        for &line in imp.empty_lines_b.borrow().iter() {
             let y = gap + (line as f64 * scale_y);
             cr.rectangle(width / 2.0, y, width / 2.0, scale_y.max(1.0));
             let _ = cr.fill();
