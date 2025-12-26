@@ -6,7 +6,7 @@
 
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{Adjustment, Box, PolicyType, ScrolledWindow, TextView, glib};
+use gtk::{Adjustment, Box, GestureClick, PolicyType, ScrolledWindow, TextView, glib};
 use once_cell::sync::OnceCell;
 use std::cell::{Cell, RefCell};
 
@@ -61,6 +61,15 @@ mod imp {
                 .justification(gtk::Justification::Right)
                 .monospace(true)
                 .build();
+
+            // Disable context menu on gutter
+            let gesture = GestureClick::new();
+            gesture.set_button(3); // Right click
+            gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
+            gesture.connect_pressed(|gesture, _, _, _| {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+            });
+            gutter_view.add_controller(gesture);
 
             gutter_view.add_css_class("line-numbers");
 
