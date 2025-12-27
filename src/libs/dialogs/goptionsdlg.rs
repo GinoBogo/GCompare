@@ -22,6 +22,13 @@ pub struct GOptionsDlg {
 }
 
 impl GOptionsDlg {
+    /// Create a new options dialog.
+    ///
+    /// # Arguments
+    ///
+    /// * `parent` - Parent application window
+    /// * `current_font_family` - Currently selected font family
+    /// * `current_font_size` - Currently selected font size
     pub fn new(
         parent: &ApplicationWindow,
         current_font_family: &str,
@@ -236,6 +243,11 @@ impl GOptionsDlg {
         }
     }
 
+    /// Show the dialog and execute callback with result.
+    ///
+    /// # Arguments
+    ///
+    /// * `callback` - Function to call with dialog result (font family, font size) or None if cancelled
     pub fn show(&self, callback: impl Fn(Option<(String, f64)>) + 'static) {
         let font_family_clone = self.font_family_combo.clone();
         let font_family_model_clone = self.font_family_model.clone();

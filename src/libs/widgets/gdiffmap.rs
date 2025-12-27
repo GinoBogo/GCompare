@@ -10,6 +10,7 @@ use gtk::{Box, DrawingArea, Fixed, Frame, GestureDrag, Overlay, glib};
 use once_cell::sync::Lazy;
 use std::cell::{Cell, RefCell};
 
+/// Cursor dimensions and position.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CursorSize {
     pub x: f64,
@@ -18,6 +19,7 @@ pub struct CursorSize {
     pub h: f64,
 }
 
+/// Panel identifier for left/right comparison panels.
 #[derive(Clone, Copy, Debug, Default, PartialEq)]
 pub enum PanelId {
     #[default]
@@ -25,6 +27,7 @@ pub enum PanelId {
     B,
 }
 
+/// Text information for a file panel.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct FileTextInfo {
     pub upper_line: usize,
@@ -32,18 +35,21 @@ pub struct FileTextInfo {
     pub visible_lines: usize,
 }
 
+/// Combined text information for both file panels.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct TextInfo {
     pub a: FileTextInfo,
     pub b: FileTextInfo,
 }
 
+/// Canvas dimensions for the drawing area.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct CanvasSize {
     pub w: f64,
     pub h: f64,
 }
 
+/// Drawing information containing canvas and cursor dimensions.
 #[derive(Clone, Copy, Debug, Default)]
 pub struct DrawInfo {
     pub canvas_size: CanvasSize,
@@ -180,10 +186,19 @@ glib::wrapper! {
 }
 
 impl GDiffMap {
+    /// Create a new GDiffMap widget.
     pub fn new() -> Self {
         glib::Object::builder().build()
     }
 
+    /// Update text information for a specific panel.
+    ///
+    /// # Arguments
+    ///
+    /// * `panel` - Panel identifier (A or B)
+    /// * `upper_line` - Upper visible line number
+    /// * `total_lines` - Total number of lines in the file
+    /// * `visible_lines` - Number of visible lines
     pub fn update_text_info(
         &self,
         panel: PanelId,
@@ -211,6 +226,12 @@ impl GDiffMap {
         self.update_cursor_size();
     }
 
+    /// Set the diff line numbers for both panels.
+    ///
+    /// # Arguments
+    ///
+    /// * `lines_a` - Line numbers with differences in panel A
+    /// * `lines_b` - Line numbers with differences in panel B
     pub fn set_diff_lines(&self, lines_a: Vec<usize>, lines_b: Vec<usize>) {
         let imp = self.imp();
         *imp.diff_lines_a.borrow_mut() = lines_a;
@@ -223,6 +244,12 @@ impl GDiffMap {
         }
     }
 
+    /// Set the empty line numbers for both panels.
+    ///
+    /// # Arguments
+    ///
+    /// * `empty_a` - Empty line numbers in panel A
+    /// * `empty_b` - Empty line numbers in panel B
     pub fn set_empty_lines(&self, empty_a: Vec<usize>, empty_b: Vec<usize>) {
         let imp = self.imp();
         *imp.empty_lines_a.borrow_mut() = empty_a;

@@ -8,6 +8,7 @@ use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{Button, glib};
 
+/// Button theme variants for styling.
 #[derive(Debug, Clone, Copy)]
 pub enum ButtonTheme {
     Default,
