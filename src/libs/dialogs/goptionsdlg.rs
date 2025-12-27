@@ -6,16 +6,13 @@
 
 use crate::libs::services::font_service::{FontInfo, FontService};
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
+use crate::libs::widgets::gcombofont::GComboFont;
 use gtk::prelude::*;
-use gtk::{
-    ApplicationWindow, CellRendererText, ComboBox, Dialog, Grid, Label, ListStore, Notebook,
-    ScrolledWindow, SpinButton, TextView,
-};
+use gtk::{ApplicationWindow, Dialog, Grid, Label, Notebook, ScrolledWindow, SpinButton, TextView};
 
 pub struct GOptionsDlg {
     dialog: Dialog,
-    font_family_combo: ComboBox,
-    font_family_model: ListStore,
+    font_family_combo: GComboFont,
     font_size_spin: SpinButton,
     apply_button: GButton,
     cancel_button: GButton,
@@ -73,34 +70,12 @@ impl GOptionsDlg {
         font_family_label.set_halign(gtk::Align::End);
         fonts_grid.attach(&font_family_label, 0, 0, 1, 1);
 
-        // Create a custom ComboBox with ListStore for Pango markup support
-        let list_store = ListStore::new(&[
-            gtk::glib::Type::STRING, // Display name (with markup)
-            gtk::glib::Type::STRING, // Clean font name
-        ]);
-
-        let font_family_combo = ComboBox::with_model(&list_store);
-        let renderer = CellRendererText::new();
-        font_family_combo.pack_start(&renderer, true);
-        font_family_combo.add_attribute(&renderer, "markup", 0);
+        // Create GComboFont widget for font selection
+        let font_family_combo = GComboFont::new();
 
         // Get system monospace fonts
         let font_service = FontService::new();
         let font_families = font_service.get_monospace_fonts();
-
-        // Add fonts to the model
-        for font_info in font_families.iter() {
-            // Use Pango markup to show alias fonts in gray
-            let display_text = if font_info.is_alias {
-                format!("<span foreground=\"gray\">{}</span>", font_info.name)
-            } else {
-                font_info.name.clone()
-            };
-
-            let iter = list_store.append();
-            list_store.set_value(&iter, 0, &gtk::glib::Value::from(&display_text));
-            list_store.set_value(&iter, 1, &gtk::glib::Value::from(&font_info.name));
-        }
 
         // Set current font family, find the best match if not in the list
         let best_match_font = if font_families
@@ -125,9 +100,9 @@ impl GOptionsDlg {
         } else {
             Some(0)
         };
-        font_family_combo.set_active(active_index);
+        font_family_combo.combo_box().set_active(active_index);
 
-        fonts_grid.attach(&font_family_combo, 1, 0, 1, 1);
+        fonts_grid.attach(font_family_combo.combo_box(), 1, 0, 1, 1);
 
         let font_size_label = Label::new(Some("Font Size:"));
         font_size_label.set_halign(gtk::Align::End);
@@ -169,13 +144,13 @@ impl GOptionsDlg {
             .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
         // Setup font change handlers
+        let font_family_combo_clone1 = font_family_combo.clone();
         let font_size_spin_clone = font_size_spin.clone();
         let css_provider_clone = css_provider.clone();
-        let list_store_clone = list_store.clone();
-        font_family_combo.connect_changed(move |combo| {
-            if let Some(active_iter) = combo.active_iter() {
-                if let Ok(font_family) = list_store_clone.get_value(&active_iter, 1).get::<String>()
-                {
+        font_family_combo
+            .combo_box()
+            .connect_changed(move |_combo| {
+                if let Some(font_family) = font_family_combo_clone1.active_font() {
                     let font_size = font_size_spin_clone.value();
                     let css = format!(
                         "textview {{ font-family: {}; font-size: {}pt; }}",
@@ -183,24 +158,18 @@ impl GOptionsDlg {
                     );
                     css_provider_clone.load_from_data(&css);
                 }
-            }
-        });
+            });
 
         let font_family_combo_clone2 = font_family_combo.clone();
         let css_provider_clone2 = css_provider.clone();
-        let list_store_clone2 = list_store.clone();
         font_size_spin.connect_value_changed(move |spin| {
             let font_size = spin.value();
-            if let Some(active_iter) = font_family_combo_clone2.active_iter() {
-                if let Ok(font_family) =
-                    list_store_clone2.get_value(&active_iter, 1).get::<String>()
-                {
-                    let css = format!(
-                        "textview {{ font-family: {}; font-size: {}pt; }}",
-                        font_family, font_size
-                    );
-                    css_provider_clone2.load_from_data(&css);
-                }
+            if let Some(font_family) = font_family_combo_clone2.active_font() {
+                let css = format!(
+                    "textview {{ font-family: {}; font-size: {}pt; }}",
+                    font_family, font_size
+                );
+                css_provider_clone2.load_from_data(&css);
             }
         });
 
@@ -236,7 +205,6 @@ impl GOptionsDlg {
         Self {
             dialog,
             font_family_combo,
-            font_family_model: list_store,
             font_size_spin,
             apply_button,
             cancel_button,
@@ -250,7 +218,6 @@ impl GOptionsDlg {
     /// * `callback` - Function to call with dialog result (font family, font size) or None if cancelled
     pub fn show(&self, callback: impl Fn(Option<(String, f64)>) + 'static) {
         let font_family_clone = self.font_family_combo.clone();
-        let font_family_model_clone = self.font_family_model.clone();
         let font_size_clone = self.font_size_spin.clone();
         let dialog_clone = self.dialog.clone();
         let callback = std::sync::Arc::new(callback);
@@ -258,14 +225,9 @@ impl GOptionsDlg {
         // Apply button handler
         let callback_apply = callback.clone();
         self.apply_button.connect_clicked(move |_| {
-            let font_family = if let Some(active_iter) = font_family_clone.active_iter() {
-                font_family_model_clone
-                    .get_value(&active_iter, 1)
-                    .get::<String>()
-                    .unwrap_or_else(|_| "Monospace".to_string())
-            } else {
-                "Monospace".to_string()
-            };
+            let font_family = font_family_clone
+                .active_font()
+                .unwrap_or_else(|| "Monospace".to_string());
 
             let font_size = font_size_clone.value();
             callback_apply(Some((font_family, font_size)));
