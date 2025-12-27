@@ -54,7 +54,12 @@ impl AppController {
     }
 
     /// Initialize the application UI.
-    pub fn initialize_ui(&mut self, app: &Application) {
+    pub fn initialize_ui(
+        &mut self,
+        app: &Application,
+        file_a_path: Option<String>,
+        file_b_path: Option<String>,
+    ) {
         let window = ApplicationWindow::builder()
             .application(app)
             .title("GCompare - File Comparison Tool")
@@ -100,12 +105,70 @@ impl AppController {
         self.comparison_panels = Some(comparison_panels);
         self.status_bar = Some(status_bar);
         self.diff_map = Some(diff_map);
+
+        // Load files from command-line arguments if provided
+        self.load_files_from_args(file_a_path, file_b_path);
     }
 
     /// Show the application window.
     pub fn show(&self) {
         if let Some(window) = &self.window {
             window.present();
+        }
+    }
+
+    /// Load files from command-line arguments into the text views.
+    ///
+    /// # Arguments
+    ///
+    /// * `file_a_path` - Optional path to file A.
+    /// * `file_b_path` - Optional path to file B.
+    fn load_files_from_args(&mut self, file_a_path: Option<String>, file_b_path: Option<String>) {
+        if let (Some(comparison_panels), Some(status_bar)) =
+            (&self.comparison_panels, &self.status_bar)
+        {
+            let panel_a_text_view = comparison_panels.panel_a_text_view();
+            let panel_a_path_combo = comparison_panels.panel_a_path_combo();
+            let panel_b_text_view = comparison_panels.panel_b_text_view();
+            let panel_b_path_combo = comparison_panels.panel_b_path_combo();
+
+            // Load file A if provided
+            if let Some(path_a) = file_a_path {
+                if std::path::Path::new(&path_a).exists() {
+                    // Set the path in the combo box
+                    if let Some(entry) = panel_a_path_combo
+                        .child()
+                        .and_then(|c| c.downcast::<gtk::Entry>().ok())
+                    {
+                        entry.set_text(&path_a);
+                    }
+
+                    // Load the file content
+                    let (bytes_a, lines_a) = self
+                        .file_service
+                        .reload_file_from_path(panel_a_text_view, panel_a_path_combo);
+                    status_bar.set_status_a_file_info(bytes_a, lines_a);
+                }
+            }
+
+            // Load file B if provided
+            if let Some(path_b) = file_b_path {
+                if std::path::Path::new(&path_b).exists() {
+                    // Set the path in the combo box
+                    if let Some(entry) = panel_b_path_combo
+                        .child()
+                        .and_then(|c| c.downcast::<gtk::Entry>().ok())
+                    {
+                        entry.set_text(&path_b);
+                    }
+
+                    // Load the file content
+                    let (bytes_b, lines_b) = self
+                        .file_service
+                        .reload_file_from_path(panel_b_text_view, panel_b_path_combo);
+                    status_bar.set_status_b_file_info(bytes_b, lines_b);
+                }
+            }
         }
     }
 
@@ -627,7 +690,7 @@ impl AppController {
                 &current_config.font_family,
                 current_config.font_size as f64,
             );
-            
+
             let state_clone_apply = state_clone.clone();
             let config_service_apply = config_service_clone.clone();
             let panel_a_text_view_apply = panel_a_text_view.clone();
@@ -636,25 +699,40 @@ impl AppController {
                 if let Some((font_family, font_size)) = result {
                     // Apply font changes to text views
                     let css_provider = gtk::CssProvider::new();
-                    let css = format!("textview {{ font-family: \"{}\"; font-size: {}pt; }}", font_family, font_size);
+                    let css = format!(
+                        "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
+                        font_family, font_size
+                    );
                     css_provider.load_from_data(&css);
-                    
+
                     // Apply to both text views (content and gutter)
-                    panel_a_text_view_apply.content_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    panel_a_text_view_apply.gutter_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    
-                    panel_b_text_view_apply.content_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    panel_b_text_view_apply.gutter_view().style_context().add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    
+                    panel_a_text_view_apply
+                        .content_view()
+                        .style_context()
+                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    panel_a_text_view_apply
+                        .gutter_view()
+                        .style_context()
+                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+
+                    panel_b_text_view_apply
+                        .content_view()
+                        .style_context()
+                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    panel_b_text_view_apply
+                        .gutter_view()
+                        .style_context()
+                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+
                     // Update the in-memory state with new font settings
                     // This is crucial - without this, the font settings get overwritten when window closes
                     let mut updated_config = state_clone_apply.config().clone();
                     updated_config.font_family = font_family.clone();
                     updated_config.font_size = font_size as i32;
-                    
+
                     // Update the state in memory
                     state_clone_apply.update_config(updated_config.clone());
-                    
+
                     // Save config to disk
                     config_service_apply.save_config(&updated_config);
                     println!("Font updated and saved: {} {}", font_family, font_size);
