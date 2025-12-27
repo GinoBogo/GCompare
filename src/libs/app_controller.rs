@@ -444,12 +444,11 @@ impl AppController {
             // Helper to get background color from CSS class
             let get_theme_bg_color = |class_name: &str| {
                 style_context.add_class(class_name);
-                // Use a fallback approach since direct background color access is complex
-                // For now, use predefined colors that match our CSS
+                // Use colors that match the CSS definitions
                 let bg_color = match class_name {
-                    "diff-bg-remove" => gtk::gdk::RGBA::new(1.0, 0.8, 0.8, 1.0), // Light red
-                    "diff-bg-add" => gtk::gdk::RGBA::new(0.8, 1.0, 0.8, 1.0),    // Light green
-                    "diff-bg-empty" => gtk::gdk::RGBA::new(1.0, 0.98, 0.86, 1.0), // Light yellow
+                    "diff-bg-remove" => gtk::gdk::RGBA::new(1.0, 0.8, 0.8, 1.0), // #ffcccc
+                    "diff-bg-add" => gtk::gdk::RGBA::new(0.8, 1.0, 0.8, 1.0),    // #ccffcc
+                    "diff-bg-empty" => gtk::gdk::RGBA::new(1.0, 0.98, 0.86, 1.0), // #fffacd
                     _ => gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0),                // White default
                 };
                 style_context.remove_class(class_name);
@@ -481,10 +480,11 @@ impl AppController {
             // Compute Diff
             let changes = diff_service.compute_diff(text_a.as_str(), text_b.as_str());
 
-            // Clear buffers to redraw with highlights
-            buffer_a.set_text("");
-            buffer_b.set_text("");
-
+            // Pre-compute all content and tag information using character positions
+            let mut content_a = String::new();
+            let mut content_b = String::new();
+            let mut tag_ranges_a: Vec<(usize, usize, &str)> = Vec::new();
+            let mut tag_ranges_b: Vec<(usize, usize, &str)> = Vec::new();
             let mut lines_a: Vec<usize> = Vec::new();
             let mut lines_b: Vec<usize> = Vec::new();
             let mut empty_lines_a: Vec<usize> = Vec::new();
@@ -492,57 +492,47 @@ impl AppController {
             let mut current_line_a = 0;
             let mut current_line_b = 0;
 
-            // Apply changes
-            for change in changes {
+            // Build content and tag ranges in batch
+            for change in &changes {
                 match change.tag {
                     ChangeTag::Equal => {
-                        buffer_a.insert(&mut buffer_a.end_iter(), &change.content);
-                        buffer_b.insert(&mut buffer_b.end_iter(), &change.content);
+                        content_a.push_str(&change.content);
+                        content_b.push_str(&change.content);
                         current_line_a += 1;
                         current_line_b += 1;
                     }
                     ChangeTag::Delete => {
+                        let start_pos = content_a.chars().count();
+                        content_a.push_str(&change.content);
+                        let end_pos = content_a.chars().count();
+
                         // Check if content is empty or whitespace-only
                         let is_empty_or_whitespace = change.content.trim().is_empty();
 
                         if is_empty_or_whitespace {
                             empty_lines_a.push(current_line_a);
-                            buffer_a.insert_with_tags_by_name(
-                                &mut buffer_a.end_iter(),
-                                &change.content,
-                                &["diff_empty"],
-                            );
+                            tag_ranges_a.push((start_pos, end_pos, "diff_empty"));
                         } else {
                             lines_a.push(current_line_a);
-                            buffer_a.insert_with_tags_by_name(
-                                &mut buffer_a.end_iter(),
-                                &change.content,
-                                &["diff_remove"],
-                            );
+                            tag_ranges_a.push((start_pos, end_pos, "diff_remove"));
                         }
 
                         current_line_a += 1;
-                        // For simple alignment, we might want to insert newlines in B,
-                        // but for now we just highlight the deletion in A.
                     }
                     ChangeTag::Insert => {
+                        let start_pos = content_b.chars().count();
+                        content_b.push_str(&change.content);
+                        let end_pos = content_b.chars().count();
+
                         // Check if content is empty or whitespace-only
                         let is_empty_or_whitespace = change.content.trim().is_empty();
 
                         if is_empty_or_whitespace {
                             empty_lines_b.push(current_line_b);
-                            buffer_b.insert_with_tags_by_name(
-                                &mut buffer_b.end_iter(),
-                                &change.content,
-                                &["diff_empty"],
-                            );
+                            tag_ranges_b.push((start_pos, end_pos, "diff_empty"));
                         } else {
                             lines_b.push(current_line_b);
-                            buffer_b.insert_with_tags_by_name(
-                                &mut buffer_b.end_iter(),
-                                &change.content,
-                                &["diff_add"],
-                            );
+                            tag_ranges_b.push((start_pos, end_pos, "diff_add"));
                         }
 
                         current_line_b += 1;
@@ -550,8 +540,26 @@ impl AppController {
                 }
             }
 
-            diff_map.set_diff_lines(lines_a, lines_b);
-            diff_map.set_empty_lines(empty_lines_a, empty_lines_b);
+            // Batch update buffers with single operations
+            buffer_a.set_text(&content_a);
+            buffer_b.set_text(&content_b);
+
+            // Apply all tags in batch using character positions
+            for (start_char, end_char, tag_name) in tag_ranges_a {
+                // Convert character positions to iterators
+                let start_iter = buffer_a.iter_at_offset(start_char as i32);
+                let end_iter = buffer_a.iter_at_offset(end_char as i32);
+                buffer_a.apply_tag_by_name(tag_name, &start_iter, &end_iter);
+            }
+
+            for (start_char, end_char, tag_name) in tag_ranges_b {
+                // Convert character positions to iterators
+                let start_iter = buffer_b.iter_at_offset(start_char as i32);
+                let end_iter = buffer_b.iter_at_offset(end_char as i32);
+                buffer_b.apply_tag_by_name(tag_name, &start_iter, &end_iter);
+            }
+
+            diff_map.set_all_diff_lines(lines_a, lines_b, empty_lines_a, empty_lines_b);
 
             // Update status bar with diff information
             status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map);

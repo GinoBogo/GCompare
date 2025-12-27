@@ -236,12 +236,6 @@ impl GDiffMap {
         let imp = self.imp();
         *imp.diff_lines_a.borrow_mut() = lines_a;
         *imp.diff_lines_b.borrow_mut() = lines_b;
-
-        if let Some(overlay) = self.child().and_downcast::<Overlay>() {
-            if let Some(drawing_area) = overlay.child() {
-                drawing_area.queue_draw();
-            }
-        }
     }
 
     /// Set the empty line numbers for both panels.
@@ -254,7 +248,17 @@ impl GDiffMap {
         let imp = self.imp();
         *imp.empty_lines_a.borrow_mut() = empty_a;
         *imp.empty_lines_b.borrow_mut() = empty_b;
+    }
 
+    /// Batch update both diff and empty lines with single redraw
+    pub fn set_all_diff_lines(&self, lines_a: Vec<usize>, lines_b: Vec<usize>, empty_a: Vec<usize>, empty_b: Vec<usize>) {
+        let imp = self.imp();
+        *imp.diff_lines_a.borrow_mut() = lines_a;
+        *imp.diff_lines_b.borrow_mut() = lines_b;
+        *imp.empty_lines_a.borrow_mut() = empty_a;
+        *imp.empty_lines_b.borrow_mut() = empty_b;
+
+        // Single redraw after all updates
         if let Some(overlay) = self.child().and_downcast::<Overlay>() {
             if let Some(drawing_area) = overlay.child() {
                 drawing_area.queue_draw();
@@ -264,8 +268,7 @@ impl GDiffMap {
 
     /// Clear all diff lines from the map
     pub fn clear_diff_lines(&self) {
-        self.set_diff_lines(Vec::new(), Vec::new());
-        self.set_empty_lines(Vec::new(), Vec::new());
+        self.set_all_diff_lines(Vec::new(), Vec::new(), Vec::new(), Vec::new());
     }
 
     /// Navigate to the next difference and return the line number to scroll to
