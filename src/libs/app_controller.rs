@@ -16,6 +16,7 @@ use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::diff_service::DiffService;
 use crate::libs::services::file_service::FileService;
 use crate::libs::state::ApplicationState;
+use crate::libs::theme;
 use crate::libs::ui::comparison_panels::ComparisonPanelsWidget;
 use crate::libs::ui::control_panel::ControlPanelWidget;
 use crate::libs::widgets::gdiffmap::GDiffMap;
@@ -506,15 +507,60 @@ impl AppController {
 
             // Helper to get background color from CSS class
             let get_theme_bg_color = |class_name: &str| {
-                style_context.add_class(class_name);
-                // Use colors that match the CSS definitions
-                let bg_color = match class_name {
-                    "diff-bg-remove" => gtk::gdk::RGBA::new(1.0, 0.8, 0.8, 1.0), // #ffcccc
-                    "diff-bg-add" => gtk::gdk::RGBA::new(0.8, 1.0, 0.8, 1.0),    // #ccffcc
-                    "diff-bg-empty" => gtk::gdk::RGBA::new(1.0, 0.98, 0.86, 1.0), // #fffacd
-                    _ => gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0),                // White default
+                // Get CSS content from theme module
+                let css_content = theme::get_css_content();
+
+                // Parse CSS to find the background color for the given class
+                let bg_color = if css_content
+                    .lines()
+                    .any(|line| line.starts_with(&format!(".{} {{", class_name)))
+                {
+                    // Find the background-color line within the CSS block
+                    let mut color_str = None;
+                    let mut in_block = false;
+
+                    for line in css_content.lines() {
+                        if line.starts_with(&format!(".{} {{", class_name)) {
+                            in_block = true;
+                            continue;
+                        }
+                        if in_block {
+                            if line.contains("}") {
+                                break;
+                            }
+                            if line.contains("background-color:") {
+                                color_str = line
+                                    .split("background-color:")
+                                    .nth(1)
+                                    .and_then(|s| s.split(";").next())
+                                    .map(|s| s.trim().to_string());
+                                break;
+                            }
+                        }
+                    }
+
+                    if let Some(color) = color_str {
+                        // Parse hex color to RGBA
+                        if color.starts_with("#") && color.len() == 7 {
+                            let r = u8::from_str_radix(&color[1..3], 16).unwrap_or(255);
+                            let g = u8::from_str_radix(&color[3..5], 16).unwrap_or(255);
+                            let b = u8::from_str_radix(&color[5..7], 16).unwrap_or(255);
+                            gtk::gdk::RGBA::new(
+                                r as f32 / 255.0,
+                                g as f32 / 255.0,
+                                b as f32 / 255.0,
+                                1.0,
+                            )
+                        } else {
+                            gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0) // Fallback to white
+                        }
+                    } else {
+                        gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0) // Fallback to white
+                    }
+                } else {
+                    gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0) // Fallback to white
                 };
-                style_context.remove_class(class_name);
+
                 bg_color
             };
 
@@ -729,7 +775,7 @@ impl AppController {
                     let mut updated_config = state_clone_apply.config().clone();
                     updated_config.font_family = font_family.clone();
                     updated_config.font_size = font_size as i32;
-                    
+
                     // Update color settings
                     updated_config.diff_remove_bg = color_config.diff_remove_bg;
                     updated_config.diff_add_bg = color_config.diff_add_bg;
@@ -750,7 +796,10 @@ impl AppController {
 
                     // Save config to disk
                     config_service_apply.save_config(&updated_config);
-                    println!("Font and colors updated and saved: {} {}", font_family, font_size);
+                    println!(
+                        "Font and colors updated and saved: {} {}",
+                        font_family, font_size
+                    );
                 }
             });
         });

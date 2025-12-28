@@ -23,3 +23,8 @@ pub fn init() {
         }
     });
 }
+
+/// Get the CSS content as a string slice.
+pub fn get_css_content() -> &'static str {
+    include_str!("../style.css")
+}

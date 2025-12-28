@@ -253,7 +253,13 @@ impl GDiffMap {
     }
 
     /// Batch update both diff and empty lines with single redraw
-    pub fn set_all_diff_lines(&self, lines_a: Vec<usize>, lines_b: Vec<usize>, empty_a: Vec<usize>, empty_b: Vec<usize>) {
+    pub fn set_all_diff_lines(
+        &self,
+        lines_a: Vec<usize>,
+        lines_b: Vec<usize>,
+        empty_a: Vec<usize>,
+        empty_b: Vec<usize>,
+    ) {
         let imp = self.imp();
         *imp.diff_lines_a.borrow_mut() = lines_a;
         *imp.diff_lines_b.borrow_mut() = lines_b;
