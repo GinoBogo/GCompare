@@ -5,6 +5,7 @@
 //! * Version: 1.0
 
 pub mod gbutton;
+pub mod gcolorpicker;
 pub mod gcombofont;
 pub mod gdiffmap;
 pub mod gstatusbar;

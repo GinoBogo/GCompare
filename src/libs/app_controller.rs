@@ -689,6 +689,7 @@ impl AppController {
                 &window_clone,
                 &current_config.font_family,
                 current_config.font_size as f64,
+                &current_config,
             );
 
             let state_clone_apply = state_clone.clone();
@@ -696,7 +697,7 @@ impl AppController {
             let panel_a_text_view_apply = panel_a_text_view.clone();
             let panel_b_text_view_apply = panel_b_text_view.clone();
             dialog.show(move |result| {
-                if let Some((font_family, font_size)) = result {
+                if let Some((font_family, font_size, color_config)) = result {
                     // Apply font changes to text views
                     let css_provider = gtk::CssProvider::new();
                     let css = format!(
@@ -724,18 +725,32 @@ impl AppController {
                         .style_context()
                         .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-                    // Update the in-memory state with new font settings
-                    // This is crucial - without this, the font settings get overwritten when window closes
+                    // Update the in-memory state with new settings
                     let mut updated_config = state_clone_apply.config().clone();
                     updated_config.font_family = font_family.clone();
                     updated_config.font_size = font_size as i32;
+                    
+                    // Update color settings
+                    updated_config.diff_remove_bg = color_config.diff_remove_bg;
+                    updated_config.diff_add_bg = color_config.diff_add_bg;
+                    updated_config.diff_empty_bg = color_config.diff_empty_bg;
+                    updated_config.diff_remove_text = color_config.diff_remove_text;
+                    updated_config.diff_add_text = color_config.diff_add_text;
+                    updated_config.diff_empty_text = color_config.diff_empty_text;
+                    updated_config.gutter_bg = color_config.gutter_bg;
+                    updated_config.gutter_text = color_config.gutter_text;
+                    updated_config.minimap_bg = color_config.minimap_bg;
+                    updated_config.minimap_separator = color_config.minimap_separator;
+                    updated_config.minimap_remove = color_config.minimap_remove;
+                    updated_config.minimap_add = color_config.minimap_add;
+                    updated_config.minimap_empty = color_config.minimap_empty;
 
                     // Update the state in memory
                     state_clone_apply.update_config(updated_config.clone());
 
                     // Save config to disk
                     config_service_apply.save_config(&updated_config);
-                    println!("Font updated and saved: {} {}", font_family, font_size);
+                    println!("Font and colors updated and saved: {} {}", font_family, font_size);
                 }
             });
         });
