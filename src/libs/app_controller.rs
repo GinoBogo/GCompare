@@ -28,6 +28,7 @@ pub struct AppController {
     config_service: ConfigService,
     file_service: FileService,
     diff_service: DiffService,
+    css_provider: Rc<gtk::CssProvider>,
     window: Option<ApplicationWindow>,
     control_panel: Option<ControlPanelWidget>,
     comparison_panels: Option<ComparisonPanelsWidget>,
@@ -40,12 +41,19 @@ impl AppController {
     pub fn new() -> Self {
         let config_service = ConfigService::new();
         let state = Rc::new(ApplicationState::new(config_service.load_config()));
+        
+        // Initialize theme and get CSS provider
+        let css_provider = Rc::new(theme::init());
+        
+        // Update theme with config colors
+        theme::update_provider_with_config(&*css_provider, &state.config());
 
         Self {
             state,
             config_service,
             file_service: FileService::new(),
             diff_service: DiffService::new(),
+            css_provider,
             window: None,
             control_panel: None,
             comparison_panels: None,
@@ -729,6 +737,7 @@ impl AppController {
         let config_service_clone = self.config_service.clone();
         let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
+        let css_provider_clone = self.css_provider.clone();
         control_panel.options_button.connect_clicked(move |_| {
             let current_config = state_clone.config();
             let dialog = GOptionsDlg::new(
@@ -742,6 +751,7 @@ impl AppController {
             let config_service_apply = config_service_clone.clone();
             let panel_a_text_view_apply = panel_a_text_view.clone();
             let panel_b_text_view_apply = panel_b_text_view.clone();
+            let css_provider_apply = css_provider_clone.clone();
             dialog.show(move |result| {
                 if let Some((font_family, font_size, color_config)) = result {
                     // Apply font changes to text views
@@ -793,6 +803,9 @@ impl AppController {
 
                     // Update the state in memory
                     state_clone_apply.update_config(updated_config.clone());
+                    
+                    // Update theme with new colors
+                    theme::update_provider_with_config(&*css_provider_apply, &updated_config);
 
                     // Save config to disk
                     config_service_apply.save_config(&updated_config);

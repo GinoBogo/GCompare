@@ -122,8 +122,6 @@ mod imp {
             cursor.add_css_class("map-cursor");
             cursor.set_cursor_from_name(Some("grab"));
 
-            crate::libs::theme::init();
-
             // Setup Drag Gesture
             let drag = GestureDrag::new();
 

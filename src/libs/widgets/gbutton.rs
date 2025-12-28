@@ -45,8 +45,6 @@ mod imp {
 
             obj.add_css_class("gbutton");
             obj.add_css_class("gbutton-default");
-
-            crate::libs::theme::init();
         }
     }
 

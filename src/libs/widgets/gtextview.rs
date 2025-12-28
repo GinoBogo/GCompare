@@ -49,9 +49,6 @@ mod imp {
             obj.set_orientation(gtk::Orientation::Horizontal);
             obj.set_spacing(5);
 
-            // Initialize theme
-            crate::libs::theme::init();
-
             // Create gutter (line numbers) components
 
             let gutter_view = TextView::builder()
