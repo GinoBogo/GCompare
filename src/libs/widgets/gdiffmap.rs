@@ -4,6 +4,8 @@
 //! * License: MIT
 //! * Version: 1.0
 
+#![allow(dead_code)]
+
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{Box, DrawingArea, Fixed, Frame, GestureDrag, Overlay, glib};

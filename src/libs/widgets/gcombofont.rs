@@ -4,6 +4,8 @@
 //! * License: MIT
 //! * Version: 1.0
 
+#![allow(dead_code)]
+
 use crate::libs::services::font_service::{FontInfo, FontService};
 use gtk::prelude::*;
 use gtk::{CellRendererText, ComboBox, ListStore};
@@ -47,7 +49,6 @@ impl GComboFont {
     /// # Arguments
     ///
     /// * `font_service` - Custom font service instance
-    #[allow(dead_code)]
     pub fn with_font_service(font_service: FontService) -> Self {
         let list_store = ListStore::new(&[
             gtk::glib::Type::STRING, // Display name (with markup)
@@ -122,7 +123,6 @@ impl GComboFont {
     /// # Returns
     ///
     /// * `bool` - True if font was found and selected, false otherwise
-    #[allow(dead_code)]
     pub fn set_active_font(&self, font_name: &str) -> bool {
         let font_families = self.font_families.borrow();
 
@@ -144,13 +144,11 @@ impl GComboFont {
     /// # Returns
     ///
     /// * `Vec<FontInfo>` - List of all available fonts with alias information
-    #[allow(dead_code)]
     pub fn available_fonts(&self) -> Vec<FontInfo> {
         self.font_families.borrow().clone()
     }
 
     /// Reload fonts from the system font service.
-    #[allow(dead_code)]
     pub fn reload_fonts(&self) {
         self.load_fonts();
     }
@@ -160,7 +158,6 @@ impl GComboFont {
     /// # Returns
     ///
     /// * `FontService` - The font service used by this widget
-    #[allow(dead_code)]
     pub fn font_service(&self) -> FontService {
         self.font_service.borrow().clone()
     }

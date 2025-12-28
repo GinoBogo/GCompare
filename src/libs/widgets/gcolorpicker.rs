@@ -4,6 +4,8 @@
 //! * License: MIT
 //! * Version: 1.0
 
+#![allow(dead_code)]
+
 use gtk::prelude::*;
 use gtk::{Box, ColorButton, Label, Orientation};
 
@@ -29,9 +31,7 @@ impl GColorPicker {
         label_widget.set_halign(gtk::Align::Start);
         label_widget.set_hexpand(true);
 
-        let color_button = ColorButton::builder()
-            .use_alpha(false)
-            .build();
+        let color_button = ColorButton::builder().use_alpha(false).build();
 
         // Parse hex color and set it
         if let Ok(rgba) = Self::parse_hex_color(color) {
@@ -88,12 +88,7 @@ impl GColorPicker {
         let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| ())?;
         let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| ())?;
 
-        let rgba = gtk::gdk::RGBA::new(
-            r as f32 / 255.0,
-            g as f32 / 255.0,
-            b as f32 / 255.0,
-            1.0,
-        );
+        let rgba = gtk::gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0);
 
         Ok(rgba)
     }
