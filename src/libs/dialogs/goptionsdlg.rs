@@ -21,6 +21,9 @@ pub struct GOptionsDlg {
     diff_remove_bg_picker: GColorPicker,
     diff_add_bg_picker: GColorPicker,
     diff_empty_bg_picker: GColorPicker,
+    diff_remove_text_picker: GColorPicker,
+    diff_add_text_picker: GColorPicker,
+    diff_empty_text_picker: GColorPicker,
     gutter_bg_picker: GColorPicker,
     gutter_text_picker: GColorPicker,
     minimap_bg_picker: GColorPicker,
@@ -50,8 +53,8 @@ impl GOptionsDlg {
         dialog.set_modal(true);
         dialog.set_transient_for(Some(parent));
 
-        dialog.set_default_size(640, 480);
-        dialog.set_size_request(640, 480);
+        dialog.set_default_size(480, 480);
+        dialog.set_size_request(480, 480);
 
         let content_area = dialog.content_area();
         let main_grid = Grid::new();
@@ -216,40 +219,56 @@ impl GOptionsDlg {
         let diff_empty_bg_picker = GColorPicker::new("Empty Background:", &config.diff_empty_bg);
         colors_grid.attach(diff_empty_bg_picker.container(), 0, 3, 2, 1);
 
+        let diff_remove_text_picker = GColorPicker::new("Removed Text:", &config.diff_remove_text);
+        colors_grid.attach(diff_remove_text_picker.container(), 0, 4, 2, 1);
+
+        let diff_add_text_picker = GColorPicker::new("Added Text:", &config.diff_add_text);
+        colors_grid.attach(diff_add_text_picker.container(), 0, 5, 2, 1);
+
+        let diff_empty_text_picker = GColorPicker::new("Empty Text:", &config.diff_empty_text);
+        colors_grid.attach(diff_empty_text_picker.container(), 0, 6, 2, 1);
+
         // Gutter section
         let gutter_label = Label::new(Some("Gutter"));
         gutter_label.set_halign(gtk::Align::Start);
         gutter_label.set_markup("<b>Gutter</b>");
-        colors_grid.attach(&gutter_label, 0, 4, 2, 1);
+        colors_grid.attach(&gutter_label, 0, 7, 2, 1);
 
         let gutter_bg_picker = GColorPicker::new("Background:", &config.gutter_bg);
-        colors_grid.attach(gutter_bg_picker.container(), 0, 5, 2, 1);
+        colors_grid.attach(gutter_bg_picker.container(), 0, 8, 2, 1);
 
         let gutter_text_picker = GColorPicker::new("Text:", &config.gutter_text);
-        colors_grid.attach(gutter_text_picker.container(), 0, 6, 2, 1);
+        colors_grid.attach(gutter_text_picker.container(), 0, 9, 2, 1);
 
         // Minimap section
         let minimap_label = Label::new(Some("Minimap"));
         minimap_label.set_halign(gtk::Align::Start);
         minimap_label.set_markup("<b>Minimap</b>");
-        colors_grid.attach(&minimap_label, 0, 7, 2, 1);
+        colors_grid.attach(&minimap_label, 0, 10, 2, 1);
 
         let minimap_bg_picker = GColorPicker::new("Background:", &config.minimap_bg);
-        colors_grid.attach(minimap_bg_picker.container(), 0, 8, 2, 1);
+        colors_grid.attach(minimap_bg_picker.container(), 0, 11, 2, 1);
 
         let minimap_separator_picker = GColorPicker::new("Separator:", &config.minimap_separator);
-        colors_grid.attach(minimap_separator_picker.container(), 0, 9, 2, 1);
+        colors_grid.attach(minimap_separator_picker.container(), 0, 12, 2, 1);
 
         let minimap_remove_picker = GColorPicker::new("Removed:", &config.minimap_remove);
-        colors_grid.attach(minimap_remove_picker.container(), 0, 10, 2, 1);
+        colors_grid.attach(minimap_remove_picker.container(), 0, 13, 2, 1);
 
         let minimap_add_picker = GColorPicker::new("Added:", &config.minimap_add);
-        colors_grid.attach(minimap_add_picker.container(), 0, 11, 2, 1);
+        colors_grid.attach(minimap_add_picker.container(), 0, 14, 2, 1);
 
         let minimap_empty_picker = GColorPicker::new("Empty:", &config.minimap_empty);
-        colors_grid.attach(minimap_empty_picker.container(), 0, 12, 2, 1);
+        colors_grid.attach(minimap_empty_picker.container(), 0, 15, 2, 1);
 
-        notebook.append_page(&colors_grid, Some(&Label::new(Some("Colors"))));
+        // Create scrolled window for colors tab
+        let colors_scrolled = ScrolledWindow::new();
+        colors_scrolled.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
+        colors_scrolled.set_hexpand(true);
+        colors_scrolled.set_vexpand(true);
+        colors_scrolled.set_child(Some(&colors_grid));
+
+        notebook.append_page(&colors_scrolled, Some(&Label::new(Some("Colors"))));
 
         main_grid.attach(&notebook, 0, 0, 1, 1);
 
@@ -279,6 +298,9 @@ impl GOptionsDlg {
             diff_remove_bg_picker,
             diff_add_bg_picker,
             diff_empty_bg_picker,
+            diff_remove_text_picker,
+            diff_add_text_picker,
+            diff_empty_text_picker,
             gutter_bg_picker,
             gutter_text_picker,
             minimap_bg_picker,
@@ -306,6 +328,9 @@ impl GOptionsDlg {
         let diff_remove_bg_picker_clone = self.diff_remove_bg_picker.clone();
         let diff_add_bg_picker_clone = self.diff_add_bg_picker.clone();
         let diff_empty_bg_picker_clone = self.diff_empty_bg_picker.clone();
+        let diff_remove_text_picker_clone = self.diff_remove_text_picker.clone();
+        let diff_add_text_picker_clone = self.diff_add_text_picker.clone();
+        let diff_empty_text_picker_clone = self.diff_empty_text_picker.clone();
         let gutter_bg_picker_clone = self.gutter_bg_picker.clone();
         let gutter_text_picker_clone = self.gutter_text_picker.clone();
         let minimap_bg_picker_clone = self.minimap_bg_picker.clone();
@@ -338,9 +363,9 @@ impl GOptionsDlg {
                 diff_remove_bg: diff_remove_bg_picker_clone.get_color(),
                 diff_add_bg: diff_add_bg_picker_clone.get_color(),
                 diff_empty_bg: diff_empty_bg_picker_clone.get_color(),
-                diff_remove_text: "#990000".to_string(), // Using defaults for text colors
-                diff_add_text: "#009900".to_string(),
-                diff_empty_text: "#ffcc00".to_string(),
+                diff_remove_text: diff_remove_text_picker_clone.get_color(),
+                diff_add_text: diff_add_text_picker_clone.get_color(),
+                diff_empty_text: diff_empty_text_picker_clone.get_color(),
                 gutter_bg: gutter_bg_picker_clone.get_color(),
                 gutter_text: gutter_text_picker_clone.get_color(),
                 minimap_bg: minimap_bg_picker_clone.get_color(),
