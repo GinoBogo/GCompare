@@ -8,12 +8,16 @@
 
 use gtk::prelude::*;
 use gtk::{Box, ColorButton, Label, Orientation};
+use std::rc::Rc;
 
 /// Color picker widget with label and color button.
 pub struct GColorPicker {
     container: Box,
-    color_button: ColorButton,
+    pub color_button: ColorButton,
+    label: String,
 }
+
+pub type SharedGColorPicker = Rc<GColorPicker>;
 
 impl GColorPicker {
     /// Create a new color picker widget.
@@ -44,6 +48,7 @@ impl GColorPicker {
         Self {
             container,
             color_button,
+            label: label.to_string(),
         }
     }
 
@@ -97,7 +102,6 @@ impl GColorPicker {
 impl Clone for GColorPicker {
     fn clone(&self) -> Self {
         let color = self.get_color();
-        let new_picker = Self::new("", &color);
-        new_picker
+        Self::new(&self.label, &color)
     }
 }

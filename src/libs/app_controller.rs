@@ -270,7 +270,7 @@ impl AppController {
         );
 
         // Setup window close handler
-        let state = self.state.clone();
+        let state_for_close = self.state.clone();
         let config_service = self.config_service.clone();
         let panel_a_combo = comparison_panels.panel_a_path_combo().clone();
         let panel_b_combo = comparison_panels.panel_b_path_combo().clone();
@@ -278,12 +278,16 @@ impl AppController {
         window.connect_close_request(move |window| {
             // Update configuration with current state
             let updated_config =
-                state.update_config_from_ui(window, &panel_a_combo, &panel_b_combo);
+                state_for_close.update_config_from_ui(window, &panel_a_combo, &panel_b_combo);
+
+            // Save configuration to disk
             config_service.save_config(&updated_config);
+
+            // Quit the application
+            window.destroy();
             glib::Propagation::Proceed
         });
 
-        // Connect text view changes to GDiffMap updates
         let diff_map = comparison_panels.diff_map().clone();
 
         // Panel A text changes
@@ -499,6 +503,7 @@ impl AppController {
         // Create additional clones for navigation buttons
         let diff_map_nav_prev = diff_map.clone();
         let diff_map_nav_next = diff_map.clone();
+        let state_for_colors = self.state.clone();
 
         control_panel.compare_button.connect_clicked(move |_| {
             let buffer_a = panel_a_text_view.content_view().buffer();
@@ -513,63 +518,25 @@ impl AppController {
                 color
             };
 
-            // Helper to get background color from CSS class
+            // Helper to get background color from config
             let get_theme_bg_color = |class_name: &str| {
-                // Get CSS content from theme module
-                let css_content = theme::get_css_content();
-
-                // Parse CSS to find the background color for the given class
-                let bg_color = if css_content
-                    .lines()
-                    .any(|line| line.starts_with(&format!(".{} {{", class_name)))
-                {
-                    // Find the background-color line within the CSS block
-                    let mut color_str = None;
-                    let mut in_block = false;
-
-                    for line in css_content.lines() {
-                        if line.starts_with(&format!(".{} {{", class_name)) {
-                            in_block = true;
-                            continue;
-                        }
-                        if in_block {
-                            if line.contains("}") {
-                                break;
-                            }
-                            if line.contains("background-color:") {
-                                color_str = line
-                                    .split("background-color:")
-                                    .nth(1)
-                                    .and_then(|s| s.split(";").next())
-                                    .map(|s| s.trim().to_string());
-                                break;
-                            }
-                        }
-                    }
-
-                    if let Some(color) = color_str {
-                        // Parse hex color to RGBA
-                        if color.starts_with("#") && color.len() == 7 {
-                            let r = u8::from_str_radix(&color[1..3], 16).unwrap_or(255);
-                            let g = u8::from_str_radix(&color[3..5], 16).unwrap_or(255);
-                            let b = u8::from_str_radix(&color[5..7], 16).unwrap_or(255);
-                            gtk::gdk::RGBA::new(
-                                r as f32 / 255.0,
-                                g as f32 / 255.0,
-                                b as f32 / 255.0,
-                                1.0,
-                            )
-                        } else {
-                            gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0) // Fallback to white
-                        }
-                    } else {
-                        gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0) // Fallback to white
-                    }
+                let config = &state_for_colors.config();
+                let color = match class_name {
+                    "diff-bg-remove" => &config.diff_remove_bg,
+                    "diff-bg-add" => &config.diff_add_bg,
+                    "diff-bg-empty" => &config.diff_empty_bg,
+                    _ => "#ffffff", // White default
+                };
+                
+                // Parse hex color to RGBA
+                if color.starts_with("#") && color.len() == 7 {
+                    let r = u8::from_str_radix(&color[1..3], 16).unwrap_or(255);
+                    let g = u8::from_str_radix(&color[3..5], 16).unwrap_or(255);
+                    let b = u8::from_str_radix(&color[5..7], 16).unwrap_or(255);
+                    gtk::gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0)
                 } else {
                     gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0) // Fallback to white
-                };
-
-                bg_color
+                }
             };
 
             // Create tags for highlighting if they don't exist
@@ -739,7 +706,8 @@ impl AppController {
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
         let css_provider_clone = self.css_provider.clone();
         control_panel.options_button.connect_clicked(move |_| {
-            let current_config = state_clone.config();
+            // Reload config from file to get latest values
+            let current_config = config_service_clone.load_config();
             let dialog = GOptionsDlg::new(
                 &window_clone,
                 &current_config.font_family,
@@ -806,6 +774,9 @@ impl AppController {
                     
                     // Update theme with new colors
                     theme::update_provider_with_config(&*css_provider_apply, &updated_config);
+                    
+                    // Debug: Print that colors were updated
+                    println!("Colors updated - user needs to click Compare to see changes");
 
                     // Save config to disk
                     config_service_apply.save_config(&updated_config);

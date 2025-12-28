@@ -29,32 +29,69 @@ pub fn init() -> CssProvider {
 
 /// Update a CSS provider with custom colors from config.
 pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs::state::AppConfig) {
-    // Get the base CSS content
-    let base_css = include_str!("../style.css");
+    // Load base CSS into memory
+    let mut css_content = include_str!("../style.css").to_string();
 
-    // Create custom CSS with user-defined colors
-    let custom_colors = format!(
-        r#"
-.diff-bg-remove {{
-    background-color: {};
-}}
-.diff-bg-add {{
-    background-color: {};
-}}
-.diff-bg-empty {{
-    background-color: {};
-}}
-"#,
-        config.diff_remove_bg, config.diff_add_bg, config.diff_empty_bg
-    );
+    // Clean and validate color values
+    let clean_color = |color: &str| {
+        let cleaned = color
+            .trim()
+            .strip_prefix("#")
+            .unwrap_or(color)
+            .chars()
+            .filter(|c| c.is_ascii_hexdigit())
+            .collect::<String>();
 
-    // Combine base CSS with custom colors
-    let merged_css = format!("{}\n{}", base_css, custom_colors);
+        // Ensure we have exactly 6 hex digits
+        if cleaned.len() == 6 {
+            cleaned
+        } else if cleaned.len() == 3 {
+            // Convert 3-digit hex to 6-digit (e.g., "f00" -> "ff0000")
+            cleaned
+                .chars()
+                .flat_map(|c| std::iter::repeat(c).take(2))
+                .collect()
+        } else {
+            // Fallback to default color if invalid
+            "ffcccc".to_string()
+        }
+    };
 
-    provider.load_from_data(&merged_css);
-}
+    // Replace specific color values in the CSS
+    let replacements = vec![
+        (".diff-bg-remove", clean_color(&config.diff_remove_bg)),
+        (".diff-bg-add", clean_color(&config.diff_add_bg)),
+        (".diff-bg-empty", clean_color(&config.diff_empty_bg)),
+    ];
 
-/// Get the CSS content as a string slice.
-pub fn get_css_content() -> &'static str {
-    include_str!("../style.css")
+    for (class_name, new_color) in replacements {
+        // Find the CSS block for this class
+        if let Some(start) = css_content.find(&format!("{} {{", class_name)) {
+            // Find the end of the block
+            if let Some(block_end) = css_content[start..].find("}") {
+                let block_start = start;
+                let block_end = start + block_end;
+
+                // Find and replace the background-color in this block
+                let block = &css_content[block_start..block_end];
+                if let Some(bg_start) = block.find("background-color:") {
+                    let bg_line_start = block_start + bg_start;
+                    if let Some(bg_end) = css_content[bg_line_start..].find(";") {
+                        let bg_line_end = bg_line_start + bg_end;
+
+                        // Replace the color value
+                        let before_bg = &css_content[..bg_line_start + "background-color:".len()];
+                        let after_bg = &css_content[bg_line_end..];
+                        css_content = format!("{} #{}{}", before_bg, new_color, after_bg);
+                    }
+                }
+            }
+        }
+    }
+
+    // Debug: print the generated CSS
+    eprintln!("Updated CSS:\n{}", css_content);
+
+    // Apply the modified CSS
+    provider.load_from_data(&css_content);
 }
