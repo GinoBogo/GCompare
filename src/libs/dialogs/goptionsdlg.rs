@@ -347,19 +347,19 @@ impl GOptionsDlg {
         let dialog_clone = self.dialog.clone();
 
         // Clone ColorButtons directly (not GColorPicker) to avoid duplication
-        let text_diff_remove_bg_button = self.text_diff_remove_bg_picker.color_button.clone();
-        let text_diff_remove_fg_button = self.text_diff_remove_fg_picker.color_button.clone();
-        let text_diff_add_bg_button = self.text_diff_add_bg_picker.color_button.clone();
-        let text_diff_add_fg_button = self.text_diff_add_fg_picker.color_button.clone();
-        let text_diff_empty_bg_button = self.text_diff_empty_bg_picker.color_button.clone();
-        let text_diff_empty_fg_button = self.text_diff_empty_fg_picker.color_button.clone();
-        let gutter_numbers_bg_button = self.gutter_numbers_bg_picker.color_button.clone();
-        let gutter_numbers_fg_button = self.gutter_numbers_fg_picker.color_button.clone();
-        let minimap_bg_button = self.minimap_bg_picker.color_button.clone();
-        let minimap_fg_button = self.minimap_fg_picker.color_button.clone();
-        let minimap_diff_remove_button = self.minimap_diff_remove_picker.color_button.clone();
-        let minimap_diff_add_button = self.minimap_diff_add_picker.color_button.clone();
-        let minimap_diff_empty_button = self.minimap_diff_empty_picker.color_button.clone();
+        let text_diff_remove_bg_picker = self.text_diff_remove_bg_picker.clone();
+        let text_diff_remove_fg_picker = self.text_diff_remove_fg_picker.clone();
+        let text_diff_add_bg_picker = self.text_diff_add_bg_picker.clone();
+        let text_diff_add_fg_picker = self.text_diff_add_fg_picker.clone();
+        let text_diff_empty_bg_picker = self.text_diff_empty_bg_picker.clone();
+        let text_diff_empty_fg_picker = self.text_diff_empty_fg_picker.clone();
+        let gutter_numbers_bg_picker = self.gutter_numbers_bg_picker.clone();
+        let gutter_numbers_fg_picker = self.gutter_numbers_fg_picker.clone();
+        let minimap_bg_picker = self.minimap_bg_picker.clone();
+        let minimap_fg_picker = self.minimap_fg_picker.clone();
+        let minimap_diff_remove_picker = self.minimap_diff_remove_picker.clone();
+        let minimap_diff_add_picker = self.minimap_diff_add_picker.clone();
+        let minimap_diff_empty_picker = self.minimap_diff_empty_picker.clone();
         let minimap_cursor_bg_picker = self.minimap_cursor_bg_picker.clone();
 
         let callback = std::sync::Arc::new(callback);
@@ -373,17 +373,6 @@ impl GOptionsDlg {
 
             let font_size = font_size_clone.value();
 
-            // Helper function to get color from ColorButton
-            let get_color_from_button = |button: &gtk::ColorButton| -> String {
-                let rgba = button.rgba();
-                format!(
-                    "#{:02x}{:02x}{:02x}",
-                    (rgba.red() * 255.0) as u8,
-                    (rgba.green() * 255.0) as u8,
-                    (rgba.blue() * 255.0) as u8
-                )
-            };
-
             // Create color configuration using current colors from UI
             let color_config = crate::libs::state::AppConfig {
                 window_width: 0,         // Not updated in this dialog
@@ -394,19 +383,19 @@ impl GOptionsDlg {
                 file_a_history: Vec::new(), // Not updated in this dialog
                 file_b_history: Vec::new(), // Not updated in this dialog
                 sync_scroll: true,          // Not updated in this dialog
-                text_diff_remove_bg: get_color_from_button(&text_diff_remove_bg_button),
-                text_diff_remove_fg: get_color_from_button(&text_diff_remove_fg_button),
-                text_diff_add_bg: get_color_from_button(&text_diff_add_bg_button),
-                text_diff_add_fg: get_color_from_button(&text_diff_add_fg_button),
-                text_diff_empty_bg: get_color_from_button(&text_diff_empty_bg_button),
-                text_diff_empty_fg: get_color_from_button(&text_diff_empty_fg_button),
-                gutter_numbers_bg: get_color_from_button(&gutter_numbers_bg_button),
-                gutter_numbers_fg: get_color_from_button(&gutter_numbers_fg_button),
-                minimap_bg: get_color_from_button(&minimap_bg_button),
-                minimap_fg: get_color_from_button(&minimap_fg_button),
-                minimap_diff_remove: get_color_from_button(&minimap_diff_remove_button),
-                minimap_diff_add: get_color_from_button(&minimap_diff_add_button),
-                minimap_diff_empty: get_color_from_button(&minimap_diff_empty_button),
+                text_diff_remove_bg: text_diff_remove_bg_picker.get_color(),
+                text_diff_remove_fg: text_diff_remove_fg_picker.get_color(),
+                text_diff_add_bg: text_diff_add_bg_picker.get_color(),
+                text_diff_add_fg: text_diff_add_fg_picker.get_color(),
+                text_diff_empty_bg: text_diff_empty_bg_picker.get_color(),
+                text_diff_empty_fg: text_diff_empty_fg_picker.get_color(),
+                gutter_numbers_bg: gutter_numbers_bg_picker.get_color(),
+                gutter_numbers_fg: gutter_numbers_fg_picker.get_color(),
+                minimap_bg: minimap_bg_picker.get_color(),
+                minimap_fg: minimap_fg_picker.get_color(),
+                minimap_diff_remove: minimap_diff_remove_picker.get_color(),
+                minimap_diff_add: minimap_diff_add_picker.get_color(),
+                minimap_diff_empty: minimap_diff_empty_picker.get_color(),
                 minimap_cursor_bg: minimap_cursor_bg_picker.get_color(),
             };
 
