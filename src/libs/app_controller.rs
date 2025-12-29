@@ -47,7 +47,7 @@ impl AppController {
         let css_provider = Rc::new(theme::init());
 
         // Update theme with config colors
-        theme::update_provider_with_config(&*css_provider, &state.config());
+        theme::update_provider_with_config(&css_provider, &state.config());
 
         Self {
             state,
@@ -143,41 +143,41 @@ impl AppController {
             let panel_b_path_combo = comparison_panels.panel_b_path_combo();
 
             // Load file A if provided
-            if let Some(path_a) = file_a_path {
-                if std::path::Path::new(&path_a).exists() {
-                    // Set the path in the combo box
-                    if let Some(entry) = panel_a_path_combo
-                        .child()
-                        .and_then(|c| c.downcast::<gtk::Entry>().ok())
-                    {
-                        entry.set_text(&path_a);
-                    }
-
-                    // Load the file content
-                    let (bytes_a, lines_a) = self
-                        .file_service
-                        .reload_file_from_path(panel_a_text_view, panel_a_path_combo);
-                    status_bar.set_status_a_file_info(bytes_a, lines_a);
+            if let Some(path_a) = file_a_path
+                && std::path::Path::new(&path_a).exists()
+            {
+                // Set the path in the combo box
+                if let Some(entry) = panel_a_path_combo
+                    .child()
+                    .and_then(|c| c.downcast::<gtk::Entry>().ok())
+                {
+                    entry.set_text(&path_a);
                 }
+
+                // Load the file content
+                let (bytes_a, lines_a) = self
+                    .file_service
+                    .reload_file_from_path(panel_a_text_view, panel_a_path_combo);
+                status_bar.set_status_a_file_info(bytes_a, lines_a);
             }
 
             // Load file B if provided
-            if let Some(path_b) = file_b_path {
-                if std::path::Path::new(&path_b).exists() {
-                    // Set the path in the combo box
-                    if let Some(entry) = panel_b_path_combo
-                        .child()
-                        .and_then(|c| c.downcast::<gtk::Entry>().ok())
-                    {
-                        entry.set_text(&path_b);
-                    }
-
-                    // Load the file content
-                    let (bytes_b, lines_b) = self
-                        .file_service
-                        .reload_file_from_path(panel_b_text_view, panel_b_path_combo);
-                    status_bar.set_status_b_file_info(bytes_b, lines_b);
+            if let Some(path_b) = file_b_path
+                && std::path::Path::new(&path_b).exists()
+            {
+                // Set the path in the combo box
+                if let Some(entry) = panel_b_path_combo
+                    .child()
+                    .and_then(|c| c.downcast::<gtk::Entry>().ok())
+                {
+                    entry.set_text(&path_b);
                 }
+
+                // Load the file content
+                let (bytes_b, lines_b) = self
+                    .file_service
+                    .reload_file_from_path(panel_b_text_view, panel_b_path_combo);
+                status_bar.set_status_b_file_info(bytes_b, lines_b);
             }
         }
     }
@@ -789,7 +789,7 @@ impl AppController {
                         state_clone_apply.update_config(updated_config.clone());
 
                         // Update theme with new colors
-                        theme::update_provider_with_config(&*css_provider_apply, &updated_config);
+                        theme::update_provider_with_config(&css_provider_apply, &updated_config);
 
                         // Redraw minimap to pick up new cursor color
                         gtk::prelude::WidgetExt::queue_draw(&diff_map_apply);

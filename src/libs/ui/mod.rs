@@ -4,5 +4,5 @@
 //! * License: MIT
 //! * Version: 1.0
 
-pub mod control_panel;
 pub mod comparison_panels;
+pub mod control_panel;

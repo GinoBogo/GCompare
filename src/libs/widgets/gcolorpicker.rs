@@ -4,8 +4,6 @@
 //! * License: MIT
 //! * Version: 1.0
 
-#![allow(dead_code)]
-
 use gtk::prelude::*;
 use gtk::{Box, ColorButton, Label, Orientation, Scale};
 use std::rc::Rc;
@@ -18,11 +16,8 @@ pub struct GColorPicker {
     pub color_button: ColorButton,
     alpha_scale: Option<Scale>,
     label: String,
-    alpha: std::cell::Cell<f64>, // Store alpha separately to avoid GTK issues
-    alpha_cell: Option<std::sync::Arc<std::cell::Cell<f64>>>, // Store the alpha cell for the closure
+    alpha_cell: Option<Rc<std::cell::Cell<f64>>>, // Store the alpha cell for the closure
 }
-
-pub type SharedGColorPicker = Rc<GColorPicker>;
 
 impl GColorPicker {
     /// Create a new color picker widget.
@@ -74,7 +69,7 @@ impl GColorPicker {
             container.append(&scale);
 
             // Create alpha cell BEFORE setting up connections
-            let alpha_cell = std::sync::Arc::new(std::cell::Cell::new(initial_alpha));
+            let alpha_cell = std::rc::Rc::new(std::cell::Cell::new(initial_alpha));
 
             // Set up connections using the SAME alpha_cell
             let color_button_for_slider = color_button.clone();
@@ -108,7 +103,6 @@ impl GColorPicker {
             color_button,
             alpha_scale,
             label: label.to_string(),
-            alpha: std::cell::Cell::new(initial_alpha),
             alpha_cell,
         }
     }
@@ -145,47 +139,6 @@ impl GColorPicker {
                 (rgba.green() * 255.0) as u8,
                 (rgba.blue() * 255.0) as u8
             )
-        }
-    }
-
-    /// Set the color from hex string (6 or 8 digit hex).
-    pub fn set_color(&self, color: &str) {
-        if let Ok((rgba, alpha)) = Self::parse_hex_color(color) {
-            self.color_button.set_rgba(&rgba);
-            self.alpha.set(alpha);
-            if let Some(ref scale) = self.alpha_scale {
-                scale.set_value(alpha * 100.0);
-            }
-            if let Some(ref alpha_cell) = self.alpha_cell {
-                alpha_cell.set(alpha);
-            }
-        }
-    }
-
-    /// Copy the alpha value from another color picker (for clone operations)
-    pub fn copy_alpha_from(&self, other: &GColorPicker) {
-        if let (Some(ref other_alpha_cell), Some(ref self_alpha_cell)) =
-            (other.alpha_cell.as_ref(), self.alpha_cell.as_ref())
-        {
-            let original_value = other_alpha_cell.get();
-            self_alpha_cell.set(original_value);
-        }
-    }
-
-    /// Connect to color changed signal.
-    pub fn connect_color_changed<F: Fn() + 'static>(&self, callback: F) {
-        let callback_ref = std::rc::Rc::new(callback);
-        let callback_clone = callback_ref.clone();
-
-        self.color_button.connect_color_set(move |_| {
-            callback_clone();
-        });
-
-        if let Some(ref scale) = self.alpha_scale {
-            let callback_clone2 = callback_ref.clone();
-            scale.connect_value_changed(move |_| {
-                callback_clone2();
-            });
         }
     }
 

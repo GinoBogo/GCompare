@@ -36,8 +36,7 @@ impl FontService {
         // First try to get monospace fonts specifically
         if let Ok(output) = Command::new("fc-list")
             .output()
-        {
-            if output.status.success() {
+            && output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 for line in stdout.lines() {
                     let line = line.trim();
@@ -69,15 +68,13 @@ impl FontService {
                     }
                 }
             }
-        }
 
         // If we didn't find enough fonts, try a broader search
-        if fonts.len() < 5 {
-            if let Ok(output) = Command::new("fc-list")
-                .args(&[":family", ":style"])
+        if fonts.len() < 5
+            && let Ok(output) = Command::new("fc-list")
+                .args([":family", ":style"])
                 .output()
-            {
-                if output.status.success() {
+                && output.status.success() {
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     for line in stdout.lines() {
                         let line = line.trim();
@@ -102,8 +99,6 @@ impl FontService {
                         }
                     }
                 }
-            }
-        }
 
         // Add common font aliases that are not installed but map to available fonts
         let common_aliases = vec![
@@ -150,10 +145,9 @@ impl FontService {
     /// Get the best monospace font match for a given font family.
     pub fn get_best_monospace_match(&self, font_family: &str) -> String {
         if let Ok(output) = Command::new("fc-match")
-            .args(&[font_family, ":spacing=100"])
+            .args([font_family, ":spacing=100"])
             .output()
-        {
-            if output.status.success() {
+            && output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 // Extract font family from fc-match output
                 // Format is usually: "Family Name:style=Style:file=/path/to/font"
@@ -162,7 +156,6 @@ impl FontService {
                     return font_family.to_string();
                 }
             }
-        }
         
         // Fallback to "Monospace" if nothing matches
         "Monospace".to_string()

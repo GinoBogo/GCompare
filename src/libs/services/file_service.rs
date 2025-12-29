@@ -89,20 +89,18 @@ impl FileService {
         let path_combo_clone = path_combo.clone();
 
         file_chooser.connect_response(move |dialog, response| {
-            if response == ResponseType::Accept {
-                if let Some(file) = dialog.file() {
-                    if let Some(path) = file.path() {
-                        if let Ok(file_content) = std::fs::read_to_string(&path) {
-                            text_view_clone.buffer().set_text(&file_content);
+            if response == ResponseType::Accept
+                && let Some(file) = dialog.file()
+                && let Some(path) = file.path()
+                && let Ok(file_content) = std::fs::read_to_string(&path)
+            {
+                text_view_clone.buffer().set_text(&file_content);
 
-                            if let Some(entry) = path_combo_clone
-                                .child()
-                                .and_then(|child| child.downcast::<Entry>().ok())
-                            {
-                                entry.set_text(path.to_str().unwrap_or_default());
-                            }
-                        }
-                    }
+                if let Some(entry) = path_combo_clone
+                    .child()
+                    .and_then(|child| child.downcast::<Entry>().ok())
+                {
+                    entry.set_text(path.to_str().unwrap_or_default());
                 }
             }
             dialog.destroy();
@@ -130,11 +128,11 @@ impl FileService {
             let path_str = entry.text().to_string();
             if !path_str.is_empty() {
                 let path = std::path::Path::new(&path_str);
-                if let Some(parent) = path.parent() {
-                    if parent.exists() {
-                        let f = gtk::gio::File::for_path(parent);
-                        file_chooser.set_current_folder(Some(&f)).ok();
-                    }
+                if let Some(parent) = path.parent()
+                    && parent.exists()
+                {
+                    let f = gtk::gio::File::for_path(parent);
+                    file_chooser.set_current_folder(Some(&f)).ok();
                 }
                 if let Some(name) = path.file_name().and_then(|n| n.to_str()) {
                     file_chooser.set_current_name(name);
@@ -146,22 +144,20 @@ impl FileService {
         let path_combo_clone = path_combo.clone();
 
         file_chooser.connect_response(move |dialog, response| {
-            if response == ResponseType::Accept {
-                if let Some(file) = dialog.file() {
-                    if let Some(path) = file.path() {
-                        let buffer = text_view_clone.buffer();
-                        let (start_iter, end_iter) = buffer.bounds();
-                        let file_content = buffer.text(&start_iter, &end_iter, true);
+            if response == ResponseType::Accept
+                && let Some(file) = dialog.file()
+                && let Some(path) = file.path()
+            {
+                let buffer = text_view_clone.buffer();
+                let (start_iter, end_iter) = buffer.bounds();
+                let file_content = buffer.text(&start_iter, &end_iter, true);
 
-                        if std::fs::write(&path, file_content.as_str()).is_ok() {
-                            if let Some(entry) = path_combo_clone
-                                .child()
-                                .and_then(|child| child.downcast::<Entry>().ok())
-                            {
-                                entry.set_text(path.to_str().unwrap_or_default());
-                            }
-                        }
-                    }
+                if std::fs::write(&path, file_content.as_str()).is_ok()
+                    && let Some(entry) = path_combo_clone
+                        .child()
+                        .and_then(|child| child.downcast::<Entry>().ok())
+                {
+                    entry.set_text(path.to_str().unwrap_or_default());
                 }
             }
             dialog.destroy();

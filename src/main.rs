@@ -32,7 +32,7 @@ fn main() {
             .collect();
 
         // Get the first two files as A and B
-        let file_a = paths.get(0).cloned();
+        let file_a = paths.first().cloned();
         let file_b = paths.get(1).cloned();
 
         build_ui(app, file_a, file_b);

@@ -5,11 +5,11 @@
 //! * Version: 1.0
 
 pub mod app_controller;
-pub mod theme;
+pub mod dialogs;
 pub mod services;
 pub mod state;
+pub mod theme;
 pub mod ui;
 pub mod widgets;
-pub mod dialogs;
 
 pub use app_controller::AppController;

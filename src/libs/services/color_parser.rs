@@ -67,7 +67,7 @@ fn parse_hex_color(hex: &str) -> Result<ColorParseResult, String> {
     let (r, g, b, a) = match cleaned.len() {
         3 => {
             // 3-digit hex: RGB -> RRGGBB, alpha = 1.0
-            let r = expand_hex_digit(cleaned.chars().nth(0).unwrap())?;
+            let r = expand_hex_digit(cleaned.chars().next().unwrap())?;
             let g = expand_hex_digit(cleaned.chars().nth(1).unwrap())?;
             let b = expand_hex_digit(cleaned.chars().nth(2).unwrap())?;
             (r, g, b, 255)

@@ -108,18 +108,18 @@ impl ApplicationState {
 
         // Helper function to update history
         let update_history = |mut history: Vec<String>, path: Option<String>| {
-            if let Some(path_str) = path {
-                if !path_str.trim().is_empty() {
-                    // Remove existing entry if present
-                    if let Some(position) = history.iter().position(|x| x == &path_str) {
-                        history.remove(position);
-                    }
-                    // Add to beginning of history
-                    history.insert(0, path_str);
-                    // Keep history to reasonable size
-                    if history.len() > 10 {
-                        history.truncate(10);
-                    }
+            if let Some(path_str) = path
+                && !path_str.trim().is_empty()
+            {
+                // Remove existing entry if present
+                if let Some(position) = history.iter().position(|x| x == &path_str) {
+                    history.remove(position);
+                }
+                // Add to beginning of history
+                history.insert(0, path_str);
+                // Keep history to reasonable size
+                if history.len() > 10 {
+                    history.truncate(10);
                 }
             }
             history

@@ -209,7 +209,7 @@ impl FilePanelWidget {
         let open_button = GButton::new("Open");
         open_button.set_width_request(60);
         open_button.set_height_request(30);
-        open_button.set_theme(button_theme.clone());
+        open_button.set_theme(button_theme);
         path_control_bar.append(&open_button);
 
         // Save button

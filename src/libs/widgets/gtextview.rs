@@ -4,8 +4,6 @@
 //! * License: MIT
 //! * Version: 1.0
 
-#![allow(dead_code)]
-
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{Adjustment, Box, GestureClick, PolicyType, ScrolledWindow, TextView, glib};
@@ -224,7 +222,7 @@ fn update_line_numbers(
     // Handle empty content
     if new_line_count == 0 {
         gutter_buffer.set_text("");
-        gutter_view.set_width_request((1 * 8) + 12);
+        gutter_view.set_width_request(8 + 12);
         return;
     }
 
@@ -376,12 +374,11 @@ impl GTextView {
         let new_buffer = content_view.buffer();
         if let Some(new_iter) = new_buffer.iter_at_line(cursor_line) {
             let new_offset = new_iter.line_offset();
-            if cursor_line_offset <= new_offset {
-                if let Some(restored_iter) =
+            if cursor_line_offset <= new_offset
+                && let Some(restored_iter) =
                     new_buffer.iter_at_line_offset(cursor_line, cursor_line_offset)
-                {
-                    new_buffer.place_cursor(&restored_iter);
-                }
+            {
+                new_buffer.place_cursor(&restored_iter);
             }
         }
 

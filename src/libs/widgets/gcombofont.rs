@@ -4,8 +4,6 @@
 //! * License: MIT
 //! * Version: 1.0
 
-#![allow(dead_code)]
-
 use crate::libs::services::font_service::{FontInfo, FontService};
 use gtk::prelude::*;
 use gtk::{CellRendererText, ComboBox, ListStore};
@@ -38,33 +36,6 @@ impl GComboFont {
             list_store,
             font_families: RefCell::new(Vec::new()),
             font_service: RefCell::new(FontService::new()),
-        };
-
-        widget.load_fonts();
-        widget
-    }
-
-    /// Create a new GComboFont widget with custom font service.
-    ///
-    /// # Arguments
-    ///
-    /// * `font_service` - Custom font service instance
-    pub fn with_font_service(font_service: FontService) -> Self {
-        let list_store = ListStore::new(&[
-            gtk::glib::Type::STRING, // Display name (with markup)
-            gtk::glib::Type::STRING, // Clean font name
-        ]);
-
-        let combo = ComboBox::with_model(&list_store);
-        let renderer = CellRendererText::new();
-        combo.pack_start(&renderer, true);
-        combo.add_attribute(&renderer, "markup", 0);
-
-        let widget = Self {
-            combo,
-            list_store,
-            font_families: RefCell::new(Vec::new()),
-            font_service: RefCell::new(font_service),
         };
 
         widget.load_fonts();
@@ -112,54 +83,6 @@ impl GComboFont {
         } else {
             None
         }
-    }
-
-    /// Set the active font by font name.
-    ///
-    /// # Arguments
-    ///
-    /// * `font_name` - Font name to select
-    ///
-    /// # Returns
-    ///
-    /// * `bool` - True if font was found and selected, false otherwise
-    pub fn set_active_font(&self, font_name: &str) -> bool {
-        let font_families = self.font_families.borrow();
-
-        // Find the font in our stored list
-        if let Some((index, _)) = font_families
-            .iter()
-            .enumerate()
-            .find(|(_, font)| font.name == font_name)
-        {
-            self.combo.set_active(Some(index as u32));
-            true
-        } else {
-            false
-        }
-    }
-
-    /// Get all available font information.
-    ///
-    /// # Returns
-    ///
-    /// * `Vec<FontInfo>` - List of all available fonts with alias information
-    pub fn available_fonts(&self) -> Vec<FontInfo> {
-        self.font_families.borrow().clone()
-    }
-
-    /// Reload fonts from the system font service.
-    pub fn reload_fonts(&self) {
-        self.load_fonts();
-    }
-
-    /// Get the font service instance.
-    ///
-    /// # Returns
-    ///
-    /// * `FontService` - The font service used by this widget
-    pub fn font_service(&self) -> FontService {
-        self.font_service.borrow().clone()
     }
 
     /// Get the underlying ComboBox widget.

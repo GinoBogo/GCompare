@@ -4,8 +4,6 @@
 //! * License: MIT
 //! * Version: 1.0
 
-#![allow(dead_code)]
-
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{Box, DrawingArea, Fixed, Frame, GestureDrag, Overlay, glib};
@@ -265,10 +263,10 @@ impl GDiffMap {
         *imp.empty_lines_b.borrow_mut() = empty_b;
 
         // Single redraw after all updates
-        if let Some(overlay) = self.child().and_downcast::<Overlay>() {
-            if let Some(drawing_area) = overlay.child() {
-                drawing_area.queue_draw();
-            }
+        if let Some(overlay) = self.child().and_downcast::<Overlay>()
+            && let Some(drawing_area) = overlay.child()
+        {
+            drawing_area.queue_draw();
         }
     }
 

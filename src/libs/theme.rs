@@ -53,6 +53,7 @@ fn parse_css_rules(css_content: &str) -> Vec<CssRule> {
 
     // Regex to match CSS rules: .selector { property: value; }
     let rule_regex = Regex::new(r"([^{]+)\s*\{([^}]+)\}").unwrap();
+    let prop_regex = Regex::new(r"([a-zA-Z-]+)\s*:\s*([^;]+)").unwrap();
 
     for captures in rule_regex.captures_iter(css_content) {
         let selector = captures[1].trim().to_string();
@@ -61,7 +62,6 @@ fn parse_css_rules(css_content: &str) -> Vec<CssRule> {
         let mut rule = CssRule::new(selector);
 
         // Parse individual properties
-        let prop_regex = Regex::new(r"([a-zA-Z-]+)\s*:\s*([^;]+)").unwrap();
         for prop_captures in prop_regex.captures_iter(properties_content) {
             let prop_name = prop_captures[1].trim().to_string();
             let prop_value = prop_captures[2].trim().to_string();
@@ -116,7 +116,7 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
             // Convert 3-digit hex to 6-digit (e.g., "f00" -> "ff0000")
             cleaned
                 .chars()
-                .flat_map(|c| std::iter::repeat(c).take(2))
+                .flat_map(|c| std::iter::repeat_n(c, 2))
                 .collect()
         } else if cleaned.len() == 8 {
             // 8-digit hex with alpha channel (e.g., "#00000008")
@@ -264,11 +264,11 @@ fn parse_css_property(class_name: &str, property: &str) -> Option<gdk::RGBA> {
             // Parse the specific property
             for rule in class_rules.split(';') {
                 let rule = rule.trim();
-                if rule.starts_with(property) {
-                    if let Some(value_part) = rule.split(':').nth(1) {
-                        let value = value_part.trim();
-                        return Some(parse_color_with_fallback(value, 128, 128, 128, 1.0));
-                    }
+                if rule.starts_with(property)
+                    && let Some(value_part) = rule.split(':').nth(1)
+                {
+                    let value = value_part.trim();
+                    return Some(parse_color_with_fallback(value, 128, 128, 128, 1.0));
                 }
             }
         }
