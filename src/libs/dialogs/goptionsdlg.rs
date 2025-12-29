@@ -211,30 +211,32 @@ impl GOptionsDlg {
 
         // Removed Background
         let text_diff_remove_bg_picker =
-            GColorPicker::new("Removed Background", &config.text_diff_remove_bg);
+            GColorPicker::new("Removed Text Background", &config.text_diff_remove_bg);
         colors_grid.attach(text_diff_remove_bg_picker.container(), 0, 1, 1, 1);
 
         // Removed Text
         let text_diff_remove_fg_picker =
-            GColorPicker::new("Remove Text", &config.text_diff_remove_fg);
+            GColorPicker::new("Removed Text Color", &config.text_diff_remove_fg);
         colors_grid.attach(text_diff_remove_fg_picker.container(), 0, 2, 1, 1);
 
         // Added Background
         let text_diff_add_bg_picker =
-            GColorPicker::new("Added Background", &config.text_diff_add_bg);
+            GColorPicker::new("Added Text Background", &config.text_diff_add_bg);
         colors_grid.attach(text_diff_add_bg_picker.container(), 0, 3, 1, 1);
 
         // Added Text
-        let text_diff_add_fg_picker = GColorPicker::new("Added Text", &config.text_diff_add_fg);
+        let text_diff_add_fg_picker =
+            GColorPicker::new("Added Text Color", &config.text_diff_add_fg);
         colors_grid.attach(text_diff_add_fg_picker.container(), 0, 4, 1, 1);
 
         // Empty Background
         let text_diff_empty_bg_picker =
-            GColorPicker::new("Empty Background", &config.text_diff_empty_bg);
+            GColorPicker::new("Empty Text Background", &config.text_diff_empty_bg);
         colors_grid.attach(text_diff_empty_bg_picker.container(), 0, 5, 1, 1);
 
         // Empty Text
-        let text_diff_empty_fg_picker = GColorPicker::new("Empty Text", &config.text_diff_empty_fg);
+        let text_diff_empty_fg_picker =
+            GColorPicker::new("Empty Text Color", &config.text_diff_empty_fg);
         colors_grid.attach(text_diff_empty_fg_picker.container(), 0, 6, 1, 1);
 
         // Gutter Numbers section
@@ -246,7 +248,8 @@ impl GOptionsDlg {
         let gutter_numbers_bg_picker = GColorPicker::new("Background", &config.gutter_numbers_bg);
         colors_grid.attach(gutter_numbers_bg_picker.container(), 0, 8, 1, 1);
 
-        let gutter_numbers_fg_picker = GColorPicker::new("Text", &config.gutter_numbers_fg);
+        let gutter_numbers_fg_picker =
+            GColorPicker::new("Numbers Color", &config.gutter_numbers_fg);
         colors_grid.attach(gutter_numbers_fg_picker.container(), 0, 9, 1, 1);
 
         // Minimap section
@@ -258,18 +261,19 @@ impl GOptionsDlg {
         let minimap_bg_picker = GColorPicker::new("Background", &config.minimap_bg);
         colors_grid.attach(minimap_bg_picker.container(), 0, 11, 1, 1);
 
-        let minimap_fg_picker = GColorPicker::new("Separator", &config.minimap_fg);
+        let minimap_fg_picker = GColorPicker::new("Vertical Separator", &config.minimap_fg);
         colors_grid.attach(minimap_fg_picker.container(), 0, 12, 1, 1);
 
         let minimap_diff_remove_picker =
-            GColorPicker::new("Removed Lines", &config.minimap_diff_remove);
+            GColorPicker::new("Removed Lines Color", &config.minimap_diff_remove);
         colors_grid.attach(minimap_diff_remove_picker.container(), 0, 13, 1, 1);
 
-        let minimap_diff_add_picker = GColorPicker::new("Added Lines", &config.minimap_diff_add);
+        let minimap_diff_add_picker =
+            GColorPicker::new("Added Lines Color", &config.minimap_diff_add);
         colors_grid.attach(minimap_diff_add_picker.container(), 0, 14, 1, 1);
 
         let minimap_diff_empty_picker =
-            GColorPicker::new("Empty Lines", &config.minimap_diff_empty);
+            GColorPicker::new("Empty Lines Color", &config.minimap_diff_empty);
         colors_grid.attach(minimap_diff_empty_picker.container(), 0, 15, 1, 1);
 
         // Create scrolled window for colors tab
