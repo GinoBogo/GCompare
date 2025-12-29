@@ -178,14 +178,21 @@ pub fn update_text_tag_colors(
     text_buffers: &[&gtk::TextBuffer],
     config: &crate::libs::state::AppConfig,
 ) {
-    let color_mappings = [
+    let bg_color_mappings = [
         ("diff_remove", &config.text_diff_remove_bg),
         ("diff_add", &config.text_diff_add_bg),
         ("diff_empty", &config.text_diff_empty_bg),
     ];
 
+    let fg_color_mappings = [
+        ("diff_remove", &config.text_diff_remove_fg),
+        ("diff_add", &config.text_diff_add_fg),
+        ("diff_empty", &config.text_diff_empty_fg),
+    ];
+
     for buffer in text_buffers {
-        for (tag_name, color_value) in &color_mappings {
+        // Update background colors
+        for (tag_name, color_value) in &bg_color_mappings {
             if let Some(tag) = buffer.tag_table().lookup(tag_name) {
                 // Parse hex color to RGBA
                 if color_value.starts_with("#") && color_value.len() == 7 {
@@ -195,6 +202,21 @@ pub fn update_text_tag_colors(
                     let rgba =
                         gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0);
                     tag.set_background_rgba(Some(&rgba));
+                }
+            }
+        }
+
+        // Update foreground colors
+        for (tag_name, color_value) in &fg_color_mappings {
+            if let Some(tag) = buffer.tag_table().lookup(tag_name) {
+                // Parse hex color to RGBA
+                if color_value.starts_with("#") && color_value.len() == 7 {
+                    let r = u8::from_str_radix(&color_value[1..3], 16).unwrap_or(255);
+                    let g = u8::from_str_radix(&color_value[3..5], 16).unwrap_or(255);
+                    let b = u8::from_str_radix(&color_value[5..7], 16).unwrap_or(255);
+                    let rgba =
+                        gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0);
+                    tag.set_foreground_rgba(Some(&rgba));
                 }
             }
         }

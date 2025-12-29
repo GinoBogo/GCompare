@@ -539,12 +539,35 @@ impl AppController {
                 }
             };
 
+            // Helper to get foreground color from config
+            let get_theme_fg_color = |class_name: &str| {
+                let config = &state_for_colors.config();
+                let color = match class_name {
+                    "text-diff-remove" => &config.text_diff_remove_fg,
+                    "text-diff-add" => &config.text_diff_add_fg,
+                    "text-diff-empty" => &config.text_diff_empty_fg,
+                    _ => "#000000", // Black default
+                };
+
+                // Parse hex color to RGBA
+                if color.starts_with("#") && color.len() == 7 {
+                    let r = u8::from_str_radix(&color[1..3], 16).unwrap_or(255);
+                    let g = u8::from_str_radix(&color[3..5], 16).unwrap_or(255);
+                    let b = u8::from_str_radix(&color[5..7], 16).unwrap_or(255);
+                    gtk::gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0)
+                } else {
+                    gtk::gdk::RGBA::new(0.0, 0.0, 0.0, 1.0) // Fallback to black
+                }
+            };
+
             // Create tags for highlighting if they don't exist
             let create_tag = |buffer: &gtk::TextBuffer, name: &str, css_class: &str| {
                 if buffer.tag_table().lookup(name).is_none() {
                     let tag = gtk::TextTag::new(Some(name));
-                    let rgba = get_theme_bg_color(css_class);
-                    tag.set_background_rgba(Some(&rgba));
+                    let bg_rgba = get_theme_bg_color(css_class);
+                    let fg_rgba = get_theme_fg_color(css_class);
+                    tag.set_background_rgba(Some(&bg_rgba));
+                    tag.set_foreground_rgba(Some(&fg_rgba));
                     buffer.tag_table().add(&tag);
                 }
             };
