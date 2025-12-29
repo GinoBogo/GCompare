@@ -32,7 +32,13 @@ impl CssRule {
     fn to_css_string(&self) -> String {
         let mut result = format!("{} {{\n", self.selector);
         for (prop, value) in &self.properties {
-            result.push_str(&format!("  {}: {};\n", prop, value));
+            if value.len() == 8 && value.starts_with('#') {
+                // 8-digit hex with alpha channel
+                result.push_str(&format!("  {}: {};\n", prop, value));
+            } else {
+                // Regular 6-digit hex color
+                result.push_str(&format!("  {}: {};\n", prop, value));
+            }
         }
         result.push_str("}\n");
         result
@@ -101,7 +107,7 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
             .filter(|c| c.is_ascii_hexdigit())
             .collect::<String>();
 
-        // Ensure we have exactly 6 hex digits
+        // Ensure we have exactly 6 or 8 hex digits
         if cleaned.len() == 6 {
             cleaned
         } else if cleaned.len() == 3 {
@@ -110,6 +116,9 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
                 .chars()
                 .flat_map(|c| std::iter::repeat(c).take(2))
                 .collect()
+        } else if cleaned.len() == 8 {
+            // 8-digit hex with alpha channel (e.g., "#00000008")
+            cleaned
         } else {
             // Fallback to default color if invalid
             "ffcccc".to_string()
@@ -131,6 +140,12 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
             &config.text_diff_add_bg,
         ),
         (".text-diff-add", "color", &config.text_diff_add_fg),
+        (".minimap-diff-empty", "color", &config.minimap_diff_empty),
+        (
+            ".minimap-cursor",
+            "background-color",
+            &config.minimap_cursor_bg,
+        ),
         (
             ".text-diff-empty",
             "background-color",
@@ -155,7 +170,9 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
     // Update CSS properties using the structured tree
     for rule in &mut rules {
         for (class_selector, property, config_value) in &color_mappings {
-            if rule.selector.contains(class_selector) {
+            // Use exact match instead of contains to avoid partial matches
+            if rule.selector.trim() == class_selector.trim() {
+                // Apply hex format for all colors (including 8-digit with alpha)
                 let cleaned_color = clean_color(config_value);
                 rule.properties
                     .insert(property.to_string(), format!("#{}", cleaned_color));
@@ -169,7 +186,7 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
         css_string.push_str(&rule.to_css_string());
     }
 
-    // Apply the modified CSS
+    // Update CSS provider with new configuration
     provider.load_from_data(&css_string);
 }
 

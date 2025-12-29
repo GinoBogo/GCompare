@@ -34,6 +34,7 @@ pub struct AppConfig {
     pub minimap_diff_remove: String,
     pub minimap_diff_add: String,
     pub minimap_diff_empty: String,
+    pub minimap_cursor_bg: String,
 }
 
 impl Default for AppConfig {
@@ -61,6 +62,7 @@ impl Default for AppConfig {
             minimap_diff_remove: "#990000".to_string(), // Dark red
             minimap_diff_add: "#009900".to_string(),    // Dark green
             minimap_diff_empty: "#ffcc00".to_string(),  // Dark yellow
+            minimap_cursor_bg: "#00000008".to_string(), // Black with 5% alpha (0x08 ≈ 5%)
         }
     }
 }
@@ -152,6 +154,7 @@ impl ApplicationState {
             minimap_diff_remove: current_config.minimap_diff_remove.clone(),
             minimap_diff_add: current_config.minimap_diff_add.clone(),
             minimap_diff_empty: current_config.minimap_diff_empty.clone(),
+            minimap_cursor_bg: current_config.minimap_cursor_bg.clone(),
         }
     }
 }

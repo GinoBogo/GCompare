@@ -728,6 +728,7 @@ impl AppController {
         let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
         let css_provider_clone = self.css_provider.clone();
+        let diff_map = comparison_panels.diff_map().clone();
         control_panel.options_button.connect_clicked(move |_| {
             // Reload config from file to get latest values
             let current_config = config_service_clone.load_config();
@@ -743,6 +744,7 @@ impl AppController {
             let panel_a_text_view_apply = panel_a_text_view.clone();
             let panel_b_text_view_apply = panel_b_text_view.clone();
             let css_provider_apply = css_provider_clone.clone();
+            let diff_map_apply = diff_map.clone();
             dialog.show({
                 let panel_a_text_view = panel_a_text_view.clone();
                 let panel_b_text_view = panel_b_text_view.clone();
@@ -794,12 +796,16 @@ impl AppController {
                         updated_config.minimap_diff_remove = color_config.minimap_diff_remove;
                         updated_config.minimap_diff_add = color_config.minimap_diff_add;
                         updated_config.minimap_diff_empty = color_config.minimap_diff_empty;
+                        updated_config.minimap_cursor_bg = color_config.minimap_cursor_bg;
 
                         // Update the state in memory
                         state_clone_apply.update_config(updated_config.clone());
 
                         // Update theme with new colors
                         theme::update_provider_with_config(&*css_provider_apply, &updated_config);
+
+                        // Redraw minimap to pick up new cursor color
+                        gtk::prelude::WidgetExt::queue_draw(&diff_map_apply);
 
                         // Update text tag colors for real-time changes
                         let panel_a_text_view_apply = panel_a_text_view.clone();
@@ -816,8 +822,5 @@ impl AppController {
         });
 
         // TODO: Connect Sync Scroll Toggle Button
-        // control_panel.sync_scroll_check_button.connect_toggled(move |btn| {
-        //     sync_enabled.set(btn.is_active());
-        // });
     }
 }
