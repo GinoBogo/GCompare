@@ -8,12 +8,12 @@
 
 use gtk::prelude::*;
 use gtk::subclass::prelude::ObjectSubclassIsExt;
-use gtk::{Box as GtkBox, Label, Orientation};
+use gtk::{Box, Label, Orientation};
 
 /// Status bar widget for displaying application status information.
 #[derive(Clone)]
 pub struct GStatusBar {
-    container: GtkBox,
+    container: Box,
     status_bar_a: Label,
     status_bar_b: Label,
 }
@@ -21,15 +21,15 @@ pub struct GStatusBar {
 impl GStatusBar {
     /// Create a new status bar widget.
     pub fn new() -> Self {
-        let container = GtkBox::builder()
+        let container = Box::builder()
             .orientation(Orientation::Horizontal)
             .spacing(0)
             .hexpand(true)
             .build();
 
         // Create containers - ONLY TWO expandable containers for columns 0 and 2
-        let container_a = GtkBox::new(Orientation::Horizontal, 0);
-        let container_b = GtkBox::new(Orientation::Horizontal, 0);
+        let container_a = Box::new(Orientation::Horizontal, 0);
+        let container_b = Box::new(Orientation::Horizontal, 0);
 
         // Make only col0 and col2 expand equally
         container_a.set_hexpand(true);
@@ -80,7 +80,7 @@ impl GStatusBar {
     }
 
     /// Get the container widget.
-    pub fn container(&self) -> &GtkBox {
+    pub fn container(&self) -> &Box {
         &self.container
     }
 

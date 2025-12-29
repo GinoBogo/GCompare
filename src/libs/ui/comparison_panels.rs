@@ -5,7 +5,7 @@
 //! * Version: 1.0
 
 use gtk::prelude::*;
-use gtk::{Box as GtkBox, ComboBoxText, CssProvider, Frame};
+use gtk::{Box, ComboBoxText, CssProvider, Frame};
 
 use crate::libs::state::AppConfig;
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
@@ -14,7 +14,7 @@ use crate::libs::widgets::gtextview::GTextView;
 
 /// Widget containing file comparison panels and diff map.
 pub struct ComparisonPanelsWidget {
-    container: GtkBox,
+    container: Box,
     panel_a: FilePanelWidget,
     panel_b: FilePanelWidget,
     diff_map: GDiffMap,
@@ -23,7 +23,7 @@ pub struct ComparisonPanelsWidget {
 impl ComparisonPanelsWidget {
     /// Create a new comparison panels widget.
     pub fn new(config: &AppConfig) -> (Self, GDiffMap) {
-        let container = GtkBox::builder()
+        let container = Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(6)
             .build();
@@ -68,7 +68,7 @@ impl ComparisonPanelsWidget {
     }
 
     /// Get the container widget.
-    pub fn container(&self) -> &GtkBox {
+    pub fn container(&self) -> &Box {
         &self.container
     }
 

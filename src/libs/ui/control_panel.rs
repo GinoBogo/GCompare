@@ -4,14 +4,13 @@
 //! * License: MIT
 //! * Version: 1.0
 
-use gtk::Box as GtkBox;
-use gtk::prelude::*;
-
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
+use gtk::Box;
+use gtk::prelude::*;
 
 /// Control panel widget containing action buttons.
 pub struct ControlPanelWidget {
-    container: GtkBox,
+    container: Box,
     pub compare_button: GButton,
     pub reload_button: GButton,
     pub previous_button: GButton,
@@ -22,7 +21,7 @@ pub struct ControlPanelWidget {
 impl ControlPanelWidget {
     /// Create a new control panel widget.
     pub fn new() -> Self {
-        let container = GtkBox::builder()
+        let container = Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(6)
             .halign(gtk::Align::Center)
@@ -59,7 +58,7 @@ impl ControlPanelWidget {
     }
 
     /// Get the container widget.
-    pub fn container(&self) -> &GtkBox {
+    pub fn container(&self) -> &Box {
         &self.container
     }
 }
