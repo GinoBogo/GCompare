@@ -1,4 +1,4 @@
-//! Status bar widget implementation.
+//! Custom status bar widget implementation.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT

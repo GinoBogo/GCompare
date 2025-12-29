@@ -1,4 +1,4 @@
-//! Color picker widget implementation.
+//! Custom color picker widget implementation.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT

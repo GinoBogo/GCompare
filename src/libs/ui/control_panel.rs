@@ -1,4 +1,4 @@
-//! Control panel widget implementation.
+//! Custom control panel widget implementation.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT

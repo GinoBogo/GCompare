@@ -1,4 +1,4 @@
-//! GOptions dialog implementation.
+//! Custom options dialog implementation.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT

@@ -1,4 +1,4 @@
-//! Comparison panels widget implementation.
+//! Custom comparison panels widget implementation.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT
