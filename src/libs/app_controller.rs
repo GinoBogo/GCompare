@@ -720,63 +720,74 @@ impl AppController {
             let panel_a_text_view_apply = panel_a_text_view.clone();
             let panel_b_text_view_apply = panel_b_text_view.clone();
             let css_provider_apply = css_provider_clone.clone();
-            dialog.show(move |result| {
-                if let Some((font_family, font_size, color_config)) = result {
-                    // Apply font changes to text views
-                    let css_provider = gtk::CssProvider::new();
-                    let css = format!(
-                        "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
-                        font_family, font_size
-                    );
-                    css_provider.load_from_data(&css);
+            dialog.show({
+                let panel_a_text_view = panel_a_text_view.clone();
+                let panel_b_text_view = panel_b_text_view.clone();
+                move |result| {
+                    if let Some((font_family, font_size, color_config)) = result {
+                        // Apply font changes to text views
+                        let css_provider = gtk::CssProvider::new();
+                        let css = format!(
+                            "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
+                            font_family, font_size
+                        );
+                        css_provider.load_from_data(&css);
 
-                    // Apply to both text views (content and gutter)
-                    panel_a_text_view_apply
-                        .content_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    panel_a_text_view_apply
-                        .gutter_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                        // Apply to both text views (content and gutter)
+                        panel_a_text_view_apply
+                            .content_view()
+                            .style_context()
+                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                        panel_a_text_view_apply
+                            .gutter_view()
+                            .style_context()
+                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-                    panel_b_text_view_apply
-                        .content_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    panel_b_text_view_apply
-                        .gutter_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                        panel_b_text_view_apply
+                            .content_view()
+                            .style_context()
+                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                        panel_b_text_view_apply
+                            .gutter_view()
+                            .style_context()
+                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
 
-                    // Update the in-memory state with new settings
-                    let mut updated_config = state_clone_apply.config().clone();
-                    updated_config.font_family = font_family.clone();
-                    updated_config.font_size = font_size as i32;
+                        // Update the in-memory state with new settings
+                        let mut updated_config = state_clone_apply.config().clone();
+                        updated_config.font_family = font_family.clone();
+                        updated_config.font_size = font_size as i32;
 
-                    // Update color settings
-                    updated_config.text_diff_remove_bg = color_config.text_diff_remove_bg;
-                    updated_config.text_diff_remove_fg = color_config.text_diff_remove_fg;
-                    updated_config.text_diff_add_bg = color_config.text_diff_add_bg;
-                    updated_config.text_diff_add_fg = color_config.text_diff_add_fg;
-                    updated_config.text_diff_empty_bg = color_config.text_diff_empty_bg;
-                    updated_config.text_diff_empty_fg = color_config.text_diff_empty_fg;
-                    updated_config.gutter_numbers_bg = color_config.gutter_numbers_bg;
-                    updated_config.gutter_numbers_fg = color_config.gutter_numbers_fg;
-                    updated_config.minimap_bg = color_config.minimap_bg;
-                    updated_config.minimap_fg = color_config.minimap_fg;
-                    updated_config.minimap_diff_remove = color_config.minimap_diff_remove;
-                    updated_config.minimap_diff_add = color_config.minimap_diff_add;
-                    updated_config.minimap_diff_empty = color_config.minimap_diff_empty;
+                        // Update color settings
+                        updated_config.text_diff_remove_bg = color_config.text_diff_remove_bg;
+                        updated_config.text_diff_remove_fg = color_config.text_diff_remove_fg;
+                        updated_config.text_diff_add_bg = color_config.text_diff_add_bg;
+                        updated_config.text_diff_add_fg = color_config.text_diff_add_fg;
+                        updated_config.text_diff_empty_bg = color_config.text_diff_empty_bg;
+                        updated_config.text_diff_empty_fg = color_config.text_diff_empty_fg;
+                        updated_config.gutter_numbers_bg = color_config.gutter_numbers_bg;
+                        updated_config.gutter_numbers_fg = color_config.gutter_numbers_fg;
+                        updated_config.minimap_bg = color_config.minimap_bg;
+                        updated_config.minimap_fg = color_config.minimap_fg;
+                        updated_config.minimap_diff_remove = color_config.minimap_diff_remove;
+                        updated_config.minimap_diff_add = color_config.minimap_diff_add;
+                        updated_config.minimap_diff_empty = color_config.minimap_diff_empty;
 
-                    // Update the state in memory
-                    state_clone_apply.update_config(updated_config.clone());
+                        // Update the state in memory
+                        state_clone_apply.update_config(updated_config.clone());
 
-                    // Update theme with new colors
-                    theme::update_provider_with_config(&*css_provider_apply, &updated_config);
+                        // Update theme with new colors
+                        theme::update_provider_with_config(&*css_provider_apply, &updated_config);
 
-                    // Save config to disk
-                    config_service_apply.save_config(&updated_config);
+                        // Update text tag colors for real-time changes
+                        let panel_a_text_view_apply = panel_a_text_view.clone();
+                        let panel_b_text_view_apply = panel_b_text_view.clone();
+                        let buffer_a = panel_a_text_view_apply.content_view().buffer();
+                        let buffer_b = panel_b_text_view_apply.content_view().buffer();
+                        theme::update_text_tag_colors(&[&buffer_a, &buffer_b], &updated_config);
+
+                        // Save config to disk
+                        config_service_apply.save_config(&updated_config);
+                    }
                 }
             });
         });

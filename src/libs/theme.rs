@@ -4,12 +4,66 @@
 //! * License: MIT
 //! * Version: 1.0
 
-use gtk::{CssProvider, STYLE_PROVIDER_PRIORITY_APPLICATION, gdk};
+use gtk::{CssProvider, STYLE_PROVIDER_PRIORITY_APPLICATION, gdk, prelude::*};
+use regex::Regex;
+use std::collections::HashMap;
 use std::sync::Once;
 
 /// Get the bundled CSS content (cached at compile time).
 fn get_css_content() -> &'static str {
     include_str!("../style.css")
+}
+
+/// Parse CSS into a structured representation.
+#[derive(Debug, Clone)]
+struct CssRule {
+    selector: String,
+    properties: HashMap<String, String>,
+}
+
+impl CssRule {
+    fn new(selector: String) -> Self {
+        Self {
+            selector,
+            properties: HashMap::new(),
+        }
+    }
+
+    fn to_css_string(&self) -> String {
+        let mut result = format!("{} {{\n", self.selector);
+        for (prop, value) in &self.properties {
+            result.push_str(&format!("  {}: {};\n", prop, value));
+        }
+        result.push_str("}\n");
+        result
+    }
+}
+
+/// Parse CSS content into structured rules.
+fn parse_css_rules(css_content: &str) -> Vec<CssRule> {
+    let mut rules = Vec::new();
+
+    // Regex to match CSS rules: .selector { property: value; }
+    let rule_regex = Regex::new(r"([^{]+)\s*\{([^}]+)\}").unwrap();
+
+    for captures in rule_regex.captures_iter(css_content) {
+        let selector = captures[1].trim().to_string();
+        let properties_content = &captures[2];
+
+        let mut rule = CssRule::new(selector);
+
+        // Parse individual properties
+        let prop_regex = Regex::new(r"([a-zA-Z-]+)\s*:\s*([^;]+)").unwrap();
+        for prop_captures in prop_regex.captures_iter(properties_content) {
+            let prop_name = prop_captures[1].trim().to_string();
+            let prop_value = prop_captures[2].trim().to_string();
+            rule.properties.insert(prop_name, prop_value);
+        }
+
+        rules.push(rule);
+    }
+
+    rules
 }
 
 /// Initialize the application theme.
@@ -34,10 +88,10 @@ pub fn init() -> CssProvider {
 
 /// Update a CSS provider with custom colors from config.
 pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs::state::AppConfig) {
-    // Load base CSS into memory
-    let mut css_content = get_css_content().to_string();
+    // Parse CSS into structured rules
+    let mut rules = parse_css_rules(get_css_content());
 
-    // Clean and validate color values
+    // Helper function to clean and validate color values
     let clean_color = |color: &str| {
         let cleaned = color
             .trim()
@@ -62,43 +116,89 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
         }
     };
 
-    // Replace specific color values in the CSS
-    let replacements = vec![
+    // Define color mappings
+    let color_mappings = [
+        // Text diff colors
         (
             ".text-diff-remove",
-            clean_color(&config.text_diff_remove_bg),
+            "background-color",
+            &config.text_diff_remove_bg,
         ),
-        (".text-diff-add", clean_color(&config.text_diff_add_bg)),
-        (".text-diff-empty", clean_color(&config.text_diff_empty_bg)),
+        (".text-diff-remove", "color", &config.text_diff_remove_fg),
+        (
+            ".text-diff-add",
+            "background-color",
+            &config.text_diff_add_bg,
+        ),
+        (".text-diff-add", "color", &config.text_diff_add_fg),
+        (
+            ".text-diff-empty",
+            "background-color",
+            &config.text_diff_empty_bg,
+        ),
+        (".text-diff-empty", "color", &config.text_diff_empty_fg),
+        // Gutter numbers colors
+        (
+            ".gutter-numbers",
+            "background-color",
+            &config.gutter_numbers_bg,
+        ),
+        (".gutter-numbers", "color", &config.gutter_numbers_fg),
+        // Minimap colors
+        (".minimap", "background-color", &config.minimap_bg),
+        (".minimap", "color", &config.minimap_fg),
+        (".minimap-diff-remove", "color", &config.minimap_diff_remove),
+        (".minimap-diff-add", "color", &config.minimap_diff_add),
+        (".minimap-diff-empty", "color", &config.minimap_diff_empty),
     ];
 
-    for (class_name, new_color) in replacements {
-        // Find the CSS block for this class
-        if let Some(start) = css_content.find(&format!("{} {{", class_name)) {
-            // Find the end of the block
-            if let Some(block_end) = css_content[start..].find("}") {
-                let block_start = start;
-                let block_end = start + block_end;
-
-                // Find and replace the background-color in this block
-                let block = &css_content[block_start..block_end];
-                if let Some(bg_start) = block.find("background-color:") {
-                    let bg_line_start = block_start + bg_start;
-                    if let Some(bg_end) = css_content[bg_line_start..].find(";") {
-                        let bg_line_end = bg_line_start + bg_end;
-
-                        // Replace the color value
-                        let before_bg = &css_content[..bg_line_start + "background-color:".len()];
-                        let after_bg = &css_content[bg_line_end..];
-                        css_content = format!("{} #{}{}", before_bg, new_color, after_bg);
-                    }
-                }
+    // Update CSS properties using the structured tree
+    for rule in &mut rules {
+        for (class_selector, property, config_value) in &color_mappings {
+            if rule.selector.contains(class_selector) {
+                let cleaned_color = clean_color(config_value);
+                rule.properties
+                    .insert(property.to_string(), format!("#{}", cleaned_color));
             }
         }
     }
 
+    // Generate CSS string from the modified rules
+    let mut css_string = String::new();
+    for rule in &rules {
+        css_string.push_str(&rule.to_css_string());
+    }
+
     // Apply the modified CSS
-    provider.load_from_data(&css_content);
+    provider.load_from_data(&css_string);
+}
+
+/// Update text tag colors for real-time theme changes.
+pub fn update_text_tag_colors(
+    text_buffers: &[&gtk::TextBuffer],
+    config: &crate::libs::state::AppConfig,
+) {
+    let color_mappings = [
+        ("diff_remove", &config.text_diff_remove_bg),
+        ("diff_add", &config.text_diff_add_bg),
+        ("diff_empty", &config.text_diff_empty_bg),
+    ];
+
+    for buffer in text_buffers {
+        for (tag_name, color_value) in &color_mappings {
+            if let Some(tag) = buffer.tag_table().lookup(tag_name) {
+                // Parse hex color to RGBA
+                if color_value.starts_with("#") && color_value.len() == 7 {
+                    let r = u8::from_str_radix(&color_value[1..3], 16).unwrap_or(255);
+                    let g = u8::from_str_radix(&color_value[3..5], 16).unwrap_or(255);
+                    let b = u8::from_str_radix(&color_value[5..7], 16).unwrap_or(255);
+                    let rgba =
+                        gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0);
+                    tag.set_background_rgba(Some(&rgba));
+                }
+            }
+        }
+    }
 }
 
 /// Get color property from a CSS class using the theme provider.
