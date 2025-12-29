@@ -82,47 +82,46 @@
 }
 
 /* GTextView Styles */
-.line-numbers {
+.text-diff-remove {
+    background-color: #ffcccc;
+    color: #000000;
+}
+
+.text-diff-add {
+    background-color: #ccffcc;
+    color: #000000;
+}
+
+.text-diff-empty {
+    background-color: #fffacd;
+    color: #000000;
+}
+
+.gutter-numbers {
     background-color: #f0f0f0;
     color: #888888;
     padding-right: 5px;
 }
 
 /* GDiffMap Styles */
-.map-cursor {
-    background-color: rgba(0, 0, 0, 0.05);
-    border: 1px solid black;
-}
-
-.diff-map {
+.minimap {
     background-color: #ffffff;
-    color: #ffffff;
-}
-
-.diff-map-separator {
     color: #cccccc;
 }
 
-.diff-map-remove {
+.minimap-diff-remove {
     color: #990000;
 }
 
-.diff-map-add {
+.minimap-diff-add {
     color: #009900;
 }
 
-.diff-map-empty {
+.minimap-diff-empty {
     color: #ffcc00;
 }
 
-.diff-bg-remove {
-    background-color: #ffcccc;
-}
-
-.diff-bg-add {
-    background-color: #ccffcc;
-}
-
-.diff-bg-empty {
-    background-color: #fffacd;
+.minimap-cursor {
+    background-color: rgba(0, 0, 0, 0.05);
+    border: 1px solid black;
 }

@@ -119,7 +119,7 @@ mod imp {
 
             // Create Cursor widget
             let cursor = Box::new(gtk::Orientation::Horizontal, 0);
-            cursor.add_css_class("map-cursor");
+            cursor.add_css_class("minimap-cursor");
             cursor.set_cursor_from_name(Some("grab"));
 
             // Setup Drag Gesture
@@ -323,7 +323,13 @@ impl GDiffMap {
         all_diff_lines.last().copied()
     }
 
-    fn draw_diff_lines(&self, da: &DrawingArea, cr: &gtk::cairo::Context, width: f64, height: f64) {
+    fn draw_diff_lines(
+        &self,
+        _da: &DrawingArea,
+        cr: &gtk::cairo::Context,
+        width: f64,
+        height: f64,
+    ) {
         let imp = self.imp();
         let info = imp.text_info.get();
         let max_total_lines = info.a.total_lines.max(info.b.total_lines).max(1) as f64;
@@ -332,18 +338,8 @@ impl GDiffMap {
         let usable_height = (height - gap * 2.0).max(0.0);
         let scale_y = usable_height / max_total_lines;
 
-        let style_context = da.style_context();
-
-        // Helper to get color from CSS class
-        let get_color = |class_name: &str| {
-            style_context.add_class(class_name);
-            let color = style_context.color();
-            style_context.remove_class(class_name);
-            color
-        };
-
         // Draw Background
-        let bg_color = get_color("diff-map");
+        let bg_color = crate::libs::theme::get_background_color("minimap");
         cr.set_source_rgba(
             bg_color.red() as f64,
             bg_color.green() as f64,
@@ -353,7 +349,7 @@ impl GDiffMap {
         cr.paint().expect("Invalid cairo surface state");
 
         // Draw separator line
-        let separator_color = get_color("diff-map-separator");
+        let separator_color = crate::libs::theme::get_color("minimap");
         cr.set_source_rgba(
             separator_color.red() as f64,
             separator_color.green() as f64,
@@ -367,7 +363,7 @@ impl GDiffMap {
         let _ = cr.stroke();
 
         // Draw A lines (Left to Half) - Light Red
-        let color_a = get_color("diff-map-remove");
+        let color_a = crate::libs::theme::get_color("minimap-diff-remove");
         cr.set_source_rgba(
             color_a.red() as f64,
             color_a.green() as f64,
@@ -381,7 +377,7 @@ impl GDiffMap {
         }
 
         // Draw B lines (Half to Right) - Light Green
-        let color_b = get_color("diff-map-add");
+        let color_b = crate::libs::theme::get_color("minimap-diff-add");
         cr.set_source_rgba(
             color_b.red() as f64,
             color_b.green() as f64,
@@ -395,7 +391,7 @@ impl GDiffMap {
         }
 
         // Draw A empty/whitespace lines (Left to Half) - Yellow
-        let color_empty = get_color("diff-map-empty");
+        let color_empty = crate::libs::theme::get_color("minimap-diff-empty");
         cr.set_source_rgba(
             color_empty.red() as f64,
             color_empty.green() as f64,

@@ -28,12 +28,12 @@ impl GColorPicker {
     /// * `color` - Initial color as hex string (e.g., "#ff0000")
     pub fn new(label: &str, color: &str) -> Self {
         let container = Box::new(Orientation::Horizontal, 10);
-        container.set_halign(gtk::Align::Fill);
-        container.set_hexpand(true);
+        container.set_halign(gtk::Align::Start);
+        container.set_hexpand(false);
 
         let label_widget = Label::new(Some(label));
         label_widget.set_halign(gtk::Align::Start);
-        label_widget.set_hexpand(true);
+        label_widget.set_hexpand(false);
 
         let color_button = ColorButton::builder().use_alpha(false).build();
 
@@ -42,8 +42,8 @@ impl GColorPicker {
             color_button.set_rgba(&rgba);
         }
 
-        container.append(&label_widget);
         container.append(&color_button);
+        container.append(&label_widget);
 
         Self {
             container,

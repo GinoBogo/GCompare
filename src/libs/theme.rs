@@ -59,9 +59,9 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
 
     // Replace specific color values in the CSS
     let replacements = vec![
-        (".diff-bg-remove", clean_color(&config.diff_remove_bg)),
-        (".diff-bg-add", clean_color(&config.diff_add_bg)),
-        (".diff-bg-empty", clean_color(&config.diff_empty_bg)),
+        (".text-diff-remove", clean_color(&config.text_diff_remove_bg)),
+        (".text-diff-add", clean_color(&config.text_diff_add_bg)),
+        (".text-diff-empty", clean_color(&config.text_diff_empty_bg)),
     ];
 
     for (class_name, new_color) in replacements {
@@ -94,4 +94,143 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
 
     // Apply the modified CSS
     provider.load_from_data(&css_content);
+}
+
+/// Get color property from a CSS class using the theme provider.
+pub fn get_css_color(class_name: &str, property: &str) -> Option<gdk::RGBA> {
+    // For now, we'll use the bundled CSS parsing approach since StyleContext::new() isn't available
+    // This leverages the existing theme system without runtime file dependencies
+    let result = if property == "background-color" {
+        get_background_color_from_css(class_name)
+    } else {
+        get_color_from_css(class_name)
+    };
+    
+    result
+}
+
+/// Get foreground color from a CSS class.
+pub fn get_color(class_name: &str) -> gdk::RGBA {
+    get_css_color(class_name, "color").unwrap_or_else(|| {
+        // Fallback to default gray
+        gdk::RGBA::new(0.8, 0.8, 0.8, 1.0)
+    })
+}
+
+/// Get background color from a CSS class.
+pub fn get_background_color(class_name: &str) -> gdk::RGBA {
+    get_css_color(class_name, "background-color").unwrap_or_else(|| {
+        // Fallback to white
+        gdk::RGBA::new(1.0, 1.0, 1.0, 1.0)
+    })
+}
+
+/// Parse color from the bundled CSS content.
+fn get_color_from_css(class_name: &str) -> Option<gdk::RGBA> {
+    let css_content = include_str!("../style.css");
+    
+    // Find the CSS class definition
+    let class_pattern = format!(".{} {{", class_name);
+    if let Some(class_start) = css_content.find(&class_pattern) {
+        // Find the end of the class definition (closing brace)
+        let class_content = &css_content[class_start + class_pattern.len()..];
+        if let Some(class_end) = class_content.find('}') {
+            let class_rules = &class_content[..class_end];
+            
+            // Parse the color property
+            for rule in class_rules.split(';') {
+                let rule = rule.trim();
+                if rule.starts_with("color") && !rule.starts_with("background-color") {
+                    if let Some(value_part) = rule.split(':').nth(1) {
+                        let value = value_part.trim();
+                        // Parse hex color (e.g., "#cccccc")
+                        if value.starts_with('#') && value.len() == 7 {
+                            let r = u8::from_str_radix(&value[1..3], 16).ok()? as f64 / 255.0;
+                            let g = u8::from_str_radix(&value[3..5], 16).ok()? as f64 / 255.0;
+                            let b = u8::from_str_radix(&value[5..7], 16).ok()? as f64 / 255.0;
+                            let mut rgba = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+                            rgba.set_red(r as f32);
+                            rgba.set_green(g as f32);
+                            rgba.set_blue(b as f32);
+                            rgba.set_alpha(1.0);
+                            return Some(rgba);
+                        } else if value.starts_with("rgba(") {
+                            // Parse rgba format: rgba(255, 255, 255, 0.8)
+                            let rgba_part = &value[5..value.len() - 1]; // Remove "rgba(" and ")"
+                            let parts: Vec<&str> = rgba_part.split(',').collect();
+                            if parts.len() == 4 {
+                                let r = parts[0].trim().parse::<u8>().ok()? as f64 / 255.0;
+                                let g = parts[1].trim().parse::<u8>().ok()? as f64 / 255.0;
+                                let b = parts[2].trim().parse::<u8>().ok()? as f64 / 255.0;
+                                let a = parts[3].trim().parse::<f64>().ok()?;
+                                let mut rgba = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+                                rgba.set_red(r as f32);
+                                rgba.set_green(g as f32);
+                                rgba.set_blue(b as f32);
+                                rgba.set_alpha(a as f32);
+                                return Some(rgba);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    None
+}
+
+/// Parse background color from the bundled CSS content.
+fn get_background_color_from_css(class_name: &str) -> Option<gdk::RGBA> {
+    let css_content = include_str!("../style.css");
+    
+    // Find the CSS class definition
+    let class_pattern = format!(".{} {{", class_name);
+    if let Some(class_start) = css_content.find(&class_pattern) {
+        // Find the end of the class definition (closing brace)
+        let class_content = &css_content[class_start + class_pattern.len()..];
+        if let Some(class_end) = class_content.find('}') {
+            let class_rules = &class_content[..class_end];
+            
+            // Parse the background-color property
+            for rule in class_rules.split(';') {
+                let rule = rule.trim();
+                if rule.starts_with("background-color") {
+                    if let Some(value_part) = rule.split(':').nth(1) {
+                        let value = value_part.trim();
+                        // Parse hex color (e.g., "#ffffff")
+                        if value.starts_with('#') && value.len() == 7 {
+                            let r = u8::from_str_radix(&value[1..3], 16).ok()? as f64 / 255.0;
+                            let g = u8::from_str_radix(&value[3..5], 16).ok()? as f64 / 255.0;
+                            let b = u8::from_str_radix(&value[5..7], 16).ok()? as f64 / 255.0;
+                            let mut rgba = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+                            rgba.set_red(r as f32);
+                            rgba.set_green(g as f32);
+                            rgba.set_blue(b as f32);
+                            rgba.set_alpha(1.0);
+                            return Some(rgba);
+                        } else if value.starts_with("rgba(") {
+                            // Parse rgba format: rgba(255, 255, 255, 0.8)
+                            let rgba_part = &value[5..value.len() - 1]; // Remove "rgba(" and ")"
+                            let parts: Vec<&str> = rgba_part.split(',').collect();
+                            if parts.len() == 4 {
+                                let r = parts[0].trim().parse::<u8>().ok()? as f64 / 255.0;
+                                let g = parts[1].trim().parse::<u8>().ok()? as f64 / 255.0;
+                                let b = parts[2].trim().parse::<u8>().ok()? as f64 / 255.0;
+                                let a = parts[3].trim().parse::<f64>().ok()?;
+                                let mut rgba = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
+                                rgba.set_red(r as f32);
+                                rgba.set_green(g as f32);
+                                rgba.set_blue(b as f32);
+                                rgba.set_alpha(a as f32);
+                                return Some(rgba);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+    
+    None
 }

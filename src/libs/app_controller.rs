@@ -41,10 +41,10 @@ impl AppController {
     pub fn new() -> Self {
         let config_service = ConfigService::new();
         let state = Rc::new(ApplicationState::new(config_service.load_config()));
-        
+
         // Initialize theme and get CSS provider
         let css_provider = Rc::new(theme::init());
-        
+
         // Update theme with config colors
         theme::update_provider_with_config(&*css_provider, &state.config());
 
@@ -522,12 +522,12 @@ impl AppController {
             let get_theme_bg_color = |class_name: &str| {
                 let config = &state_for_colors.config();
                 let color = match class_name {
-                    "diff-bg-remove" => &config.diff_remove_bg,
-                    "diff-bg-add" => &config.diff_add_bg,
-                    "diff-bg-empty" => &config.diff_empty_bg,
+                    "text-diff-remove" => &config.text_diff_remove_bg,
+                    "text-diff-add" => &config.text_diff_add_bg,
+                    "text-diff-empty" => &config.text_diff_empty_bg,
                     _ => "#ffffff", // White default
                 };
-                
+
                 // Parse hex color to RGBA
                 if color.starts_with("#") && color.len() == 7 {
                     let r = u8::from_str_radix(&color[1..3], 16).unwrap_or(255);
@@ -549,10 +549,10 @@ impl AppController {
                 }
             };
 
-            create_tag(&buffer_a, "diff_remove", "diff-bg-remove");
-            create_tag(&buffer_b, "diff_add", "diff-bg-add");
-            create_tag(&buffer_a, "diff_empty", "diff-bg-empty");
-            create_tag(&buffer_b, "diff_empty", "diff-bg-empty");
+            create_tag(&buffer_a, "diff_remove", "text-diff-remove");
+            create_tag(&buffer_b, "diff_add", "text-diff-add");
+            create_tag(&buffer_a, "diff_empty", "text-diff-empty");
+            create_tag(&buffer_b, "diff_empty", "text-diff-empty");
 
             // Get content
             let (start_a, end_a) = buffer_a.bounds();
@@ -755,26 +755,26 @@ impl AppController {
                     updated_config.font_size = font_size as i32;
 
                     // Update color settings
-                    updated_config.diff_remove_bg = color_config.diff_remove_bg;
-                    updated_config.diff_add_bg = color_config.diff_add_bg;
-                    updated_config.diff_empty_bg = color_config.diff_empty_bg;
-                    updated_config.diff_remove_text = color_config.diff_remove_text;
-                    updated_config.diff_add_text = color_config.diff_add_text;
-                    updated_config.diff_empty_text = color_config.diff_empty_text;
-                    updated_config.gutter_bg = color_config.gutter_bg;
-                    updated_config.gutter_text = color_config.gutter_text;
+                    updated_config.text_diff_remove_bg = color_config.text_diff_remove_bg;
+                    updated_config.text_diff_remove_fg = color_config.text_diff_remove_fg;
+                    updated_config.text_diff_add_bg = color_config.text_diff_add_bg;
+                    updated_config.text_diff_add_fg = color_config.text_diff_add_fg;
+                    updated_config.text_diff_empty_bg = color_config.text_diff_empty_bg;
+                    updated_config.text_diff_empty_fg = color_config.text_diff_empty_fg;
+                    updated_config.gutter_numbers_bg = color_config.gutter_numbers_bg;
+                    updated_config.gutter_numbers_fg = color_config.gutter_numbers_fg;
                     updated_config.minimap_bg = color_config.minimap_bg;
-                    updated_config.minimap_separator = color_config.minimap_separator;
-                    updated_config.minimap_remove = color_config.minimap_remove;
-                    updated_config.minimap_add = color_config.minimap_add;
-                    updated_config.minimap_empty = color_config.minimap_empty;
+                    updated_config.minimap_fg = color_config.minimap_fg;
+                    updated_config.minimap_diff_remove = color_config.minimap_diff_remove;
+                    updated_config.minimap_diff_add = color_config.minimap_diff_add;
+                    updated_config.minimap_diff_empty = color_config.minimap_diff_empty;
 
                     // Update the state in memory
                     state_clone_apply.update_config(updated_config.clone());
-                    
+
                     // Update theme with new colors
                     theme::update_provider_with_config(&*css_provider_apply, &updated_config);
-                    
+
                     // Debug: Print that colors were updated
                     println!("Colors updated - user needs to click Compare to see changes");
 

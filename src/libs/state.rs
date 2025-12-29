@@ -21,19 +21,19 @@ pub struct AppConfig {
     pub file_b_history: Vec<String>,
     pub sync_scroll: bool,
     // Color settings
-    pub diff_remove_bg: String,
-    pub diff_add_bg: String,
-    pub diff_empty_bg: String,
-    pub diff_remove_text: String,
-    pub diff_add_text: String,
-    pub diff_empty_text: String,
-    pub gutter_bg: String,
-    pub gutter_text: String,
+    pub text_diff_remove_bg: String,
+    pub text_diff_remove_fg: String,
+    pub text_diff_add_bg: String,
+    pub text_diff_add_fg: String,
+    pub text_diff_empty_bg: String,
+    pub text_diff_empty_fg: String,
+    pub gutter_numbers_bg: String,
+    pub gutter_numbers_fg: String,
     pub minimap_bg: String,
-    pub minimap_separator: String,
-    pub minimap_remove: String,
-    pub minimap_add: String,
-    pub minimap_empty: String,
+    pub minimap_fg: String,
+    pub minimap_diff_remove: String,
+    pub minimap_diff_add: String,
+    pub minimap_diff_empty: String,
 }
 
 impl Default for AppConfig {
@@ -48,19 +48,19 @@ impl Default for AppConfig {
             file_b_history: Vec::new(),
             sync_scroll: true,
             // Color settings - using hex values from CSS
-            diff_remove_bg: "#ffcccc".to_string(),    // Light red
-            diff_add_bg: "#ccffcc".to_string(),        // Light green
-            diff_empty_bg: "#fffacd".to_string(),      // Light yellow
-            diff_remove_text: "#990000".to_string(),   // Dark red
-            diff_add_text: "#009900".to_string(),      // Dark green
-            diff_empty_text: "#ffcc00".to_string(),    // Dark yellow
-            gutter_bg: "#f0f0f0".to_string(),          // Light gray
-            gutter_text: "#888888".to_string(),        // Medium gray
+            text_diff_remove_bg: "#ffcccc".to_string(), // Light red
+            text_diff_remove_fg: "#990000".to_string(), // Dark red
+            text_diff_add_bg: "#ccffcc".to_string(),    // Light green
+            text_diff_add_fg: "#009900".to_string(),    // Dark green
+            text_diff_empty_bg: "#fffacd".to_string(),  // Light yellow
+            text_diff_empty_fg: "#ffcc00".to_string(),  // Dark yellow
+            gutter_numbers_bg: "#f0f0f0".to_string(),   // Light gray
+            gutter_numbers_fg: "#888888".to_string(),   // Medium gray
             minimap_bg: "#ffffff".to_string(),          // White
-            minimap_separator: "#cccccc".to_string(),  // Light gray
-            minimap_remove: "#990000".to_string(),      // Dark red
-            minimap_add: "#009900".to_string(),         // Dark green
-            minimap_empty: "#ffcc00".to_string(),       // Dark yellow
+            minimap_fg: "#cccccc".to_string(),          // Light gray
+            minimap_diff_remove: "#990000".to_string(), // Dark red
+            minimap_diff_add: "#009900".to_string(),    // Dark green
+            minimap_diff_empty: "#ffcc00".to_string(),  // Dark yellow
         }
     }
 }
@@ -73,7 +73,9 @@ pub struct ApplicationState {
 impl ApplicationState {
     /// Create a new application state with the given configuration.
     pub fn new(config: AppConfig) -> Self {
-        Self { config: std::cell::RefCell::new(config) }
+        Self {
+            config: std::cell::RefCell::new(config),
+        }
     }
 
     /// Get current configuration.
@@ -137,19 +139,19 @@ impl ApplicationState {
             ),
             sync_scroll: current_config.sync_scroll,
             // Preserve color settings
-            diff_remove_bg: current_config.diff_remove_bg.clone(),
-            diff_add_bg: current_config.diff_add_bg.clone(),
-            diff_empty_bg: current_config.diff_empty_bg.clone(),
-            diff_remove_text: current_config.diff_remove_text.clone(),
-            diff_add_text: current_config.diff_add_text.clone(),
-            diff_empty_text: current_config.diff_empty_text.clone(),
-            gutter_bg: current_config.gutter_bg.clone(),
-            gutter_text: current_config.gutter_text.clone(),
+            text_diff_remove_bg: current_config.text_diff_remove_bg.clone(),
+            text_diff_remove_fg: current_config.text_diff_remove_fg.clone(),
+            text_diff_add_bg: current_config.text_diff_add_bg.clone(),
+            text_diff_add_fg: current_config.text_diff_add_fg.clone(),
+            text_diff_empty_bg: current_config.text_diff_empty_bg.clone(),
+            text_diff_empty_fg: current_config.text_diff_empty_fg.clone(),
+            gutter_numbers_bg: current_config.gutter_numbers_bg.clone(),
+            gutter_numbers_fg: current_config.gutter_numbers_fg.clone(),
             minimap_bg: current_config.minimap_bg.clone(),
-            minimap_separator: current_config.minimap_separator.clone(),
-            minimap_remove: current_config.minimap_remove.clone(),
-            minimap_add: current_config.minimap_add.clone(),
-            minimap_empty: current_config.minimap_empty.clone(),
+            minimap_fg: current_config.minimap_fg.clone(),
+            minimap_diff_remove: current_config.minimap_diff_remove.clone(),
+            minimap_diff_add: current_config.minimap_diff_add.clone(),
+            minimap_diff_empty: current_config.minimap_diff_empty.clone(),
         }
     }
 }

@@ -70,7 +70,7 @@ mod imp {
             });
             gutter_view.add_controller(gesture);
 
-            gutter_view.add_css_class("line-numbers");
+            gutter_view.add_css_class("gutter-numbers");
 
             let gutter_scrolled_window = ScrolledWindow::builder()
                 .hexpand(false)

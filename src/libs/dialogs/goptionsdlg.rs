@@ -18,19 +18,19 @@ pub struct GOptionsDlg {
     apply_button: GButton,
     cancel_button: GButton,
     // Color pickers
-    diff_remove_bg_picker: GColorPicker,
-    diff_add_bg_picker: GColorPicker,
-    diff_empty_bg_picker: GColorPicker,
-    diff_remove_text_picker: GColorPicker,
-    diff_add_text_picker: GColorPicker,
-    diff_empty_text_picker: GColorPicker,
-    gutter_bg_picker: GColorPicker,
-    gutter_text_picker: GColorPicker,
+    text_diff_remove_bg_picker: GColorPicker,
+    text_diff_remove_fg_picker: GColorPicker,
+    text_diff_add_bg_picker: GColorPicker,
+    text_diff_add_fg_picker: GColorPicker,
+    text_diff_empty_bg_picker: GColorPicker,
+    text_diff_empty_fg_picker: GColorPicker,
+    gutter_numbers_bg_picker: GColorPicker,
+    gutter_numbers_fg_picker: GColorPicker,
     minimap_bg_picker: GColorPicker,
-    minimap_separator_picker: GColorPicker,
-    minimap_remove_picker: GColorPicker,
-    minimap_add_picker: GColorPicker,
-    minimap_empty_picker: GColorPicker,
+    minimap_fg_picker: GColorPicker,
+    minimap_diff_remove_picker: GColorPicker,
+    minimap_diff_add_picker: GColorPicker,
+    minimap_diff_empty_picker: GColorPicker,
 }
 
 impl GOptionsDlg {
@@ -207,38 +207,47 @@ impl GOptionsDlg {
         let text_diff_label = Label::new(Some("Text Differences"));
         text_diff_label.set_halign(gtk::Align::Start);
         text_diff_label.set_markup("<b>Text Differences</b>");
-        colors_grid.attach(&text_diff_label, 0, 0, 2, 1);
+        colors_grid.attach(&text_diff_label, 0, 0, 1, 1);
 
-        let diff_remove_bg_picker =
-            GColorPicker::new("Removed Background:", &config.diff_remove_bg);
-        colors_grid.attach(diff_remove_bg_picker.container(), 0, 1, 2, 1);
+        // Removed Background
+        let text_diff_remove_bg_picker =
+            GColorPicker::new("Removed Background", &config.text_diff_remove_bg);
+        colors_grid.attach(text_diff_remove_bg_picker.container(), 0, 1, 1, 1);
 
-        let diff_add_bg_picker = GColorPicker::new("Added Background:", &config.diff_add_bg);
-        colors_grid.attach(diff_add_bg_picker.container(), 0, 2, 2, 1);
+        // Removed Text
+        let text_diff_remove_fg_picker =
+            GColorPicker::new("Remove Text", &config.text_diff_remove_fg);
+        colors_grid.attach(text_diff_remove_fg_picker.container(), 0, 2, 1, 1);
 
-        let diff_empty_bg_picker = GColorPicker::new("Empty Background:", &config.diff_empty_bg);
-        colors_grid.attach(diff_empty_bg_picker.container(), 0, 3, 2, 1);
+        // Added Background
+        let text_diff_add_bg_picker =
+            GColorPicker::new("Added Background", &config.text_diff_add_bg);
+        colors_grid.attach(text_diff_add_bg_picker.container(), 0, 3, 1, 1);
 
-        let diff_remove_text_picker = GColorPicker::new("Removed Text:", &config.diff_remove_text);
-        colors_grid.attach(diff_remove_text_picker.container(), 0, 4, 2, 1);
+        // Added Text
+        let text_diff_add_fg_picker = GColorPicker::new("Added Text", &config.text_diff_add_fg);
+        colors_grid.attach(text_diff_add_fg_picker.container(), 0, 4, 1, 1);
 
-        let diff_add_text_picker = GColorPicker::new("Added Text:", &config.diff_add_text);
-        colors_grid.attach(diff_add_text_picker.container(), 0, 5, 2, 1);
+        // Empty Background
+        let text_diff_empty_bg_picker =
+            GColorPicker::new("Empty Background", &config.text_diff_empty_bg);
+        colors_grid.attach(text_diff_empty_bg_picker.container(), 0, 5, 1, 1);
 
-        let diff_empty_text_picker = GColorPicker::new("Empty Text:", &config.diff_empty_text);
-        colors_grid.attach(diff_empty_text_picker.container(), 0, 6, 2, 1);
+        // Empty Text
+        let text_diff_empty_fg_picker = GColorPicker::new("Empty Text", &config.text_diff_empty_fg);
+        colors_grid.attach(text_diff_empty_fg_picker.container(), 0, 6, 1, 1);
 
-        // Gutter section
-        let gutter_label = Label::new(Some("Gutter"));
-        gutter_label.set_halign(gtk::Align::Start);
-        gutter_label.set_markup("<b>Gutter</b>");
-        colors_grid.attach(&gutter_label, 0, 7, 2, 1);
+        // Gutter Numbers section
+        let gutter_numbers_label = Label::new(Some("Gutter Numbers"));
+        gutter_numbers_label.set_halign(gtk::Align::Start);
+        gutter_numbers_label.set_markup("<b>Gutter Numbers</b>");
+        colors_grid.attach(&gutter_numbers_label, 0, 7, 2, 1);
 
-        let gutter_bg_picker = GColorPicker::new("Background:", &config.gutter_bg);
-        colors_grid.attach(gutter_bg_picker.container(), 0, 8, 2, 1);
+        let gutter_numbers_bg_picker = GColorPicker::new("Background", &config.gutter_numbers_bg);
+        colors_grid.attach(gutter_numbers_bg_picker.container(), 0, 8, 1, 1);
 
-        let gutter_text_picker = GColorPicker::new("Text:", &config.gutter_text);
-        colors_grid.attach(gutter_text_picker.container(), 0, 9, 2, 1);
+        let gutter_numbers_fg_picker = GColorPicker::new("Text", &config.gutter_numbers_fg);
+        colors_grid.attach(gutter_numbers_fg_picker.container(), 0, 9, 1, 1);
 
         // Minimap section
         let minimap_label = Label::new(Some("Minimap"));
@@ -246,20 +255,22 @@ impl GOptionsDlg {
         minimap_label.set_markup("<b>Minimap</b>");
         colors_grid.attach(&minimap_label, 0, 10, 2, 1);
 
-        let minimap_bg_picker = GColorPicker::new("Background:", &config.minimap_bg);
-        colors_grid.attach(minimap_bg_picker.container(), 0, 11, 2, 1);
+        let minimap_bg_picker = GColorPicker::new("Background", &config.minimap_bg);
+        colors_grid.attach(minimap_bg_picker.container(), 0, 11, 1, 1);
 
-        let minimap_separator_picker = GColorPicker::new("Separator:", &config.minimap_separator);
-        colors_grid.attach(minimap_separator_picker.container(), 0, 12, 2, 1);
+        let minimap_fg_picker = GColorPicker::new("Separator", &config.minimap_fg);
+        colors_grid.attach(minimap_fg_picker.container(), 0, 12, 1, 1);
 
-        let minimap_remove_picker = GColorPicker::new("Removed:", &config.minimap_remove);
-        colors_grid.attach(minimap_remove_picker.container(), 0, 13, 2, 1);
+        let minimap_diff_remove_picker =
+            GColorPicker::new("Removed Lines", &config.minimap_diff_remove);
+        colors_grid.attach(minimap_diff_remove_picker.container(), 0, 13, 1, 1);
 
-        let minimap_add_picker = GColorPicker::new("Added:", &config.minimap_add);
-        colors_grid.attach(minimap_add_picker.container(), 0, 14, 2, 1);
+        let minimap_diff_add_picker = GColorPicker::new("Added Lines", &config.minimap_diff_add);
+        colors_grid.attach(minimap_diff_add_picker.container(), 0, 14, 1, 1);
 
-        let minimap_empty_picker = GColorPicker::new("Empty:", &config.minimap_empty);
-        colors_grid.attach(minimap_empty_picker.container(), 0, 15, 2, 1);
+        let minimap_diff_empty_picker =
+            GColorPicker::new("Empty Lines", &config.minimap_diff_empty);
+        colors_grid.attach(minimap_diff_empty_picker.container(), 0, 15, 1, 1);
 
         // Create scrolled window for colors tab
         let colors_scrolled = ScrolledWindow::new();
@@ -295,19 +306,19 @@ impl GOptionsDlg {
             font_size_spin,
             apply_button,
             cancel_button,
-            diff_remove_bg_picker,
-            diff_add_bg_picker,
-            diff_empty_bg_picker,
-            diff_remove_text_picker,
-            diff_add_text_picker,
-            diff_empty_text_picker,
-            gutter_bg_picker,
-            gutter_text_picker,
+            text_diff_remove_bg_picker,
+            text_diff_remove_fg_picker,
+            text_diff_add_bg_picker,
+            text_diff_add_fg_picker,
+            text_diff_empty_bg_picker,
+            text_diff_empty_fg_picker,
+            gutter_numbers_bg_picker,
+            gutter_numbers_fg_picker,
             minimap_bg_picker,
-            minimap_separator_picker,
-            minimap_remove_picker,
-            minimap_add_picker,
-            minimap_empty_picker,
+            minimap_fg_picker,
+            minimap_diff_remove_picker,
+            minimap_diff_add_picker,
+            minimap_diff_empty_picker,
         }
     }
 
@@ -325,19 +336,19 @@ impl GOptionsDlg {
         let dialog_clone = self.dialog.clone();
 
         // Clone ColorButtons directly (not GColorPicker) to avoid duplication
-        let diff_remove_bg_button = self.diff_remove_bg_picker.color_button.clone();
-        let diff_add_bg_button = self.diff_add_bg_picker.color_button.clone();
-        let diff_empty_bg_button = self.diff_empty_bg_picker.color_button.clone();
-        let diff_remove_text_button = self.diff_remove_text_picker.color_button.clone();
-        let diff_add_text_button = self.diff_add_text_picker.color_button.clone();
-        let diff_empty_text_button = self.diff_empty_text_picker.color_button.clone();
-        let gutter_bg_button = self.gutter_bg_picker.color_button.clone();
-        let gutter_text_button = self.gutter_text_picker.color_button.clone();
+        let text_diff_remove_bg_button = self.text_diff_remove_bg_picker.color_button.clone();
+        let text_diff_remove_fg_button = self.text_diff_remove_fg_picker.color_button.clone();
+        let text_diff_add_bg_button = self.text_diff_add_bg_picker.color_button.clone();
+        let text_diff_add_fg_button = self.text_diff_add_fg_picker.color_button.clone();
+        let text_diff_empty_bg_button = self.text_diff_empty_bg_picker.color_button.clone();
+        let text_diff_empty_fg_button = self.text_diff_empty_fg_picker.color_button.clone();
+        let gutter_numbers_bg_button = self.gutter_numbers_bg_picker.color_button.clone();
+        let gutter_numbers_fg_button = self.gutter_numbers_fg_picker.color_button.clone();
         let minimap_bg_button = self.minimap_bg_picker.color_button.clone();
-        let minimap_separator_button = self.minimap_separator_picker.color_button.clone();
-        let minimap_remove_button = self.minimap_remove_picker.color_button.clone();
-        let minimap_add_button = self.minimap_add_picker.color_button.clone();
-        let minimap_empty_button = self.minimap_empty_picker.color_button.clone();
+        let minimap_fg_button = self.minimap_fg_picker.color_button.clone();
+        let minimap_diff_remove_button = self.minimap_diff_remove_picker.color_button.clone();
+        let minimap_diff_add_button = self.minimap_diff_add_picker.color_button.clone();
+        let minimap_diff_empty_button = self.minimap_diff_empty_picker.color_button.clone();
 
         let callback = std::sync::Arc::new(callback);
 
@@ -363,27 +374,27 @@ impl GOptionsDlg {
 
             // Create color configuration using current colors from UI
             let color_config = crate::libs::state::AppConfig {
-                window_width: 0, // Not updated in this dialog
-                window_height: 0,
-                window_maximized: false,
+                window_width: 0,         // Not updated in this dialog
+                window_height: 0,        // Not updated in this dialog
+                window_maximized: false, // Not updated in this dialog
                 font_family: font_family.clone(),
                 font_size: font_size as i32,
                 file_a_history: Vec::new(), // Not updated in this dialog
                 file_b_history: Vec::new(), // Not updated in this dialog
                 sync_scroll: true,          // Not updated in this dialog
-                diff_remove_bg: get_color_from_button(&diff_remove_bg_button),
-                diff_add_bg: get_color_from_button(&diff_add_bg_button),
-                diff_empty_bg: get_color_from_button(&diff_empty_bg_button),
-                diff_remove_text: get_color_from_button(&diff_remove_text_button),
-                diff_add_text: get_color_from_button(&diff_add_text_button),
-                diff_empty_text: get_color_from_button(&diff_empty_text_button),
-                gutter_bg: get_color_from_button(&gutter_bg_button),
-                gutter_text: get_color_from_button(&gutter_text_button),
+                text_diff_remove_bg: get_color_from_button(&text_diff_remove_bg_button),
+                text_diff_remove_fg: get_color_from_button(&text_diff_remove_fg_button),
+                text_diff_add_bg: get_color_from_button(&text_diff_add_bg_button),
+                text_diff_add_fg: get_color_from_button(&text_diff_add_fg_button),
+                text_diff_empty_bg: get_color_from_button(&text_diff_empty_bg_button),
+                text_diff_empty_fg: get_color_from_button(&text_diff_empty_fg_button),
+                gutter_numbers_bg: get_color_from_button(&gutter_numbers_bg_button),
+                gutter_numbers_fg: get_color_from_button(&gutter_numbers_fg_button),
                 minimap_bg: get_color_from_button(&minimap_bg_button),
-                minimap_separator: get_color_from_button(&minimap_separator_button),
-                minimap_remove: get_color_from_button(&minimap_remove_button),
-                minimap_add: get_color_from_button(&minimap_add_button),
-                minimap_empty: get_color_from_button(&minimap_empty_button),
+                minimap_fg: get_color_from_button(&minimap_fg_button),
+                minimap_diff_remove: get_color_from_button(&minimap_diff_remove_button),
+                minimap_diff_add: get_color_from_button(&minimap_diff_add_button),
+                minimap_diff_empty: get_color_from_button(&minimap_diff_empty_button),
             };
 
             callback_apply(Some((font_family, font_size, color_config)));
