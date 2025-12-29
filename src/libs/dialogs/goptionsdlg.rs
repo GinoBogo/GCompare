@@ -245,7 +245,8 @@ impl GOptionsDlg {
         gutter_numbers_label.set_markup("<b>Gutter Numbers</b>");
         colors_grid.attach(&gutter_numbers_label, 0, 7, 2, 1);
 
-        let gutter_numbers_bg_picker = GColorPicker::new("Background", &config.gutter_numbers_bg);
+        let gutter_numbers_bg_picker =
+            GColorPicker::new("Gutter Background", &config.gutter_numbers_bg);
         colors_grid.attach(gutter_numbers_bg_picker.container(), 0, 8, 1, 1);
 
         let gutter_numbers_fg_picker =
@@ -258,7 +259,7 @@ impl GOptionsDlg {
         minimap_label.set_markup("<b>Minimap</b>");
         colors_grid.attach(&minimap_label, 0, 10, 2, 1);
 
-        let minimap_bg_picker = GColorPicker::new("Background", &config.minimap_bg);
+        let minimap_bg_picker = GColorPicker::new("Minimap Background", &config.minimap_bg);
         colors_grid.attach(minimap_bg_picker.container(), 0, 11, 1, 1);
 
         let minimap_fg_picker = GColorPicker::new("Vertical Separator", &config.minimap_fg);

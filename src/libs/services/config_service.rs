@@ -31,19 +31,8 @@ impl ConfigService {
 
     /// Save application configuration to file.
     pub fn save_config(&self, config: &AppConfig) {
-        println!("=== SAVING CONFIG ===");
-        println!("diff_text_remove_bg: {}", config.text_diff_remove_bg);
-        println!("diff_text_add_bg: {}", config.text_diff_add_bg);
-        println!("diff_text_empty_bg: {}", config.text_diff_empty_bg);
-        
         if let Ok(file) = File::create(CONFIG_FILE) {
             let _ = serde_json::to_writer_pretty(file, config);
-            
-            // Verify what was actually written
-            if let Ok(content) = std::fs::read_to_string(CONFIG_FILE) {
-                println!("File content: {}", content);
-            }
         }
-        println!("=== END SAVE ===");
     }
 }

@@ -775,15 +775,8 @@ impl AppController {
                     // Update theme with new colors
                     theme::update_provider_with_config(&*css_provider_apply, &updated_config);
 
-                    // Debug: Print that colors were updated
-                    println!("Colors updated - user needs to click Compare to see changes");
-
                     // Save config to disk
                     config_service_apply.save_config(&updated_config);
-                    println!(
-                        "Font and colors updated and saved: {} {}",
-                        font_family, font_size
-                    );
                 }
             });
         });
