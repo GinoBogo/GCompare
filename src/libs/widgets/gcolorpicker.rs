@@ -10,6 +10,8 @@ use gtk::prelude::*;
 use gtk::{Box, ColorButton, Label, Orientation, Scale};
 use std::rc::Rc;
 
+use crate::libs::services::color_parser::parse_color_comprehensive;
+
 /// Color picker widget with label, color button, and transparency slider for alpha control.
 pub struct GColorPicker {
     container: Box,
@@ -187,36 +189,12 @@ impl GColorPicker {
         }
     }
 
-    /// Parse hex color string to RGBA and alpha.
+    /// Parse hex color string to RGBA and alpha using centralized parser.
     /// Supports both 6-digit (#RRGGBB) and 8-digit (#RRGGBBAA) formats.
     fn parse_hex_color(hex: &str) -> Result<(gtk::gdk::RGBA, f64), ()> {
-        let hex = hex.trim_start_matches('#');
-
-        let (r, g, b, alpha) = if hex.len() == 6 {
-            // 6-digit hex, alpha = 1.0 (fully opaque)
-            let r = u8::from_str_radix(&hex[0..2], 16).map_err(|_| ())?;
-            let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| ())?;
-            let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| ())?;
-            (r, g, b, 255)
-        } else if hex.len() == 8 {
-            // 8-digit hex with alpha
-            let r = u8::from_str_radix(&hex[0..2], 16).map_err(|_| ())?;
-            let g = u8::from_str_radix(&hex[2..4], 16).map_err(|_| ())?;
-            let b = u8::from_str_radix(&hex[4..6], 16).map_err(|_| ())?;
-            let a = u8::from_str_radix(&hex[6..8], 16).map_err(|_| ())?;
-            (r, g, b, a)
-        } else {
-            return Err(());
-        };
-
-        let rgba = gtk::gdk::RGBA::new(
-            r as f32 / 255.0,
-            g as f32 / 255.0,
-            b as f32 / 255.0,
-            alpha as f32 / 255.0,
-        );
-
-        Ok((rgba, alpha as f64 / 255.0))
+        parse_color_comprehensive(hex)
+            .map(|result| (result.rgba, result.alpha))
+            .map_err(|_| ())
     }
 }
 

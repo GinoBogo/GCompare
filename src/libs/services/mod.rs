@@ -4,6 +4,7 @@
 //! * License: MIT
 //! * Version: 1.0
 
+pub mod color_parser;
 pub mod config_service;
 pub mod diff_service;
 pub mod file_service;

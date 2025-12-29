@@ -9,6 +9,8 @@ use regex::Regex;
 use std::collections::HashMap;
 use std::sync::Once;
 
+use crate::libs::services::color_parser::parse_color_with_fallback;
+
 /// Get the bundled CSS content (cached at compile time).
 fn get_css_content() -> &'static str {
     include_str!("../style.css")
@@ -211,30 +213,16 @@ pub fn update_text_tag_colors(
         // Update background colors
         for (tag_name, color_value) in &bg_color_mappings {
             if let Some(tag) = buffer.tag_table().lookup(tag_name) {
-                // Parse hex color to RGBA
-                if color_value.starts_with("#") && color_value.len() == 7 {
-                    let r = u8::from_str_radix(&color_value[1..3], 16).unwrap_or(255);
-                    let g = u8::from_str_radix(&color_value[3..5], 16).unwrap_or(255);
-                    let b = u8::from_str_radix(&color_value[5..7], 16).unwrap_or(255);
-                    let rgba =
-                        gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0);
-                    tag.set_background_rgba(Some(&rgba));
-                }
+                let rgba = parse_color_with_fallback(color_value, 255, 255, 255, 1.0);
+                tag.set_background_rgba(Some(&rgba));
             }
         }
 
         // Update foreground colors
         for (tag_name, color_value) in &fg_color_mappings {
             if let Some(tag) = buffer.tag_table().lookup(tag_name) {
-                // Parse hex color to RGBA
-                if color_value.starts_with("#") && color_value.len() == 7 {
-                    let r = u8::from_str_radix(&color_value[1..3], 16).unwrap_or(255);
-                    let g = u8::from_str_radix(&color_value[3..5], 16).unwrap_or(255);
-                    let b = u8::from_str_radix(&color_value[5..7], 16).unwrap_or(255);
-                    let rgba =
-                        gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0);
-                    tag.set_foreground_rgba(Some(&rgba));
-                }
+                let rgba = parse_color_with_fallback(color_value, 0, 0, 0, 1.0);
+                tag.set_foreground_rgba(Some(&rgba));
             }
         }
     }
@@ -261,7 +249,7 @@ pub fn get_background_color(class_name: &str) -> gdk::RGBA {
     })
 }
 
-/// Parse any CSS property from the bundled CSS content.
+/// Parse any CSS property value as color using centralized parser.
 fn parse_css_property(class_name: &str, property: &str) -> Option<gdk::RGBA> {
     let css_content = get_css_content();
 
@@ -279,44 +267,10 @@ fn parse_css_property(class_name: &str, property: &str) -> Option<gdk::RGBA> {
                 if rule.starts_with(property) {
                     if let Some(value_part) = rule.split(':').nth(1) {
                         let value = value_part.trim();
-                        return parse_color_value(value);
+                        return Some(parse_color_with_fallback(value, 128, 128, 128, 1.0));
                     }
                 }
             }
-        }
-    }
-
-    None
-}
-
-/// Parse a color value (hex or rgba) into gdk::RGBA.
-fn parse_color_value(value: &str) -> Option<gdk::RGBA> {
-    // Parse hex color (e.g., "#ffffff")
-    if value.starts_with('#') && value.len() == 7 {
-        let r = u8::from_str_radix(&value[1..3], 16).ok()? as f64 / 255.0;
-        let g = u8::from_str_radix(&value[3..5], 16).ok()? as f64 / 255.0;
-        let b = u8::from_str_radix(&value[5..7], 16).ok()? as f64 / 255.0;
-        let mut rgba = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
-        rgba.set_red(r as f32);
-        rgba.set_green(g as f32);
-        rgba.set_blue(b as f32);
-        rgba.set_alpha(1.0);
-        return Some(rgba);
-    } else if value.starts_with("rgba(") {
-        // Parse rgba format: rgba(255, 255, 255, 0.8)
-        let rgba_part = &value[5..value.len() - 1]; // Remove "rgba(" and ")"
-        let parts: Vec<&str> = rgba_part.split(',').collect();
-        if parts.len() == 4 {
-            let r = parts[0].trim().parse::<u8>().ok()? as f64 / 255.0;
-            let g = parts[1].trim().parse::<u8>().ok()? as f64 / 255.0;
-            let b = parts[2].trim().parse::<u8>().ok()? as f64 / 255.0;
-            let a = parts[3].trim().parse::<f64>().ok()?;
-            let mut rgba = gdk::RGBA::new(0.0, 0.0, 0.0, 0.0);
-            rgba.set_red(r as f32);
-            rgba.set_green(g as f32);
-            rgba.set_blue(b as f32);
-            rgba.set_alpha(a as f32);
-            return Some(rgba);
         }
     }
 

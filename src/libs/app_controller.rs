@@ -12,6 +12,7 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use crate::libs::dialogs::goptionsdlg::GOptionsDlg;
+use crate::libs::services::color_parser::parse_color_with_fallback;
 use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::diff_service::DiffService;
 use crate::libs::services::file_service::FileService;
@@ -528,15 +529,8 @@ impl AppController {
                     _ => "#ffffff", // White default
                 };
 
-                // Parse hex color to RGBA
-                if color.starts_with("#") && color.len() == 7 {
-                    let r = u8::from_str_radix(&color[1..3], 16).unwrap_or(255);
-                    let g = u8::from_str_radix(&color[3..5], 16).unwrap_or(255);
-                    let b = u8::from_str_radix(&color[5..7], 16).unwrap_or(255);
-                    gtk::gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0)
-                } else {
-                    gtk::gdk::RGBA::new(1.0, 1.0, 1.0, 1.0) // Fallback to white
-                }
+                // Use centralized color parsing
+                parse_color_with_fallback(color, 255, 255, 255, 1.0)
             };
 
             // Helper to get foreground color from config
@@ -549,15 +543,8 @@ impl AppController {
                     _ => "#000000", // Black default
                 };
 
-                // Parse hex color to RGBA
-                if color.starts_with("#") && color.len() == 7 {
-                    let r = u8::from_str_radix(&color[1..3], 16).unwrap_or(255);
-                    let g = u8::from_str_radix(&color[3..5], 16).unwrap_or(255);
-                    let b = u8::from_str_radix(&color[5..7], 16).unwrap_or(255);
-                    gtk::gdk::RGBA::new(r as f32 / 255.0, g as f32 / 255.0, b as f32 / 255.0, 1.0)
-                } else {
-                    gtk::gdk::RGBA::new(0.0, 0.0, 0.0, 1.0) // Fallback to black
-                }
+                // Use centralized color parsing
+                parse_color_with_fallback(color, 0, 0, 0, 1.0)
             };
 
             // Create tags for highlighting if they don't exist
