@@ -4,7 +4,7 @@
 //! * License: MIT
 //! * Version: 1.0
 
-use crate::libs::services::font_service::{FontInfo, FontService};
+use crate::libs::services::font_service::FontInfo;
 use gtk::prelude::*;
 use gtk::{CellRendererText, ComboBox, ListStore};
 use std::cell::RefCell;
@@ -15,7 +15,6 @@ pub struct GComboFont {
     combo: ComboBox,
     list_store: ListStore,
     font_families: RefCell<Vec<FontInfo>>,
-    font_service: RefCell<FontService>,
 }
 
 impl GComboFont {
@@ -35,7 +34,6 @@ impl GComboFont {
             combo,
             list_store,
             font_families: RefCell::new(Vec::new()),
-            font_service: RefCell::new(FontService::new()),
         };
 
         widget.load_fonts();
@@ -44,8 +42,43 @@ impl GComboFont {
 
     /// Load system fonts into the combo box.
     fn load_fonts(&self) {
-        let font_service = self.font_service.borrow();
-        let font_families = font_service.get_monospace_fonts();
+        let mut fonts = Vec::new();
+
+        let source = font_kit::source::SystemSource::new();
+        if let Ok(families) = source.all_families() {
+            for family in families {
+                if let Ok(family_handle) = source.select_family_by_name(&family) {
+                    let handles = family_handle.fonts();
+                    if !handles.is_empty() {
+                        if let Ok(font) = handles[0].load() {
+                            if font.is_monospace() {
+                                fonts.push(FontInfo::new(family, false));
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        // Add common fallback monospace fonts
+        let common_monospace = vec![
+            "Monospace",
+            "Courier New",
+            "Consolas",
+            "Menlo",
+            "DejaVu Sans Mono",
+            "Ubuntu Mono",
+            "Source Code Pro",
+        ];
+
+        for font in common_monospace {
+            if !fonts.iter().any(|f| f.name == font) {
+                fonts.push(FontInfo::new(font.to_string(), true));
+            }
+        }
+
+        fonts.sort_by(|a, b| a.name.cmp(&b.name));
+        let font_families = fonts;
 
         // Clear existing items
         self.list_store.clear();

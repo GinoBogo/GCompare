@@ -57,9 +57,22 @@ The project is organized into modular components:
 *   `src/libs/services`: Business logic (`FileService`, `DiffService`, `ConfigService`).
 *   `src/libs/state`: Application state management.
 
+## Third-Party Libraries
+
+This project uses the following Rust crates:
+
+*   font-kit
+*   gio
+*   gtk4
+*   once_cell
+*   regex
+*   serde
+*   serde_json
+*   similar
+
 ## License
 
-This project is licensed under the MIT License.
+This project is licensed under the MIT License. Third-party libraries used in this project may be subject to their own respective licenses.
 
 ## Author
 
