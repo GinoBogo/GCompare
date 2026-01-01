@@ -280,10 +280,17 @@ impl GDiffMap {
         let imp = self.imp();
         let lines_a = imp.diff_lines_a.borrow();
         let lines_b = imp.diff_lines_b.borrow();
+        let empty_a = imp.empty_lines_a.borrow();
+        let empty_b = imp.empty_lines_b.borrow();
 
         // Combine and sort all difference lines
-        let mut all_diff_lines: Vec<usize> =
-            lines_a.iter().chain(lines_b.iter()).copied().collect();
+        let mut all_diff_lines: Vec<usize> = lines_a
+            .iter()
+            .chain(lines_b.iter())
+            .chain(empty_a.iter())
+            .chain(empty_b.iter())
+            .copied()
+            .collect();
         all_diff_lines.sort_unstable();
         all_diff_lines.dedup();
 
@@ -303,10 +310,17 @@ impl GDiffMap {
         let imp = self.imp();
         let lines_a = imp.diff_lines_a.borrow();
         let lines_b = imp.diff_lines_b.borrow();
+        let empty_a = imp.empty_lines_a.borrow();
+        let empty_b = imp.empty_lines_b.borrow();
 
         // Combine and sort all difference lines
-        let mut all_diff_lines: Vec<usize> =
-            lines_a.iter().chain(lines_b.iter()).copied().collect();
+        let mut all_diff_lines: Vec<usize> = lines_a
+            .iter()
+            .chain(lines_b.iter())
+            .chain(empty_a.iter())
+            .chain(empty_b.iter())
+            .copied()
+            .collect();
         all_diff_lines.sort_unstable();
         all_diff_lines.dedup();
 
