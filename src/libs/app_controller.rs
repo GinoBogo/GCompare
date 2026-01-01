@@ -16,6 +16,8 @@ use crate::libs::services::color_parser::parse_color_with_fallback;
 use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::diff_service::DiffService;
 use crate::libs::services::file_service::FileService;
+use crate::libs::services::incremental_diff_service::IncrementalDiffService;
+use crate::libs::services::text_highlighter::TextHighlighter;
 use crate::libs::state::ApplicationState;
 use crate::libs::theme;
 use crate::libs::ui::comparison_panels::ComparisonPanelsWidget;
@@ -29,6 +31,8 @@ pub struct AppController {
     config_service: ConfigService,
     file_service: FileService,
     diff_service: DiffService,
+    incremental_diff_service: IncrementalDiffService,
+    text_highlighter: TextHighlighter,
     css_provider: Rc<gtk::CssProvider>,
     window: Option<ApplicationWindow>,
     control_panel: Option<ControlPanelWidget>,
@@ -54,6 +58,8 @@ impl AppController {
             config_service,
             file_service: FileService::new(),
             diff_service: DiffService::new(),
+            incremental_diff_service: IncrementalDiffService::new(),
+            text_highlighter: TextHighlighter::new(),
             css_provider,
             window: None,
             control_panel: None,
@@ -101,12 +107,23 @@ impl AppController {
         main_grid.attach(comparison_panels.container(), 0, 1, 1, 1);
         main_grid.attach(status_bar.container(), 0, 2, 1, 1);
 
+        // Hide the auto-compare button as it's now in options
+        control_panel.auto_compare_button.set_visible(false);
+
         // Setup signal handlers
         self.setup_signal_handlers(
             &window,
             &mut control_panel,
             &comparison_panels,
             status_bar.clone(),
+        );
+
+        // Setup real-time diff tracking
+        self.setup_realtime_diff(
+            comparison_panels.panel_a_text_view(),
+            comparison_panels.panel_b_text_view(),
+            &diff_map,
+            &status_bar,
         );
 
         // Store references
@@ -505,20 +522,52 @@ impl AppController {
         let diff_map_nav_prev = diff_map.clone();
         let diff_map_nav_next = diff_map.clone();
         let state_for_colors = self.state.clone();
+        let incremental_diff_service = self.incremental_diff_service.clone();
+        let text_highlighter = self.text_highlighter.clone();
 
         control_panel.compare_button.connect_clicked(move |_| {
             let buffer_a = panel_a_text_view.content_view().buffer();
             let buffer_b = panel_b_text_view.content_view().buffer();
 
-            // Helper to get color from CSS class (future use)
-            let style_context = panel_a_text_view.content_view().style_context();
-            let _get_theme_color = |class_name: &str| {
-                style_context.add_class(class_name);
-                let color = style_context.color();
-                style_context.remove_class(class_name);
-                color
-            };
+            // If auto-comparison is enabled, just refresh the display
+            if state_for_colors.config().auto_compare {
+                // Get current text content
+                let (start_a, end_a) = buffer_a.bounds();
+                let text_a = buffer_a.text(&start_a, &end_a, true);
 
+                let (start_b, end_b) = buffer_b.bounds();
+                let text_b = buffer_b.text(&start_b, &end_b, true);
+
+                // Compute line differences
+                let diff_result =
+                    incremental_diff_service.compute_line_diff(text_a.as_str(), text_b.as_str());
+
+                // Apply highlighting
+                let config = state_for_colors.config();
+                text_highlighter.apply_line_highlighting(
+                    &buffer_a,
+                    &buffer_b,
+                    &diff_result.changed_lines_a,
+                    &diff_result.changed_lines_b,
+                    &diff_result.empty_lines_a,
+                    &diff_result.empty_lines_b,
+                    &config,
+                );
+
+                // Update diff map
+                diff_map.set_all_diff_lines(
+                    diff_result.changed_lines_a,
+                    diff_result.changed_lines_b,
+                    diff_result.empty_lines_a,
+                    diff_result.empty_lines_b,
+                );
+
+                // Update status bar
+                status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map);
+                return;
+            }
+
+            // Original compare logic (for when auto-comparison is disabled)
             // Helper to get background color from config
             let get_theme_bg_color = |class_name: &str| {
                 let config = &state_for_colors.config();
@@ -716,6 +765,7 @@ impl AppController {
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
         let css_provider_clone = self.css_provider.clone();
         let diff_map = comparison_panels.diff_map().clone();
+        let sync_enabled = sync_enabled.clone();
         control_panel.options_button.connect_clicked(move |_| {
             // Reload config from file to get latest values
             let current_config = config_service_clone.load_config();
@@ -732,6 +782,7 @@ impl AppController {
             let panel_b_text_view_apply = panel_b_text_view.clone();
             let css_provider_apply = css_provider_clone.clone();
             let diff_map_apply = diff_map.clone();
+            let sync_enabled_apply = sync_enabled.clone();
             dialog.show({
                 let panel_a_text_view = panel_a_text_view.clone();
                 let panel_b_text_view = panel_b_text_view.clone();
@@ -768,6 +819,8 @@ impl AppController {
                         let mut updated_config = state_clone_apply.config().clone();
                         updated_config.font_family = font_family.clone();
                         updated_config.font_size = font_size as i32;
+                        updated_config.auto_compare = color_config.auto_compare;
+                        updated_config.sync_scroll = color_config.sync_scroll;
 
                         // Update color settings
                         updated_config.text_diff_remove_bg = color_config.text_diff_remove_bg;
@@ -787,6 +840,9 @@ impl AppController {
 
                         // Update the state in memory
                         state_clone_apply.update_config(updated_config.clone());
+
+                        // Update runtime sync state
+                        sync_enabled_apply.set(updated_config.sync_scroll);
 
                         // Update theme with new colors
                         theme::update_provider_with_config(&css_provider_apply, &updated_config);
@@ -809,5 +865,171 @@ impl AppController {
         });
 
         // TODO: Connect Sync Scroll Toggle Button
+    }
+
+    /// Setup real-time diff tracking for both text buffers.
+    fn setup_realtime_diff(
+        &self,
+        panel_a_text_view: &crate::libs::widgets::gtextview::GTextView,
+        panel_b_text_view: &crate::libs::widgets::gtextview::GTextView,
+        diff_map: &crate::libs::widgets::gdiffmap::GDiffMap,
+        status_bar: &crate::libs::widgets::gstatusbar::GStatusBar,
+    ) {
+        use std::rc::Rc;
+
+        let buffer_a = panel_a_text_view.content_view().buffer();
+        let buffer_b = panel_b_text_view.content_view().buffer();
+
+        // Ensure tags exist to prevent Gtk-WARNINGs during auto-compare
+        let config = self.state.config();
+        let create_tags = |buffer: &gtk::TextBuffer| {
+            let table = buffer.tag_table();
+            let tags = [
+                (
+                    "diff_remove",
+                    &config.text_diff_remove_bg,
+                    &config.text_diff_remove_fg,
+                ),
+                (
+                    "diff_add",
+                    &config.text_diff_add_bg,
+                    &config.text_diff_add_fg,
+                ),
+                (
+                    "diff_empty",
+                    &config.text_diff_empty_bg,
+                    &config.text_diff_empty_fg,
+                ),
+            ];
+            for (name, bg, fg) in tags {
+                if table.lookup(name).is_none() {
+                    let tag = gtk::TextTag::new(Some(name));
+                    let bg_rgba = parse_color_with_fallback(bg, 255, 255, 255, 1.0);
+                    let fg_rgba = parse_color_with_fallback(fg, 0, 0, 0, 1.0);
+                    tag.set_background_rgba(Some(&bg_rgba));
+                    tag.set_foreground_rgba(Some(&fg_rgba));
+                    table.add(&tag);
+                }
+            }
+        };
+        create_tags(&buffer_a);
+        create_tags(&buffer_b);
+
+        // Shared state for debouncing
+        let debounce_token = Rc::new(Cell::new(0u64));
+        let is_computing = Rc::new(Cell::new(false));
+
+        // Clone needed values for the closure
+        let incremental_diff_service = self.incremental_diff_service.clone();
+        let text_highlighter = self.text_highlighter.clone();
+        let diff_map_clone = diff_map.clone();
+        let status_bar_clone = status_bar.clone();
+        let state = self.state.clone();
+
+        // Function to perform the diff update
+        let perform_diff_update = {
+            let is_computing = is_computing.clone();
+            let incremental_diff_service = incremental_diff_service.clone();
+            let text_highlighter = text_highlighter.clone();
+            let diff_map_clone = diff_map_clone.clone();
+            let status_bar_clone = status_bar_clone.clone();
+            let state = state.clone();
+
+            move |buffer_a: gtk::TextBuffer, buffer_b: gtk::TextBuffer| {
+                // Skip if auto-comparison is disabled
+                if !state.config().auto_compare {
+                    return;
+                }
+
+                is_computing.set(true);
+
+                // Get current text content
+                let (start_a, end_a) = buffer_a.bounds();
+                let text_a = buffer_a.text(&start_a, &end_a, true);
+
+                let (start_b, end_b) = buffer_b.bounds();
+                let text_b = buffer_b.text(&start_b, &end_b, true);
+
+                // Compute line differences
+                let diff_result =
+                    incremental_diff_service.compute_line_diff(text_a.as_str(), text_b.as_str());
+
+                // Apply highlighting
+                let config = state.config();
+                text_highlighter.apply_line_highlighting(
+                    &buffer_a,
+                    &buffer_b,
+                    &diff_result.changed_lines_a,
+                    &diff_result.changed_lines_b,
+                    &diff_result.empty_lines_a,
+                    &diff_result.empty_lines_b,
+                    &config,
+                );
+
+                // Update diff map
+                diff_map_clone.set_all_diff_lines(
+                    diff_result.changed_lines_a,
+                    diff_result.changed_lines_b,
+                    diff_result.empty_lines_a,
+                    diff_result.empty_lines_b,
+                );
+
+                // Update status bar
+                status_bar_clone.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map_clone);
+
+                is_computing.set(false);
+            }
+        };
+
+        // Function to schedule diff update with debouncing
+        let schedule_diff_update = {
+            let debounce_token = debounce_token.clone();
+            let is_computing = is_computing.clone();
+            let perform_diff_update = perform_diff_update.clone();
+
+            move |buffer_a: gtk::TextBuffer, buffer_b: gtk::TextBuffer| {
+                // Skip if already computing
+                if is_computing.get() {
+                    return;
+                }
+
+                // Increment token to invalidate previous pending updates
+                let current_token = debounce_token.get() + 1;
+                debounce_token.set(current_token);
+
+                // Schedule new update with 300ms debounce
+                let perform_diff_update = perform_diff_update.clone();
+                let debounce_token = debounce_token.clone();
+                let _ = glib::timeout_add_local_once(std::time::Duration::from_millis(300), {
+                    let buffer_a = buffer_a.clone();
+                    let buffer_b = buffer_b.clone();
+                    move || {
+                        // Only perform update if token hasn't changed
+                        if debounce_token.get() == current_token {
+                            perform_diff_update(buffer_a, buffer_b);
+                        }
+                    }
+                });
+            }
+        };
+
+        // Connect buffer change handlers for real-time diff
+        buffer_a.connect_changed({
+            let buffer_b = buffer_b.clone();
+            let schedule_diff_update = schedule_diff_update.clone();
+
+            move |buffer_a| {
+                schedule_diff_update(buffer_a.clone(), buffer_b.clone());
+            }
+        });
+
+        buffer_b.connect_changed({
+            let buffer_a = buffer_a.clone();
+            let schedule_diff_update = schedule_diff_update.clone();
+
+            move |buffer_b| {
+                schedule_diff_update(buffer_a.clone(), buffer_b.clone());
+            }
+        });
     }
 }

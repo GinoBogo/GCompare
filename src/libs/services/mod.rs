@@ -9,3 +9,5 @@ pub mod config_service;
 pub mod diff_service;
 pub mod file_service;
 pub mod font_service;
+pub mod incremental_diff_service;
+pub mod text_highlighter;

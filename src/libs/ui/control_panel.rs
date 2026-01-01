@@ -15,6 +15,7 @@ pub struct ControlPanelWidget {
     pub reload_button: GButton,
     pub previous_button: GButton,
     pub next_button: GButton,
+    pub auto_compare_button: GButton,
     pub options_button: GButton,
 }
 
@@ -44,6 +45,11 @@ impl ControlPanelWidget {
         next_button.set_theme(ButtonTheme::Highlight);
         container.append(&next_button);
 
+        // Add Auto-Compare toggle button
+        let auto_compare_button = GButton::new("Auto: ON");
+        auto_compare_button.set_theme(ButtonTheme::Primary);
+        container.append(&auto_compare_button);
+
         let options_button = GButton::new("Options");
         container.append(&options_button);
 
@@ -53,6 +59,7 @@ impl ControlPanelWidget {
             reload_button,
             previous_button,
             next_button,
+            auto_compare_button,
             options_button,
         }
     }

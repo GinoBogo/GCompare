@@ -20,6 +20,7 @@ pub struct AppConfig {
     pub file_a_history: Vec<String>,
     pub file_b_history: Vec<String>,
     pub sync_scroll: bool,
+    pub auto_compare: bool,
     // Color settings
     pub text_diff_remove_bg: String,
     pub text_diff_remove_fg: String,
@@ -48,6 +49,7 @@ impl Default for AppConfig {
             file_a_history: Vec::new(),
             file_b_history: Vec::new(),
             sync_scroll: true,
+            auto_compare: true,
             // Color settings - using hex values from CSS
             text_diff_remove_bg: "#ffcccc".to_string(), // Light red
             text_diff_remove_fg: "#990000".to_string(), // Dark red
@@ -140,6 +142,7 @@ impl ApplicationState {
                 get_current_path(path_combo_b),
             ),
             sync_scroll: current_config.sync_scroll,
+            auto_compare: current_config.auto_compare,
             // Preserve color settings
             text_diff_remove_bg: current_config.text_diff_remove_bg.clone(),
             text_diff_remove_fg: current_config.text_diff_remove_fg.clone(),

@@ -9,12 +9,17 @@ use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
 use crate::libs::widgets::gcolorpicker::GColorPicker;
 use crate::libs::widgets::gcombofont::GComboFont;
 use gtk::prelude::*;
-use gtk::{ApplicationWindow, Dialog, Grid, Label, Notebook, ScrolledWindow, SpinButton, TextView};
+use gtk::{
+    ApplicationWindow, CheckButton, Dialog, Grid, Label, Notebook, ScrolledWindow, SpinButton,
+    TextView,
+};
 
 pub struct GOptionsDlg {
     dialog: Dialog,
     font_family_combo: GComboFont,
     font_size_spin: SpinButton,
+    auto_compare_check: CheckButton,
+    sync_scroll_check: CheckButton,
     apply_button: GButton,
     cancel_button: GButton,
     // Color pickers
@@ -195,6 +200,25 @@ impl GOptionsDlg {
 
         notebook.append_page(&fonts_grid, Some(&Label::new(Some("Fonts"))));
 
+        // Display tab
+        let display_grid = Grid::new();
+        display_grid.set_row_spacing(10);
+        display_grid.set_column_spacing(10);
+        display_grid.set_margin_top(10);
+        display_grid.set_margin_bottom(10);
+        display_grid.set_margin_start(10);
+        display_grid.set_margin_end(10);
+
+        let auto_compare_check = CheckButton::with_label("Automatically compare files on change");
+        auto_compare_check.set_active(config.auto_compare);
+        display_grid.attach(&auto_compare_check, 0, 0, 1, 1);
+
+        let sync_scroll_check = CheckButton::with_label("Synchronize scrolling");
+        sync_scroll_check.set_active(config.sync_scroll);
+        display_grid.attach(&sync_scroll_check, 0, 1, 1, 1);
+
+        notebook.append_page(&display_grid, Some(&Label::new(Some("Display"))));
+
         // Colors tab
         let colors_grid = Grid::new();
         colors_grid.set_row_spacing(10);
@@ -314,6 +338,8 @@ impl GOptionsDlg {
             dialog,
             font_family_combo,
             font_size_spin,
+            auto_compare_check,
+            sync_scroll_check,
             apply_button,
             cancel_button,
             text_diff_remove_bg_picker,
@@ -344,6 +370,8 @@ impl GOptionsDlg {
     ) {
         let font_family_clone = self.font_family_combo.clone();
         let font_size_clone = self.font_size_spin.clone();
+        let auto_compare_check_clone = self.auto_compare_check.clone();
+        let sync_scroll_check_clone = self.sync_scroll_check.clone();
         let dialog_clone = self.dialog.clone();
 
         // Clone ColorButtons directly (not GColorPicker) to avoid duplication
@@ -372,6 +400,8 @@ impl GOptionsDlg {
                 .unwrap_or_else(|| "Monospace".to_string());
 
             let font_size = font_size_clone.value();
+            let auto_compare = auto_compare_check_clone.is_active();
+            let sync_scroll = sync_scroll_check_clone.is_active();
 
             // Create color configuration using current colors from UI
             let color_config = crate::libs::state::AppConfig {
@@ -382,7 +412,8 @@ impl GOptionsDlg {
                 font_size: font_size as i32,
                 file_a_history: Vec::new(), // Not updated in this dialog
                 file_b_history: Vec::new(), // Not updated in this dialog
-                sync_scroll: true,          // Not updated in this dialog
+                sync_scroll,
+                auto_compare,
                 text_diff_remove_bg: text_diff_remove_bg_picker.get_color(),
                 text_diff_remove_fg: text_diff_remove_fg_picker.get_color(),
                 text_diff_add_bg: text_diff_add_bg_picker.get_color(),
