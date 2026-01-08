@@ -6,7 +6,7 @@
 
 use gtk::prelude::*;
 use gtk::subclass::prelude::ObjectSubclassIsExt;
-use gtk::{Adjustment, Application, ApplicationWindow, glib};
+use gtk::{Adjustment, Application, ApplicationWindow, MessageDialog, glib};
 use similar::ChangeTag;
 use std::cell::Cell;
 use std::rc::Rc;
@@ -235,6 +235,72 @@ impl AppController {
 
         let is_loading_reload = is_loading.clone();
 
+        // Helper to check if modified
+        let is_modified = |combo: &gtk::ComboBoxText, base_text: &str| -> bool {
+            let mut current_parent = combo.parent();
+            for _ in 0..3 {
+                if let Some(parent) = current_parent {
+                    let mut child = parent.first_child();
+                    while let Some(widget) = child {
+                        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+                            let text = label.label();
+                            if text.contains(base_text) && text.contains('*') {
+                                return true;
+                            }
+                        }
+                        child = widget.next_sibling();
+                    }
+                    current_parent = parent.parent();
+                } else {
+                    break;
+                }
+            }
+            false
+        };
+
+        // Helper to prompt for save
+        let prompt_save = {
+            let window = window.clone();
+            move |has_unsaved: bool, on_discard: Rc<dyn Fn()>, on_save: Option<Rc<dyn Fn()>>| {
+                if !has_unsaved {
+                    on_discard();
+                    return;
+                }
+
+                let dialog = MessageDialog::builder()
+                    .transient_for(&window)
+                    .modal(true)
+                    .message_type(gtk::MessageType::Question)
+                    .buttons(gtk::ButtonsType::None)
+                    .text("Unsaved Changes")
+                    .secondary_text("You have unsaved changes. Do you want to save them?")
+                    .build();
+
+                dialog.add_button("Cancel", gtk::ResponseType::Cancel);
+                dialog.add_button("Discard Changes", gtk::ResponseType::Close);
+                if on_save.is_some() {
+                    dialog.add_button("Save", gtk::ResponseType::Accept);
+                }
+
+                let on_discard = on_discard.clone();
+                let on_save = on_save.clone();
+
+                dialog.connect_response(move |dlg, response| {
+                    dlg.close();
+                    match response {
+                        gtk::ResponseType::Close => on_discard(),
+                        gtk::ResponseType::Accept => {
+                            if let Some(save_cb) = &on_save {
+                                save_cb();
+                            }
+                        }
+                        _ => {}
+                    }
+                });
+                dialog.show();
+            }
+        };
+
         // Helper to reset label (remove *)
         let reset_label = |combo: &gtk::ComboBoxText, base_text: &str| {
             let mut current_parent = combo.parent();
@@ -284,28 +350,96 @@ impl AppController {
         let panel_a_path_combo_reset = panel_a_path_combo.clone();
         let panel_b_path_combo_reset = panel_b_path_combo.clone();
 
+        let prompt_save_reload = prompt_save.clone();
+        let file_service_reload = file_service.clone();
+        let window_reload = window.clone();
+
         control_panel.reload_button.connect_clicked(move |_| {
-            let (bytes_a, lines_a) = file_service.reload_file_from_path(
-                &panel_a_text_view_reload,
-                &panel_a_path_combo_reload,
-                Some(is_loading_reload.clone()),
-            );
-            let (bytes_b, lines_b) = file_service.reload_file_from_path(
-                &panel_b_text_view_reload,
-                &panel_b_path_combo_reload,
-                Some(is_loading_reload.clone()),
-            );
+            let mod_a = is_modified(&panel_a_path_combo_reload, "File A");
+            let mod_b = is_modified(&panel_b_path_combo_reload, "File B");
 
-            // Reset labels to clean state
-            reset_label(&panel_a_path_combo_reset, "File A");
-            reset_label(&panel_b_path_combo_reset, "File B");
+            let do_reload = {
+                let file_service = file_service.clone();
+                let panel_a_text_view_reload = panel_a_text_view_reload.clone();
+                let panel_a_path_combo_reload = panel_a_path_combo_reload.clone();
+                let is_loading_reload = is_loading_reload.clone();
+                let panel_b_text_view_reload = panel_b_text_view_reload.clone();
+                let panel_b_path_combo_reload = panel_b_path_combo_reload.clone();
+                let panel_a_path_combo_reset = panel_a_path_combo_reset.clone();
+                let panel_b_path_combo_reset = panel_b_path_combo_reset.clone();
+                let status_bar_clone = status_bar_clone.clone();
+                let diff_map = diff_map.clone();
+                Rc::new(move || {
+                    let (bytes_a, lines_a) = file_service.reload_file_from_path(
+                        &panel_a_text_view_reload,
+                        &panel_a_path_combo_reload,
+                        Some(is_loading_reload.clone()),
+                    );
+                    let (bytes_b, lines_b) = file_service.reload_file_from_path(
+                        &panel_b_text_view_reload,
+                        &panel_b_path_combo_reload,
+                        Some(is_loading_reload.clone()),
+                    );
 
-            // Update status bar with file information
-            status_bar_clone.set_status_a_file_info(bytes_a, lines_a);
-            status_bar_clone.set_status_b_file_info(bytes_b, lines_b);
+                    // Reset labels to clean state
+                    reset_label(&panel_a_path_combo_reset, "File A");
+                    reset_label(&panel_b_path_combo_reset, "File B");
 
-            // Clear diff map
-            diff_map.clear_diff_lines();
+                    // Update status bar with file information
+                    status_bar_clone.set_status_a_file_info(bytes_a, lines_a);
+                    status_bar_clone.set_status_b_file_info(bytes_b, lines_b);
+
+                    // Clear diff map
+                    diff_map.clear_diff_lines();
+                })
+            };
+
+            let do_save = if mod_a || mod_b {
+                let file_service = file_service_reload.clone();
+                let window = window_reload.clone();
+                let tv_a = panel_a_text_view_reload.clone();
+                let cb_a = panel_a_path_combo_reload.clone();
+                let tv_b = panel_b_text_view_reload.clone();
+                let cb_b = panel_b_path_combo_reload.clone();
+                let do_reload = do_reload.clone();
+
+                Some(Rc::new(move || {
+                    let do_reload = do_reload.clone();
+                    let file_service_b = file_service.clone();
+                    let window_b = window.clone();
+                    let tv_b = tv_b.clone();
+                    let cb_b = cb_b.clone();
+
+                    let save_b_chain = move || {
+                        if mod_b {
+                            let do_reload = do_reload.clone();
+                            file_service_b.save_file_dialog(
+                                &window_b,
+                                &tv_b.content_view(),
+                                &cb_b,
+                                Some(Box::new(move || do_reload())),
+                            );
+                        } else {
+                            do_reload();
+                        }
+                    };
+
+                    if mod_a {
+                        file_service.save_file_dialog(
+                            &window,
+                            &tv_a.content_view(),
+                            &cb_a,
+                            Some(Box::new(save_b_chain)),
+                        );
+                    } else {
+                        save_b_chain();
+                    }
+                }) as Rc<dyn Fn()>)
+            } else {
+                None
+            };
+
+            prompt_save_reload(mod_a || mod_b, do_reload, do_save);
         });
 
         // Setup Open Buttons
@@ -318,10 +452,11 @@ impl AppController {
             let combo = combo.clone();
             let file_service = self.file_service.clone();
             let is_loading = is_loading.clone();
+            let prompt_save = prompt_save.clone();
 
             // Create callback for successful load to reset label
             let combo_for_callback = combo.clone();
-            let on_load = Box::new(move || {
+            let on_load: Rc<dyn Fn()> = Rc::new(move || {
                 let base_text = if is_panel_a { "File A" } else { "File B" };
                 let mut current_parent = combo_for_callback.parent();
                 for _ in 0..3 {
@@ -344,13 +479,51 @@ impl AppController {
             });
 
             button.connect_clicked(move |_| {
-                file_service.open_file_dialog(
-                    &window,
-                    &text_view,
-                    &combo,
-                    Some(is_loading.clone()),
-                    Some(on_load.clone()),
-                );
+                let mod_file = is_modified(&combo, if is_panel_a { "File A" } else { "File B" });
+
+                let do_open = {
+                    let file_service = file_service.clone();
+                    let window = window.clone();
+                    let text_view = text_view.clone();
+                    let combo = combo.clone();
+                    let is_loading = is_loading.clone();
+                    let on_load = on_load.clone();
+                    Rc::new(move || {
+                        let on_load_for_dialog = Box::new({
+                            let on_load = on_load.clone();
+                            move || on_load()
+                        });
+                        file_service.open_file_dialog(
+                            &window,
+                            &text_view,
+                            &combo,
+                            Some(is_loading.clone()),
+                            Some(on_load_for_dialog),
+                        );
+                    })
+                };
+
+                let do_save = if mod_file {
+                    let file_service = file_service.clone();
+                    let window = window.clone();
+                    let text_view = text_view.clone();
+                    let combo = combo.clone();
+                    let do_open = do_open.clone();
+
+                    Some(Rc::new(move || {
+                        let do_open = do_open.clone();
+                        file_service.save_file_dialog(
+                            &window,
+                            &text_view,
+                            &combo,
+                            Some(Box::new(move || do_open())),
+                        );
+                    }) as Rc<dyn Fn()>)
+                } else {
+                    None
+                };
+
+                prompt_save(mod_file, do_open, do_save);
             });
         };
 
@@ -432,8 +605,79 @@ impl AppController {
         let config_service = self.config_service.clone();
         let panel_a_combo = comparison_panels.panel_a_path_combo().clone();
         let panel_b_combo = comparison_panels.panel_b_path_combo().clone();
+        let file_service_close = self.file_service.clone();
+        let panel_a_text_view_close = comparison_panels.panel_a_text_view().clone();
+        let panel_b_text_view_close = comparison_panels.panel_b_text_view().clone();
 
         window.connect_close_request(move |window| {
+            let mod_a = is_modified(&panel_a_combo, "File A");
+            let mod_b = is_modified(&panel_b_combo, "File B");
+
+            if mod_a || mod_b {
+                let do_close = {
+                    let window_for_destroy = window.clone();
+                    let state_for_close = state_for_close.clone();
+                    let config_service = config_service.clone();
+                    let panel_a_combo_for_close = panel_a_combo.clone();
+                    let panel_b_combo_for_close = panel_b_combo.clone();
+                    Rc::new(move || {
+                        let updated_config = state_for_close.update_config_from_ui(
+                            &window_for_destroy,
+                            &panel_a_combo_for_close,
+                            &panel_b_combo_for_close,
+                        );
+                        config_service.save_config(&updated_config);
+                        window_for_destroy.destroy();
+                    })
+                };
+
+                let do_save = {
+                    let file_service = file_service_close.clone();
+                    let window = window.clone();
+                    let tv_a = panel_a_text_view_close.clone();
+                    let cb_a = panel_a_combo.clone();
+                    let tv_b = panel_b_text_view_close.clone();
+                    let cb_b = panel_b_combo.clone();
+                    let do_close = do_close.clone();
+
+                    Rc::new(move || {
+                        let do_close = do_close.clone();
+                        let file_service_b = file_service.clone();
+                        let window_b = window.clone();
+                        let tv_b = tv_b.clone();
+                        let cb_b = cb_b.clone();
+
+                        let save_b_chain = move || {
+                            if mod_b {
+                                let do_close = do_close.clone();
+                                file_service_b.save_file_dialog(
+                                    &window_b,
+                                    &tv_b.content_view(),
+                                    &cb_b,
+                                    Some(Box::new(move || do_close())),
+                                );
+                            } else {
+                                do_close();
+                            }
+                        };
+
+                        if mod_a {
+                            file_service.save_file_dialog(
+                                &window,
+                                &tv_a.content_view(),
+                                &cb_a,
+                                Some(Box::new(save_b_chain)),
+                            );
+                        } else {
+                            save_b_chain();
+                        }
+                    })
+                };
+
+                prompt_save(true, do_close, Some(do_save));
+                return glib::Propagation::Stop;
+            }
+
             // Update configuration with current state
             let updated_config =
                 state_for_close.update_config_from_ui(window, &panel_a_combo, &panel_b_combo);
