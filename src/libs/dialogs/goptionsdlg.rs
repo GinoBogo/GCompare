@@ -110,20 +110,36 @@ impl GOptionsDlg {
             font_service.get_best_monospace_match(current_font_family)
         };
 
-        let active_index = if let Some(index) = font_families
-            .iter()
-            .position(|f: &FontInfo| f.name == best_match_font)
-        {
-            Some(index as u32)
-        } else if let Some(index) = font_families
-            .iter()
-            .position(|f: &FontInfo| f.name == "Monospace")
-        {
-            Some(index as u32)
-        } else {
-            Some(0)
-        };
-        font_family_combo.combo_box().set_active(active_index);
+        // Find and select the font in the combobox by iterating the model
+        let combo = font_family_combo.combo_box();
+        let mut found = false;
+
+        if let Some(model) = combo.model() {
+            for target in [best_match_font.as_str(), "Monospace"] {
+                if let Some(iter) = model.iter_first() {
+                    loop {
+                        let name: Option<String> = model.get(&iter, 0);
+                        if let Some(name) = name {
+                            if name == target {
+                                combo.set_active_iter(Some(&iter));
+                                found = true;
+                                break;
+                            }
+                        }
+                        if !model.iter_next(&iter) {
+                            break;
+                        }
+                    }
+                }
+                if found {
+                    break;
+                }
+            }
+        }
+
+        if !found {
+            combo.set_active(Some(0));
+        }
 
         fonts_grid.attach(font_family_combo.combo_box(), 1, 0, 1, 1);
 
