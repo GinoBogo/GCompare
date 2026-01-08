@@ -8,17 +8,23 @@ use gtk::prelude::*;
 use gtk::{
     ApplicationWindow, ComboBoxText, Entry, FileChooserAction, FileChooserNative, ResponseType,
 };
+use std::cell::RefCell;
+use std::rc::Rc;
 
 use crate::libs::widgets::gtextview::GTextView;
 
 /// Service for handling file operations.
 #[derive(Clone)]
-pub struct FileService;
+pub struct FileService {
+    active_dialog: Rc<RefCell<Option<FileChooserNative>>>,
+}
 
 impl FileService {
     /// Create a new file service.
     pub fn new() -> Self {
-        Self
+        Self {
+            active_dialog: Rc::new(RefCell::new(None)),
+        }
     }
 
     /// Reload file content from a given path into a GTextView.
@@ -88,6 +94,10 @@ impl FileService {
         let text_view_clone = text_view.clone();
         let path_combo_clone = path_combo.clone();
 
+        // Keep the dialog alive by storing it in the service
+        self.active_dialog.replace(Some(file_chooser.clone()));
+        let active_dialog = self.active_dialog.clone();
+
         file_chooser.connect_response(move |dialog, response| {
             if response == ResponseType::Accept
                 && let Some(file) = dialog.file()
@@ -103,7 +113,7 @@ impl FileService {
                     entry.set_text(path.to_str().unwrap_or_default());
                 }
             }
-            dialog.destroy();
+            active_dialog.replace(None);
         });
 
         file_chooser.show();
@@ -143,6 +153,10 @@ impl FileService {
         let text_view_clone = text_view.clone();
         let path_combo_clone = path_combo.clone();
 
+        // Keep the dialog alive by storing it in the service
+        self.active_dialog.replace(Some(file_chooser.clone()));
+        let active_dialog = self.active_dialog.clone();
+
         file_chooser.connect_response(move |dialog, response| {
             if response == ResponseType::Accept
                 && let Some(file) = dialog.file()
@@ -160,7 +174,7 @@ impl FileService {
                     entry.set_text(path.to_str().unwrap_or_default());
                 }
             }
-            dialog.destroy();
+            active_dialog.replace(None);
         });
 
         file_chooser.show();
