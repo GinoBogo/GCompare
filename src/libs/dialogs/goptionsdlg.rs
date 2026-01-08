@@ -118,7 +118,7 @@ impl GOptionsDlg {
             for target in [best_match_font.as_str(), "Monospace"] {
                 if let Some(iter) = model.iter_first() {
                     loop {
-                        let name: Option<String> = model.get(&iter, 0);
+                        let name: Option<String> = model.get(&iter, 1);
                         if let Some(name) = name {
                             if name == target {
                                 combo.set_active_iter(Some(&iter));
@@ -174,7 +174,7 @@ impl GOptionsDlg {
         // Apply current font settings using CSS
         let css_provider = gtk::CssProvider::new();
         let css = format!(
-            "textview {{ font-family: {}; font-size: {}pt; }}",
+            "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
             best_match_font, current_font_size
         );
         css_provider.load_from_data(&css);
@@ -192,7 +192,7 @@ impl GOptionsDlg {
                 if let Some(font_family) = font_family_combo_clone1.active_font() {
                     let font_size = font_size_spin_clone.value();
                     let css = format!(
-                        "textview {{ font-family: {}; font-size: {}pt; }}",
+                        "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
                         font_family, font_size
                     );
                     css_provider_clone.load_from_data(&css);
@@ -205,7 +205,7 @@ impl GOptionsDlg {
             let font_size = spin.value();
             if let Some(font_family) = font_family_combo_clone2.active_font() {
                 let css = format!(
-                    "textview {{ font-family: {}; font-size: {}pt; }}",
+                    "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
                     font_family, font_size
                 );
                 css_provider_clone2.load_from_data(&css);
@@ -410,10 +410,13 @@ impl GOptionsDlg {
 
         // Apply button handler
         let callback_apply = callback.clone();
+        let font_service = FontService::new();
         self.apply_button.connect_clicked(move |_| {
             let font_family = font_family_clone
                 .active_font()
                 .unwrap_or_else(|| "Monospace".to_string());
+
+            let font_family = font_service.get_best_monospace_match(&font_family);
 
             let font_size = font_size_clone.value();
             let auto_compare = auto_compare_check_clone.is_active();

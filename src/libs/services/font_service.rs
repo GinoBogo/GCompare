@@ -145,13 +145,11 @@ impl FontService {
     /// Get the best monospace font match for a given font family.
     pub fn get_best_monospace_match(&self, font_family: &str) -> String {
         if let Ok(output) = Command::new("fc-match")
-            .args([font_family, ":spacing=100"])
+            .args(["-f", "%{family}", font_family])
             .output()
             && output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
-                // Extract font family from fc-match output
-                // Format is usually: "Family Name:style=Style:file=/path/to/font"
-                let font_family = stdout.split(':').next().unwrap_or("").trim();
+                let font_family = stdout.trim();
                 if !font_family.is_empty() {
                     return font_family.to_string();
                 }
