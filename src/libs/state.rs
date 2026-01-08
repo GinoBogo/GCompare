@@ -128,8 +128,18 @@ impl ApplicationState {
         };
 
         AppConfig {
-            window_width: window.default_width(),
-            window_height: window.default_height(),
+            // Save current size only if not maximized, otherwise keep previous
+            // size
+            window_width: if window.is_maximized() {
+                current_config.window_width
+            } else {
+                window.width()
+            },
+            window_height: if window.is_maximized() {
+                current_config.window_height
+            } else {
+                window.height()
+            },
             window_maximized: window.is_maximized(),
             font_family: current_config.font_family.clone(),
             font_size: current_config.font_size,
