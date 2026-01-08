@@ -172,9 +172,11 @@ impl AppController {
                 }
 
                 // Load the file content
-                let (bytes_a, lines_a) = self
-                    .file_service
-                    .reload_file_from_path(panel_a_text_view, panel_a_path_combo);
+                let (bytes_a, lines_a) = self.file_service.reload_file_from_path(
+                    panel_a_text_view,
+                    panel_a_path_combo,
+                    None,
+                );
                 status_bar.set_status_a_file_info(bytes_a, lines_a);
             }
 
@@ -191,9 +193,11 @@ impl AppController {
                 }
 
                 // Load the file content
-                let (bytes_b, lines_b) = self
-                    .file_service
-                    .reload_file_from_path(panel_b_text_view, panel_b_path_combo);
+                let (bytes_b, lines_b) = self.file_service.reload_file_from_path(
+                    panel_b_text_view,
+                    panel_b_path_combo,
+                    None,
+                );
                 status_bar.set_status_b_file_info(bytes_b, lines_b);
             }
         }
@@ -211,6 +215,9 @@ impl AppController {
         let sync_enabled = Rc::new(Cell::new(self.state.config().sync_scroll));
         let is_syncing = Rc::new(Cell::new(false));
 
+        // Shared state for loading flag to suppress "modified" label updates
+        let is_loading = Rc::new(Cell::new(false));
+
         // Setup reload button handler
         let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
         let panel_a_path_combo = comparison_panels.panel_a_path_combo().clone();
@@ -223,11 +230,75 @@ impl AppController {
         let status_bar_clone = status_bar.clone();
         let diff_map = comparison_panels.diff_map().clone();
 
+        let panel_a_path_combo_reload = panel_a_path_combo.clone();
+        let panel_b_path_combo_reload = panel_b_path_combo.clone();
+
+        let is_loading_reload = is_loading.clone();
+
+        // Helper to reset label (remove *)
+        let reset_label = |combo: &gtk::ComboBoxText, base_text: &str| {
+            let mut current_parent = combo.parent();
+            for _ in 0..3 {
+                if let Some(parent) = current_parent {
+                    let mut child = parent.first_child();
+                    while let Some(widget) = child {
+                        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+                            if label.label().contains(base_text) {
+                                label.set_label(base_text);
+                                return;
+                            }
+                        }
+                        child = widget.next_sibling();
+                    }
+                    current_parent = parent.parent();
+                } else {
+                    break;
+                }
+            }
+        };
+
+        // Helper to set label to modified state (add *)
+        let set_modified_label = |combo: &gtk::ComboBoxText, base_text: &str| {
+            let mut current_parent = combo.parent();
+            // Search up to 3 levels of parents to find the label
+            for _ in 0..3 {
+                if let Some(parent) = current_parent {
+                    let mut child = parent.first_child();
+                    while let Some(widget) = child {
+                        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+                            let text = label.label();
+                            if text.contains(base_text) && !text.contains('*') {
+                                label.set_label(&format!("{}*", base_text));
+                                return;
+                            }
+                        }
+                        child = widget.next_sibling();
+                    }
+                    current_parent = parent.parent();
+                } else {
+                    break;
+                }
+            }
+        };
+
+        let panel_a_path_combo_reset = panel_a_path_combo.clone();
+        let panel_b_path_combo_reset = panel_b_path_combo.clone();
+
         control_panel.reload_button.connect_clicked(move |_| {
-            let (bytes_a, lines_a) =
-                file_service.reload_file_from_path(&panel_a_text_view_reload, &panel_a_path_combo);
-            let (bytes_b, lines_b) =
-                file_service.reload_file_from_path(&panel_b_text_view_reload, &panel_b_path_combo);
+            let (bytes_a, lines_a) = file_service.reload_file_from_path(
+                &panel_a_text_view_reload,
+                &panel_a_path_combo_reload,
+                Some(is_loading_reload.clone()),
+            );
+            let (bytes_b, lines_b) = file_service.reload_file_from_path(
+                &panel_b_text_view_reload,
+                &panel_b_path_combo_reload,
+                Some(is_loading_reload.clone()),
+            );
+
+            // Reset labels to clean state
+            reset_label(&panel_a_path_combo_reset, "File A");
+            reset_label(&panel_b_path_combo_reset, "File B");
 
             // Update status bar with file information
             status_bar_clone.set_status_a_file_info(bytes_a, lines_a);
@@ -240,13 +311,46 @@ impl AppController {
         // Setup Open Buttons
         let setup_open_button = |button: &crate::libs::widgets::gbutton::GButton,
                                  text_view: &crate::libs::widgets::gtextview::GTextView,
-                                 combo: &gtk::ComboBoxText| {
+                                 combo: &gtk::ComboBoxText,
+                                 is_panel_a: bool| {
             let window = window.clone();
             let text_view = text_view.content_view();
             let combo = combo.clone();
             let file_service = self.file_service.clone();
+            let is_loading = is_loading.clone();
+
+            // Create callback for successful load to reset label
+            let combo_for_callback = combo.clone();
+            let on_load = Box::new(move || {
+                let base_text = if is_panel_a { "File A" } else { "File B" };
+                let mut current_parent = combo_for_callback.parent();
+                for _ in 0..3 {
+                    if let Some(parent) = current_parent {
+                        let mut child = parent.first_child();
+                        while let Some(widget) = child {
+                            if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+                                if label.label().contains(base_text) {
+                                    label.set_label(base_text);
+                                    return;
+                                }
+                            }
+                            child = widget.next_sibling();
+                        }
+                        current_parent = parent.parent();
+                    } else {
+                        break;
+                    }
+                }
+            });
+
             button.connect_clicked(move |_| {
-                file_service.open_file_dialog(&window, &text_view, &combo);
+                file_service.open_file_dialog(
+                    &window,
+                    &text_view,
+                    &combo,
+                    Some(is_loading.clone()),
+                    Some(on_load.clone()),
+                );
             });
         };
 
@@ -254,24 +358,58 @@ impl AppController {
             comparison_panels.panel_a_open_button(),
             comparison_panels.panel_a_text_view(),
             comparison_panels.panel_a_path_combo(),
+            true,
         );
 
         setup_open_button(
             comparison_panels.panel_b_open_button(),
             comparison_panels.panel_b_text_view(),
             comparison_panels.panel_b_path_combo(),
+            false,
         );
 
         // Setup Save Buttons
         let setup_save_button = |button: &crate::libs::widgets::gbutton::GButton,
                                  text_view: &crate::libs::widgets::gtextview::GTextView,
-                                 combo: &gtk::ComboBoxText| {
+                                 combo: &gtk::ComboBoxText,
+                                 is_panel_a: bool| {
             let window = window.clone();
             let text_view = text_view.content_view();
             let combo = combo.clone();
             let file_service = self.file_service.clone();
+
+            // Create callback for successful save
+            let combo_for_callback = combo.clone();
+            let on_save: Option<std::rc::Rc<dyn Fn()>> = Some(std::rc::Rc::new(move || {
+                let base_text = if is_panel_a { "File A" } else { "File B" };
+                let modified_text = format!("{}*", base_text);
+                let mut current_parent = combo_for_callback.parent();
+                // Search up to 3 levels of parents to find the label
+                for _ in 0..3 {
+                    if let Some(parent) = current_parent {
+                        let mut child = parent.first_child();
+                        while let Some(widget) = child {
+                            if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+                                if label.label().contains(&modified_text) {
+                                    label.set_label(base_text);
+                                    return;
+                                }
+                            }
+                            child = widget.next_sibling();
+                        }
+                        current_parent = parent.parent();
+                    } else {
+                        break;
+                    }
+                }
+            }));
+
             button.connect_clicked(move |_| {
-                file_service.save_file_dialog(&window, &text_view, &combo);
+                let on_save_box = on_save.as_ref().map(|rc| {
+                    let rc_clone = rc.clone();
+                    Box::new(move || rc_clone()) as Box<dyn Fn() + 'static>
+                });
+                file_service.save_file_dialog(&window, &text_view, &combo, on_save_box);
             });
         };
 
@@ -279,12 +417,14 @@ impl AppController {
             comparison_panels.panel_a_save_button(),
             comparison_panels.panel_a_text_view(),
             comparison_panels.panel_a_path_combo(),
+            true,
         );
 
         setup_save_button(
             comparison_panels.panel_b_save_button(),
             comparison_panels.panel_b_text_view(),
             comparison_panels.panel_b_path_combo(),
+            false,
         );
 
         // Setup window close handler
@@ -316,6 +456,8 @@ impl AppController {
         let diff_map_a = diff_map.clone();
         let status_bar_a = status_bar.clone();
         let panel_b_buffer_for_status = panel_b_text_view.content_view().buffer().clone();
+        let panel_a_path_combo_for_changed = panel_a_path_combo.clone();
+        let is_loading_a = is_loading.clone();
         panel_a_buffer.connect_changed(move |_| {
             let line_count = panel_a_buffer_for_changed.line_count() as usize;
             let imp = diff_map_a.imp();
@@ -356,6 +498,11 @@ impl AppController {
                 &panel_b_buffer_for_status,
                 &diff_map_a,
             );
+
+            // Update label "File A" to "File A*"
+            if !is_loading_a.get() {
+                set_modified_label(&panel_a_path_combo_for_changed, "File A");
+            }
         });
 
         // Panel B text changes
@@ -366,6 +513,8 @@ impl AppController {
         let diff_map_b = diff_map.clone();
         let status_bar_b = status_bar.clone();
         let panel_a_buffer_for_status = panel_a_text_view.content_view().buffer().clone();
+        let panel_b_path_combo_for_changed = panel_b_path_combo.clone();
+        let is_loading_b = is_loading.clone();
         panel_b_buffer.connect_changed(move |_| {
             let line_count = panel_b_buffer_for_changed.line_count() as usize;
             let imp = diff_map_b.imp();
@@ -406,6 +555,11 @@ impl AppController {
                 &panel_b_buffer_for_changed,
                 &diff_map_b,
             );
+
+            // Update label "File B" to "File B*"
+            if !is_loading_b.get() {
+                set_modified_label(&panel_b_path_combo_for_changed, "File B");
+            }
         });
 
         // Panel A scroll changes

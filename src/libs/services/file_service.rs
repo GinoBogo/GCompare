@@ -8,7 +8,7 @@ use gtk::prelude::*;
 use gtk::{
     ApplicationWindow, ComboBoxText, Entry, FileChooserAction, FileChooserNative, ResponseType,
 };
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 use crate::libs::widgets::gtextview::GTextView;
@@ -32,6 +32,7 @@ impl FileService {
         &self,
         text_view: &GTextView,
         path_combo: &ComboBoxText,
+        loading_flag: Option<Rc<Cell<bool>>>,
     ) -> (usize, usize) {
         let path_str = path_combo
             .child()
@@ -48,7 +49,13 @@ impl FileService {
             Ok(content) => {
                 let bytes = content.len();
                 let lines = content.lines().count();
+                if let Some(flag) = &loading_flag {
+                    flag.set(true);
+                }
                 text_view.set_text(&content);
+                if let Some(flag) = &loading_flag {
+                    flag.set(false);
+                }
                 (bytes, lines)
             }
             Err(_) => {
@@ -67,6 +74,8 @@ impl FileService {
         window: &ApplicationWindow,
         text_view: &T,
         path_combo: &ComboBoxText,
+        loading_flag: Option<Rc<Cell<bool>>>,
+        on_load: Option<Box<dyn Fn() + 'static>>,
     ) {
         let file_chooser = FileChooserNative::builder()
             .title("Open File")
@@ -104,13 +113,22 @@ impl FileService {
                 && let Some(path) = file.path()
                 && let Ok(file_content) = std::fs::read_to_string(&path)
             {
+                if let Some(flag) = &loading_flag {
+                    flag.set(true);
+                }
                 text_view_clone.buffer().set_text(&file_content);
+                if let Some(flag) = &loading_flag {
+                    flag.set(false);
+                }
 
                 if let Some(entry) = path_combo_clone
                     .child()
                     .and_then(|child| child.downcast::<Entry>().ok())
                 {
                     entry.set_text(path.to_str().unwrap_or_default());
+                }
+                if let Some(callback) = &on_load {
+                    callback();
                 }
             }
             active_dialog.replace(None);
@@ -125,6 +143,7 @@ impl FileService {
         window: &ApplicationWindow,
         text_view: &T,
         path_combo: &ComboBoxText,
+        on_save: Option<Box<dyn Fn() + 'static>>,
     ) {
         let file_chooser = FileChooserNative::builder()
             .title("Save File")
@@ -172,6 +191,9 @@ impl FileService {
                         .and_then(|child| child.downcast::<Entry>().ok())
                 {
                     entry.set_text(path.to_str().unwrap_or_default());
+                    if let Some(callback) = &on_save {
+                        callback();
+                    }
                 }
             }
             active_dialog.replace(None);
