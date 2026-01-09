@@ -21,6 +21,7 @@ pub struct AppConfig {
     pub file_b_history: Vec<String>,
     pub sync_scroll: bool,
     pub auto_compare: bool,
+    pub ignore_whitespace: bool,
     // Color settings
     pub text_diff_remove_bg: String,
     pub text_diff_remove_fg: String,
@@ -50,6 +51,7 @@ impl Default for AppConfig {
             file_b_history: Vec::new(),
             sync_scroll: true,
             auto_compare: true,
+            ignore_whitespace: false,
             // Color settings - using hex values from CSS
             text_diff_remove_bg: "#ffcccc".to_string(), // Light red
             text_diff_remove_fg: "#990000".to_string(), // Dark red
@@ -153,6 +155,7 @@ impl ApplicationState {
             ),
             sync_scroll: current_config.sync_scroll,
             auto_compare: current_config.auto_compare,
+            ignore_whitespace: current_config.ignore_whitespace,
             // Preserve color settings
             text_diff_remove_bg: current_config.text_diff_remove_bg.clone(),
             text_diff_remove_fg: current_config.text_diff_remove_fg.clone(),

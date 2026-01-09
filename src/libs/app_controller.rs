@@ -942,13 +942,19 @@ impl AppController {
 
                 // Apply highlighting
                 let config = state_for_colors.config();
+                let (empty_lines_a, empty_lines_b) = if config.ignore_whitespace {
+                    (Vec::new(), Vec::new())
+                } else {
+                    (diff_result.empty_lines_a, diff_result.empty_lines_b)
+                };
+
                 text_highlighter.apply_line_highlighting(
                     &buffer_a,
                     &buffer_b,
                     &diff_result.changed_lines_a,
                     &diff_result.changed_lines_b,
-                    &diff_result.empty_lines_a,
-                    &diff_result.empty_lines_b,
+                    &empty_lines_a,
+                    &empty_lines_b,
                     &config,
                 );
 
@@ -956,8 +962,8 @@ impl AppController {
                 diff_map.set_all_diff_lines(
                     diff_result.changed_lines_a,
                     diff_result.changed_lines_b,
-                    diff_result.empty_lines_a,
-                    diff_result.empty_lines_b,
+                    empty_lines_a,
+                    empty_lines_b,
                 );
 
                 // Update status bar
@@ -1020,6 +1026,7 @@ impl AppController {
 
             // Compute Diff
             let changes = diff_service.compute_diff(text_a.as_str(), text_b.as_str());
+            let ignore_whitespace = state_for_colors.config().ignore_whitespace;
 
             // Pre-compute all content and tag information using character positions
             let mut content_a = String::new();
@@ -1051,8 +1058,10 @@ impl AppController {
                         let is_empty_or_whitespace = change.content.trim().is_empty();
 
                         if is_empty_or_whitespace {
-                            empty_lines_a.push(current_line_a);
-                            tag_ranges_a.push((start_pos, end_pos, "diff_empty"));
+                            if !ignore_whitespace {
+                                empty_lines_a.push(current_line_a);
+                                tag_ranges_a.push((start_pos, end_pos, "diff_empty"));
+                            }
                         } else {
                             lines_a.push(current_line_a);
                             tag_ranges_a.push((start_pos, end_pos, "diff_remove"));
@@ -1069,8 +1078,10 @@ impl AppController {
                         let is_empty_or_whitespace = change.content.trim().is_empty();
 
                         if is_empty_or_whitespace {
-                            empty_lines_b.push(current_line_b);
-                            tag_ranges_b.push((start_pos, end_pos, "diff_empty"));
+                            if !ignore_whitespace {
+                                empty_lines_b.push(current_line_b);
+                                tag_ranges_b.push((start_pos, end_pos, "diff_empty"));
+                            }
                         } else {
                             lines_b.push(current_line_b);
                             tag_ranges_b.push((start_pos, end_pos, "diff_add"));
@@ -1219,6 +1230,7 @@ impl AppController {
                         updated_config.font_size = font_size as i32;
                         updated_config.auto_compare = color_config.auto_compare;
                         updated_config.sync_scroll = color_config.sync_scroll;
+                        updated_config.ignore_whitespace = color_config.ignore_whitespace;
 
                         // Update color settings
                         updated_config.text_diff_remove_bg = color_config.text_diff_remove_bg;
@@ -1354,13 +1366,19 @@ impl AppController {
 
                 // Apply highlighting
                 let config = state.config();
+                let (empty_lines_a, empty_lines_b) = if config.ignore_whitespace {
+                    (Vec::new(), Vec::new())
+                } else {
+                    (diff_result.empty_lines_a, diff_result.empty_lines_b)
+                };
+
                 text_highlighter.apply_line_highlighting(
                     &buffer_a,
                     &buffer_b,
                     &diff_result.changed_lines_a,
                     &diff_result.changed_lines_b,
-                    &diff_result.empty_lines_a,
-                    &diff_result.empty_lines_b,
+                    &empty_lines_a,
+                    &empty_lines_b,
                     &config,
                 );
 
@@ -1368,8 +1386,8 @@ impl AppController {
                 diff_map_clone.set_all_diff_lines(
                     diff_result.changed_lines_a,
                     diff_result.changed_lines_b,
-                    diff_result.empty_lines_a,
-                    diff_result.empty_lines_b,
+                    empty_lines_a,
+                    empty_lines_b,
                 );
 
                 // Update status bar

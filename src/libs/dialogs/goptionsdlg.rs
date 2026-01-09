@@ -20,6 +20,7 @@ pub struct GOptionsDlg {
     font_size_spin: SpinButton,
     auto_compare_check: CheckButton,
     sync_scroll_check: CheckButton,
+    ignore_whitespace_check: CheckButton,
     apply_button: GButton,
     cancel_button: GButton,
     // Color pickers
@@ -233,6 +234,10 @@ impl GOptionsDlg {
         sync_scroll_check.set_active(config.sync_scroll);
         display_grid.attach(&sync_scroll_check, 0, 1, 1, 1);
 
+        let ignore_whitespace_check = CheckButton::with_label("Ignore whitespace");
+        ignore_whitespace_check.set_active(config.ignore_whitespace);
+        display_grid.attach(&ignore_whitespace_check, 0, 2, 1, 1);
+
         notebook.append_page(&display_grid, Some(&Label::new(Some("Display"))));
 
         // Colors tab
@@ -356,6 +361,7 @@ impl GOptionsDlg {
             font_size_spin,
             auto_compare_check,
             sync_scroll_check,
+            ignore_whitespace_check,
             apply_button,
             cancel_button,
             text_diff_remove_bg_picker,
@@ -388,6 +394,7 @@ impl GOptionsDlg {
         let font_size_clone = self.font_size_spin.clone();
         let auto_compare_check_clone = self.auto_compare_check.clone();
         let sync_scroll_check_clone = self.sync_scroll_check.clone();
+        let ignore_whitespace_check_clone = self.ignore_whitespace_check.clone();
         let dialog_clone = self.dialog.clone();
 
         // Clone ColorButtons directly (not GColorPicker) to avoid duplication
@@ -421,6 +428,7 @@ impl GOptionsDlg {
             let font_size = font_size_clone.value();
             let auto_compare = auto_compare_check_clone.is_active();
             let sync_scroll = sync_scroll_check_clone.is_active();
+            let ignore_whitespace = ignore_whitespace_check_clone.is_active();
 
             // Create color configuration using current colors from UI
             let color_config = crate::libs::state::AppConfig {
@@ -433,6 +441,7 @@ impl GOptionsDlg {
                 file_b_history: Vec::new(), // Not updated in this dialog
                 sync_scroll,
                 auto_compare,
+                ignore_whitespace,
                 text_diff_remove_bg: text_diff_remove_bg_picker.get_color(),
                 text_diff_remove_fg: text_diff_remove_fg_picker.get_color(),
                 text_diff_add_bg: text_diff_add_bg_picker.get_color(),
