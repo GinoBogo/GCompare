@@ -439,8 +439,8 @@ impl GOptionsDlg {
                 font_size: font_size as i32,
                 file_a_history: Vec::new(), // Not updated in this dialog
                 file_b_history: Vec::new(), // Not updated in this dialog
-                sync_scroll,
                 auto_compare,
+                sync_scroll,
                 ignore_whitespace,
                 text_diff_remove_bg: text_diff_remove_bg_picker.get_color(),
                 text_diff_remove_fg: text_diff_remove_fg_picker.get_color(),
