@@ -8,6 +8,7 @@ use crate::libs::services::font_service::FontInfo;
 use gtk::prelude::*;
 use gtk::{CellRendererText, ComboBox, ListStore};
 use std::cell::RefCell;
+use std::process::Command;
 
 /// Custom font selection combo box with Pango markup support for alias fonts.
 #[derive(Clone)]
@@ -55,6 +56,37 @@ impl GComboFont {
                                 fonts.push(FontInfo::new(family, false));
                             }
                         }
+                    }
+                }
+            }
+        }
+
+        // If we didn't find enough fonts, try a broader search using fc-list
+        if fonts.len() < 5
+            && let Ok(output) = Command::new("fc-list").args([":family", ":style"]).output()
+            && output.status.success()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let line = line.trim();
+                if !line.is_empty() {
+                    // Parse format like "Font Name:style=Style" or "/path/to/font: Font Name:style=Style"
+                    let font_name = if line.contains('/') {
+                        // Extract font name from path format
+                        line.split(':').nth(1).unwrap_or("").trim()
+                    } else {
+                        // Extract font name from simple format
+                        line.split(':').next().unwrap_or("").trim()
+                    };
+
+                    // Check if this might be a monospace font and is not a style variant
+                    if (font_name.to_lowercase().contains("mono")
+                        || font_name.to_lowercase().contains("code")
+                        || font_name.to_lowercase().contains("console")
+                        || font_name.to_lowercase().contains("terminal"))
+                        && !fonts.iter().any(|f: &FontInfo| f.name == font_name)
+                    {
+                        fonts.push(FontInfo::new(font_name.to_string(), false));
                     }
                 }
             }
