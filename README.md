@@ -9,9 +9,18 @@ GCompare is a modern, efficient file comparison tool written in Rust using the G
 *   **Synchronized Scrolling**: Scroll both panels simultaneously to keep context aligned.
 *   **Diff Highlighting**: Clear visual indicators for added (green) and removed (red) lines.
 *   **File History**: Remembers previously opened files for quick access via a combo box.
+*   **Merge Files**: Advanced merge capabilities with multiple strategies (Accept Ours, Accept Theirs, Union, Mark Conflicts) and interactive conflict resolution.
 *   **Custom UI Components**: Built with specialized GTK4 widgets including `GTextView` with line numbers and `GButton` with theming support.
 
 ![figure_01.png](docs/images/figure_01.png)
+
+![figure_02.png](docs/images/figure_02.png)
+
+![figure_03.png](docs/images/figure_03.png)
+
+![figure_04.png](docs/images/figure_04.png)
+
+![figure_05.png](docs/images/figure_05.png)
 
 ## Prerequisites
 
@@ -53,8 +62,8 @@ sudo pacman -S gtk4 base-devel
 The project is organized into modular components:
 
 *   `src/libs/widgets`: Custom reusable UI widgets (`GButton`, `GDiffMap`, `GTextView`, `GStatusBar`).
-*   `src/libs/ui`: High-level application panels (`ControlPanelWidget`, `ComparisonPanelsWidget`).
-*   `src/libs/services`: Business logic (`FileService`, `DiffService`, `ConfigService`).
+*   `src/libs/ui`: High-level application panels (`ControlPanelWidget`, `ComparisonPanelsWidget`, `MergeViewWidget`).
+*   `src/libs/services`: Business logic (`FileService`, `DiffService`, `MergeService`, `ConfigService`).
 *   `src/libs/state`: Application state management.
 
 ## Third-Party Libraries
