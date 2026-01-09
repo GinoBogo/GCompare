@@ -97,9 +97,17 @@ impl GMergeView {
         let btn_resolve_b = GButton::new("Accept Current B");
         btn_resolve_b.set_tooltip_text(Some("Accept changes from File B for the current conflict"));
         btn_resolve_b.set_theme(ButtonTheme::LightBlue);
+        let btn_prev = GButton::new(" Prev ▲");
+        btn_prev.set_tooltip_text(Some("Navigate to previous conflict"));
+        btn_prev.set_theme(ButtonTheme::Highlight);
+        let btn_next = GButton::new(" Next ▼");
+        btn_next.set_tooltip_text(Some("Navigate to next conflict"));
+        btn_next.set_theme(ButtonTheme::Highlight);
 
         bottom_bar.append(&btn_resolve_a);
         bottom_bar.append(&btn_resolve_b);
+        bottom_bar.append(&btn_prev);
+        bottom_bar.append(&btn_next);
         container.append(&bottom_bar);
 
         // Setup tags
@@ -334,6 +342,65 @@ impl GMergeView {
 
         let resolve_b = resolve_current;
         btn_resolve_b.connect_clicked(move |_| resolve_b(false));
+
+        // Navigation functions
+        let navigate_to_conflict = {
+            let text_view = text_view.clone();
+            let segments_store = segments_store.clone();
+            move |direction: i32| {
+                let buffer = text_view.content_view().buffer();
+                let insert_mark = buffer.mark("insert").expect("Insert mark not found");
+                let cursor_iter = buffer.iter_at_mark(&insert_mark);
+                let cursor_offset = cursor_iter.offset() as usize;
+
+                let segments = segments_store.borrow();
+                let conflict_segments: Vec<_> = segments
+                    .iter()
+                    .enumerate()
+                    .filter(|(_, s)| s.segment_type == SegmentType::Conflict)
+                    .collect();
+
+                if conflict_segments.is_empty() {
+                    return;
+                }
+
+                let current_pos = conflict_segments
+                    .iter()
+                    .position(|(_, s)| cursor_offset >= s.start && cursor_offset <= s.end)
+                    .unwrap_or(0);
+
+                let target_index = if direction > 0 {
+                    if current_pos + 1 < conflict_segments.len() {
+                        current_pos + 1
+                    } else {
+                        0 // Wrap to first
+                    }
+                } else {
+                    if current_pos == 0 {
+                        conflict_segments.len() - 1 // Wrap to last
+                    } else {
+                        current_pos - 1
+                    }
+                };
+
+                if let Some((_, target_segment)) = conflict_segments.get(target_index) {
+                    let target_iter = buffer.iter_at_offset(target_segment.start as i32);
+                    buffer.place_cursor(&target_iter);
+
+                    // Scroll the text view to show the conflict
+                    let text_view_widget = text_view.content_view();
+                    let mark = buffer.create_mark(None, &target_iter, true);
+                    text_view_widget.scroll_to_mark(&mark, 0.25, false, 0.0, 0.0);
+                    buffer.delete_mark(&mark);
+                }
+            }
+        };
+
+        let navigate_prev = navigate_to_conflict.clone();
+        btn_prev.connect_clicked(move |_| navigate_prev(-1));
+
+        let navigate_next = navigate_to_conflict;
+        btn_next.connect_clicked(move |_| navigate_next(1));
 
         // Save button
         let window_clone = window.clone();
