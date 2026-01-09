@@ -94,22 +94,22 @@ impl ComparisonPanelsWidget {
 
     /// Get panel A open button.
     pub fn panel_a_open_button(&self) -> &GButton {
-        &self.panel_a.open_button
+        &self.panel_a.btn_open
     }
 
     /// Get panel B open button.
     pub fn panel_b_open_button(&self) -> &GButton {
-        &self.panel_b.open_button
+        &self.panel_b.btn_open
     }
 
     /// Get panel A save button.
     pub fn panel_a_save_button(&self) -> &GButton {
-        &self.panel_a.save_button
+        &self.panel_a.btn_save
     }
 
     /// Get panel B save button.
     pub fn panel_b_save_button(&self) -> &GButton {
-        &self.panel_b.save_button
+        &self.panel_b.btn_save
     }
 
     /// Get diff map reference.
@@ -123,8 +123,8 @@ struct FilePanelWidget {
     container: Frame,
     text_view: GTextView,
     path_combo: ComboBoxText,
-    open_button: GButton,
-    save_button: GButton,
+    btn_open: GButton,
+    btn_save: GButton,
 }
 
 impl FilePanelWidget {
@@ -147,7 +147,7 @@ impl FilePanelWidget {
 
         // Create components
         let text_view = GTextView::new();
-        let (path_control_bar, open_button, save_button, path_combo) =
+        let (path_control_bar, btn_open, btn_save, path_combo) =
             Self::build_path_control_bar(history, button_theme);
 
         // Assemble panel
@@ -177,8 +177,8 @@ impl FilePanelWidget {
             container,
             text_view,
             path_combo,
-            open_button,
-            save_button,
+            btn_open,
+            btn_save,
         }
     }
 
@@ -206,19 +206,19 @@ impl FilePanelWidget {
         path_control_bar.append(&path_combo);
 
         // Open button
-        let open_button = GButton::new("Open");
-        open_button.set_width_request(60);
-        open_button.set_height_request(30);
-        open_button.set_theme(button_theme);
-        path_control_bar.append(&open_button);
+        let btn_open = GButton::new("Open");
+        btn_open.set_width_request(60);
+        btn_open.set_height_request(30);
+        btn_open.set_theme(button_theme);
+        path_control_bar.append(&btn_open);
 
         // Save button
-        let save_button = GButton::new("Save");
-        save_button.set_width_request(60);
-        save_button.set_height_request(30);
-        save_button.set_theme(button_theme);
-        path_control_bar.append(&save_button);
+        let btn_save = GButton::new("Save");
+        btn_save.set_width_request(60);
+        btn_save.set_height_request(30);
+        btn_save.set_theme(button_theme);
+        path_control_bar.append(&btn_save);
 
-        (path_control_bar, open_button, save_button, path_combo)
+        (path_control_bar, btn_open, btn_save, path_combo)
     }
 }

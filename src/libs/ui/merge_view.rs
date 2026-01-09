@@ -440,6 +440,7 @@ impl GMergeView {
         Self { window }
     }
 
+    /// Display the merge view window to the user.
     pub fn show(&self) {
         self.window.present();
     }

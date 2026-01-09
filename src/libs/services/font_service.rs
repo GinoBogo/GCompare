@@ -14,6 +14,12 @@ pub struct FontInfo {
 }
 
 impl FontInfo {
+    /// Create a new font information structure.
+    ///
+    /// # Arguments
+    ///
+    /// * `name` - The font family name
+    /// * `is_alias` - Whether this font is an alias for another font
     pub fn new(name: String, is_alias: bool) -> Self {
         Self { name, is_alias }
     }
