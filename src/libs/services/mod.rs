@@ -10,4 +10,5 @@ pub mod diff_service;
 pub mod file_service;
 pub mod font_service;
 pub mod incremental_diff_service;
+pub mod merge_service;
 pub mod text_highlighter;

@@ -25,9 +25,12 @@ use crate::libs::widgets::gtextview::GTextView;
 
 /// Setup the compare button interaction.
 pub fn setup_compare_interaction(
+    window: &ApplicationWindow,
     button: &GButton,
     panel_a: &GTextView,
     panel_b: &GTextView,
+    panel_a_combo: &gtk::ComboBoxText,
+    panel_b_combo: &gtk::ComboBoxText,
     diff_map: &GDiffMap,
     status_bar: &GStatusBar,
     state: Rc<ApplicationState>,
@@ -36,13 +39,42 @@ pub fn setup_compare_interaction(
     text_highlighter: TextHighlighter,
     is_loading: Rc<Cell<bool>>,
 ) {
+    let window = window.clone();
     let panel_a_text_view = panel_a.clone();
     let panel_b_text_view = panel_b.clone();
+    let panel_a_combo = panel_a_combo.clone();
+    let panel_b_combo = panel_b_combo.clone();
     let diff_map = diff_map.clone();
     let status_bar_compare = status_bar.clone();
     let state_for_colors = state;
 
     button.connect_clicked(move |_| {
+        // Check if files are specified
+        let get_path = |combo: &gtk::ComboBoxText| {
+            combo
+                .child()
+                .and_then(|c| c.downcast::<gtk::Entry>().ok())
+                .map(|e| e.text().to_string())
+                .unwrap_or_default()
+        };
+
+        let path_a = get_path(&panel_a_combo);
+        let path_b = get_path(&panel_b_combo);
+
+        if path_a.trim().is_empty() && path_b.trim().is_empty() {
+            let dialog = gtk::MessageDialog::builder()
+                .transient_for(&window)
+                .modal(true)
+                .message_type(gtk::MessageType::Warning)
+                .buttons(gtk::ButtonsType::Ok)
+                .text("No Files Specified")
+                .secondary_text("Please specify at least one file to compare.")
+                .build();
+            dialog.connect_response(|dlg, _| dlg.close());
+            dialog.show();
+            return;
+        }
+
         let buffer_a = panel_a_text_view.content_view().buffer();
         let buffer_b = panel_b_text_view.content_view().buffer();
 

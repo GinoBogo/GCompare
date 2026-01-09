@@ -354,6 +354,32 @@ impl AppController {
         let window_reload = window.clone();
 
         control_panel.reload_button.connect_clicked(move |_| {
+            // Check if files are specified
+            let get_path = |combo: &gtk::ComboBoxText| {
+                combo
+                    .child()
+                    .and_then(|c| c.downcast::<gtk::Entry>().ok())
+                    .map(|e| e.text().to_string())
+                    .unwrap_or_default()
+            };
+
+            let path_a = get_path(&panel_a_path_combo_reload);
+            let path_b = get_path(&panel_b_path_combo_reload);
+
+            if path_a.trim().is_empty() && path_b.trim().is_empty() {
+                let dialog = MessageDialog::builder()
+                    .transient_for(&window_reload)
+                    .modal(true)
+                    .message_type(gtk::MessageType::Warning)
+                    .buttons(gtk::ButtonsType::Ok)
+                    .text("No Files Specified")
+                    .secondary_text("Please specify at least one file to reload.")
+                    .build();
+                dialog.connect_response(|dlg, _| dlg.close());
+                dialog.show();
+                return;
+            }
+
             let mod_a = is_modified(&panel_a_path_combo_reload, "File A");
             let mod_b = is_modified(&panel_b_path_combo_reload, "File B");
 
@@ -439,6 +465,69 @@ impl AppController {
             };
 
             prompt_save_reload(mod_a || mod_b, do_reload, do_save);
+        });
+
+        // Setup Merge Button Handler
+        let panel_a_path_combo_merge = comparison_panels.panel_a_path_combo().clone();
+        let panel_b_path_combo_merge = comparison_panels.panel_b_path_combo().clone();
+        let panel_a_text_view_merge = comparison_panels.panel_a_text_view().clone();
+        let panel_b_text_view_merge = comparison_panels.panel_b_text_view().clone();
+        let window_merge = window.clone();
+        let state_merge = self.state.clone();
+
+        control_panel.merge_button.connect_clicked(move |_| {
+            // Helper to get path string from combo box entry
+            let get_path = |combo: &gtk::ComboBoxText| {
+                combo
+                    .child()
+                    .and_then(|c| c.downcast::<gtk::Entry>().ok())
+                    .map(|e| e.text().to_string())
+                    .unwrap_or_default()
+            };
+
+            let path_a = get_path(&panel_a_path_combo_merge);
+            let path_b = get_path(&panel_b_path_combo_merge);
+
+            let file_a_exists = !path_a.is_empty() && std::path::Path::new(&path_a).exists();
+            let file_b_exists = !path_b.is_empty() && std::path::Path::new(&path_b).exists();
+
+            if !file_a_exists || !file_b_exists {
+                let message = if !file_a_exists && !file_b_exists {
+                    "Both File A and File B do not exist or have invalid paths."
+                } else if !file_a_exists {
+                    "File A does not exist or has an invalid path."
+                } else {
+                    "File B does not exist or has an invalid path."
+                };
+
+                let dialog = MessageDialog::builder()
+                    .transient_for(&window_merge)
+                    .modal(true)
+                    .message_type(gtk::MessageType::Error)
+                    .buttons(gtk::ButtonsType::Ok)
+                    .text("Cannot Merge")
+                    .secondary_text(message)
+                    .build();
+
+                dialog.connect_response(|dlg, _| dlg.close());
+                dialog.show();
+            } else {
+                let buffer_a = panel_a_text_view_merge.content_view().buffer();
+                let (start_a, end_a) = buffer_a.bounds();
+                let text_a = buffer_a.text(&start_a, &end_a, true);
+
+                let buffer_b = panel_b_text_view_merge.content_view().buffer();
+                let (start_b, end_b) = buffer_b.bounds();
+                let text_b = buffer_b.text(&start_b, &end_b, true);
+
+                let merge_view = crate::libs::ui::merge_view::GMergeView::new(
+                    &window_merge,
+                    text_a.as_str(),
+                    text_b.as_str(),
+                    &state_merge.config(),
+                );
+                merge_view.show();
+            }
         });
 
         // Setup Open Buttons
@@ -911,13 +1000,18 @@ impl AppController {
         // Setup Compare Button Handler
         let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
+        let panel_a_combo = comparison_panels.panel_a_path_combo().clone();
+        let panel_b_combo = comparison_panels.panel_b_path_combo().clone();
         let diff_map = comparison_panels.diff_map().clone();
         let status_bar_compare = status_bar.clone();
 
         app_handlers::setup_compare_interaction(
+            window,
             &control_panel.compare_button,
             &panel_a_text_view,
             &panel_b_text_view,
+            &panel_a_combo,
+            &panel_b_combo,
             &diff_map,
             &status_bar_compare,
             self.state.clone(),

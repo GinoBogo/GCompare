@@ -11,8 +11,9 @@ use gtk::prelude::*;
 /// Control panel widget containing action buttons.
 pub struct ControlPanelWidget {
     container: Box,
-    pub compare_button: GButton,
     pub reload_button: GButton,
+    pub compare_button: GButton,
+    pub merge_button: GButton,
     pub previous_button: GButton,
     pub next_button: GButton,
     pub auto_compare_button: GButton,
@@ -29,13 +30,17 @@ impl ControlPanelWidget {
             .build();
 
         // Create buttons
+        let reload_button = GButton::new("Reload");
+        reload_button.set_theme(ButtonTheme::Primary);
+        container.append(&reload_button);
+
         let compare_button = GButton::new("Compare");
         compare_button.set_theme(ButtonTheme::Primary);
         container.append(&compare_button);
 
-        let reload_button = GButton::new("Reload");
-        reload_button.set_theme(ButtonTheme::Primary);
-        container.append(&reload_button);
+        let merge_button = GButton::new("Merge");
+        merge_button.set_theme(ButtonTheme::Primary);
+        container.append(&merge_button);
 
         let previous_button = GButton::new(" Prev ▲");
         previous_button.set_theme(ButtonTheme::Highlight);
@@ -55,8 +60,9 @@ impl ControlPanelWidget {
 
         Self {
             container,
-            compare_button,
             reload_button,
+            compare_button,
+            merge_button,
             previous_button,
             next_button,
             auto_compare_button,

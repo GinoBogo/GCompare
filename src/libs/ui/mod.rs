@@ -6,3 +6,4 @@
 
 pub mod comparison_panels;
 pub mod control_panel;
+pub mod merge_view;
