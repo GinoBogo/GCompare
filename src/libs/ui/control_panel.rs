@@ -11,13 +11,13 @@ use gtk::prelude::*;
 /// Control panel widget containing action buttons.
 pub struct ControlPanelWidget {
     container: Box,
-    pub btn_reload: GButton,
-    pub btn_compare: GButton,
-    pub btn_merge: GButton,
-    pub btn_previous: GButton,
-    pub btn_next: GButton,
-    pub btn_auto_compare: GButton,
-    pub btn_options: GButton,
+    pub reload_button: GButton,
+    pub compare_button: GButton,
+    pub merge_button: GButton,
+    pub previous_button: GButton,
+    pub next_button: GButton,
+    pub auto_compare_button: GButton,
+    pub options_button: GButton,
 }
 
 impl ControlPanelWidget {
@@ -30,43 +30,50 @@ impl ControlPanelWidget {
             .build();
 
         // Create buttons
-        let btn_reload = GButton::new("Reload");
-        btn_reload.set_theme(ButtonTheme::Primary);
-        container.append(&btn_reload);
+        let reload_button = GButton::new("Reload");
+        reload_button.set_tooltip_text(Some("Reload files from disk"));
+        reload_button.set_theme(ButtonTheme::Primary);
+        container.append(&reload_button);
 
-        let btn_compare = GButton::new("Compare");
-        btn_compare.set_theme(ButtonTheme::Primary);
-        container.append(&btn_compare);
+        let compare_button = GButton::new("Compare");
+        compare_button.set_tooltip_text(Some("Compare the two files and show differences"));
+        compare_button.set_theme(ButtonTheme::Primary);
+        container.append(&compare_button);
 
-        let btn_merge = GButton::new("Merge");
-        btn_merge.set_theme(ButtonTheme::Primary);
-        container.append(&btn_merge);
+        let merge_button = GButton::new("Merge");
+        merge_button.set_tooltip_text(Some("Open merge view to combine files"));
+        merge_button.set_theme(ButtonTheme::Primary);
+        container.append(&merge_button);
 
-        let btn_previous = GButton::new(" Prev ▲");
-        btn_previous.set_theme(ButtonTheme::Highlight);
-        container.append(&btn_previous);
+        let previous_button = GButton::new(" Prev ▲");
+        previous_button.set_tooltip_text(Some("Navigate to previous difference"));
+        previous_button.set_theme(ButtonTheme::Highlight);
+        container.append(&previous_button);
 
-        let btn_next = GButton::new(" Next ▼");
-        btn_next.set_theme(ButtonTheme::Highlight);
-        container.append(&btn_next);
+        let next_button = GButton::new(" Next ▼");
+        next_button.set_tooltip_text(Some("Navigate to next difference"));
+        next_button.set_theme(ButtonTheme::Highlight);
+        container.append(&next_button);
 
         // Add Auto-Compare toggle button
-        let btn_auto_compare = GButton::new("Auto: ON");
-        btn_auto_compare.set_theme(ButtonTheme::Primary);
-        container.append(&btn_auto_compare);
+        let auto_compare_button = GButton::new("Auto: ON");
+        auto_compare_button.set_tooltip_text(Some("Toggle automatic comparison on file changes"));
+        auto_compare_button.set_theme(ButtonTheme::Primary);
+        container.append(&auto_compare_button);
 
-        let btn_options = GButton::new("Options");
-        container.append(&btn_options);
+        let options_button = GButton::new("Options");
+        options_button.set_tooltip_text(Some("Open application settings and preferences"));
+        container.append(&options_button);
 
         Self {
             container,
-            btn_reload,
-            btn_compare,
-            btn_merge,
-            btn_previous,
-            btn_next,
-            btn_auto_compare,
-            btn_options,
+            reload_button,
+            compare_button,
+            merge_button,
+            previous_button,
+            next_button,
+            auto_compare_button,
+            options_button,
         }
     }
 

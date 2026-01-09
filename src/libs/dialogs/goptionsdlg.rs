@@ -21,8 +21,8 @@ pub struct GOptionsDlg {
     auto_compare_check: CheckButton,
     sync_scroll_check: CheckButton,
     ignore_whitespace_check: CheckButton,
-    btn_apply: GButton,
-    btn_cancel: GButton,
+    apply_button: GButton,
+    cancel_button: GButton,
     // Color pickers
     text_diff_remove_bg_picker: GColorPicker,
     text_diff_remove_fg_picker: GColorPicker,
@@ -343,13 +343,15 @@ impl GOptionsDlg {
         button_grid.set_column_spacing(10);
         button_grid.set_halign(gtk::Align::Center);
 
-        let btn_apply = GButton::new("Apply");
-        btn_apply.set_theme(ButtonTheme::Primary);
-        let btn_cancel = GButton::new("Cancel");
-        btn_cancel.set_theme(ButtonTheme::Secondary);
+        let apply_button = GButton::new("Apply");
+        apply_button.set_tooltip_text(Some("Apply settings and close dialog"));
+        apply_button.set_theme(ButtonTheme::Primary);
+        let cancel_button = GButton::new("Cancel");
+        cancel_button.set_tooltip_text(Some("Cancel changes and close dialog"));
+        cancel_button.set_theme(ButtonTheme::Secondary);
 
-        button_grid.attach(&btn_apply, 0, 0, 1, 1);
-        button_grid.attach(&btn_cancel, 1, 0, 1, 1);
+        button_grid.attach(&apply_button, 0, 0, 1, 1);
+        button_grid.attach(&cancel_button, 1, 0, 1, 1);
 
         main_grid.attach(&button_grid, 0, 1, 1, 1);
 
@@ -362,8 +364,8 @@ impl GOptionsDlg {
             auto_compare_check,
             sync_scroll_check,
             ignore_whitespace_check,
-            btn_apply,
-            btn_cancel,
+            apply_button,
+            cancel_button,
             text_diff_remove_bg_picker,
             text_diff_remove_fg_picker,
             text_diff_add_bg_picker,
@@ -418,7 +420,7 @@ impl GOptionsDlg {
         // Apply button handler
         let callback_apply = callback.clone();
         let font_service = FontService::new();
-        self.btn_apply.connect_clicked(move |_| {
+        self.apply_button.connect_clicked(move |_| {
             let font_family = font_family_clone
                 .active_font()
                 .unwrap_or_else(|| "Monospace".to_string());
@@ -465,7 +467,7 @@ impl GOptionsDlg {
         // Cancel button handler
         let dialog_clone_cancel = self.dialog.clone();
         let callback_cancel = callback.clone();
-        self.btn_cancel.connect_clicked(move |_| {
+        self.cancel_button.connect_clicked(move |_| {
             callback_cancel(None);
             dialog_clone_cancel.destroy();
         });

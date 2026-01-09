@@ -49,24 +49,29 @@ impl GMergeView {
         let size_group = SizeGroup::new(SizeGroupMode::Horizontal);
 
         let btn_ours = GButton::new("Accept File A");
+        btn_ours.set_tooltip_text(Some("Accept all changes from File A for the entire merge"));
         btn_ours.set_theme(ButtonTheme::Primary);
         size_group.add_widget(&btn_ours);
 
         let btn_theirs = GButton::new("Accept File B");
+        btn_theirs.set_tooltip_text(Some("Accept all changes from File B for the entire merge"));
         btn_theirs.set_theme(ButtonTheme::Primary);
         size_group.add_widget(&btn_theirs);
 
         let btn_union = GButton::new("Union");
+        btn_union.set_tooltip_text(Some("Include both versions in the merge result"));
         btn_union.set_theme(ButtonTheme::Primary);
         size_group.add_widget(&btn_union);
 
         let btn_conflicts = GButton::new("Mark Conflicts");
+        btn_conflicts.set_tooltip_text(Some("Mark conflicts with standard conflict markers"));
         btn_conflicts.set_theme(ButtonTheme::Primary);
         size_group.add_widget(&btn_conflicts);
 
-        let btn_save = GButton::new("Save As...");
-        btn_save.set_theme(ButtonTheme::Highlight);
-        size_group.add_widget(&btn_save);
+        let save_button = GButton::new("Save As...");
+        save_button.set_tooltip_text(Some("Save the merged result to a file"));
+        save_button.set_theme(ButtonTheme::Highlight);
+        size_group.add_widget(&save_button);
 
         toolbar.append(&btn_ours);
         toolbar.append(&btn_theirs);
@@ -77,7 +82,7 @@ impl GMergeView {
         spacer.set_hexpand(true);
         toolbar.append(&spacer);
 
-        toolbar.append(&btn_save);
+        toolbar.append(&save_button);
 
         container.append(&toolbar);
 
@@ -91,23 +96,23 @@ impl GMergeView {
         // Bottom Bar
         let bottom_bar = Box::new(Orientation::Horizontal, 6);
         bottom_bar.set_halign(gtk::Align::Center);
-        let btn_resolve_a = GButton::new("Accept Current A");
-        btn_resolve_a.set_tooltip_text(Some("Accept changes from File A for the current conflict"));
-        btn_resolve_a.set_theme(ButtonTheme::LightGreen);
-        let btn_resolve_b = GButton::new("Accept Current B");
-        btn_resolve_b.set_tooltip_text(Some("Accept changes from File B for the current conflict"));
-        btn_resolve_b.set_theme(ButtonTheme::LightBlue);
-        let btn_prev = GButton::new(" Prev ▲");
-        btn_prev.set_tooltip_text(Some("Navigate to previous conflict"));
-        btn_prev.set_theme(ButtonTheme::Highlight);
-        let btn_next = GButton::new(" Next ▼");
-        btn_next.set_tooltip_text(Some("Navigate to next conflict"));
-        btn_next.set_theme(ButtonTheme::Highlight);
+        let resolve_a_button = GButton::new("Accept Current A");
+        resolve_a_button.set_tooltip_text(Some("Accept changes from File A for the current conflict"));
+        resolve_a_button.set_theme(ButtonTheme::LightGreen);
+        let resolve_b_button = GButton::new("Accept Current B");
+        resolve_b_button.set_tooltip_text(Some("Accept changes from File B for the current conflict"));
+        resolve_b_button.set_theme(ButtonTheme::LightBlue);
+        let previous_button = GButton::new(" Prev ▲");
+        previous_button.set_tooltip_text(Some("Navigate to previous conflict"));
+        previous_button.set_theme(ButtonTheme::Highlight);
+        let next_button = GButton::new(" Next ▼");
+        next_button.set_tooltip_text(Some("Navigate to next conflict"));
+        next_button.set_theme(ButtonTheme::Highlight);
 
-        bottom_bar.append(&btn_resolve_a);
-        bottom_bar.append(&btn_resolve_b);
-        bottom_bar.append(&btn_prev);
-        bottom_bar.append(&btn_next);
+        bottom_bar.append(&resolve_a_button);
+        bottom_bar.append(&resolve_b_button);
+        bottom_bar.append(&previous_button);
+        bottom_bar.append(&next_button);
         container.append(&bottom_bar);
 
         // Setup tags
@@ -148,8 +153,8 @@ impl GMergeView {
         let update_resolve_buttons_sensitivity = {
             let text_view = text_view.clone();
             let segments_store = segments_store.clone();
-            let btn_resolve_a = btn_resolve_a.clone();
-            let btn_resolve_b = btn_resolve_b.clone();
+            let resolve_a_button = resolve_a_button.clone();
+            let resolve_b_button = resolve_b_button.clone();
 
             Rc::new(move || {
                 let buffer = text_view.content_view().buffer();
@@ -164,18 +169,16 @@ impl GMergeView {
                         offset >= s.start && offset < s.end && s.segment_type != SegmentType::Normal
                     });
 
-                    btn_resolve_a.set_sensitive(is_in_conflict);
-                    btn_resolve_b.set_sensitive(is_in_conflict);
-
-                    let opacity = if is_in_conflict { 1.0 } else { 0.5 };
-                    btn_resolve_a.set_opacity(opacity);
-                    btn_resolve_b.set_opacity(opacity);
+                    resolve_a_button.set_sensitive(is_in_conflict);
+                    resolve_a_button.set_opacity(if is_in_conflict { 1.0 } else { 0.5 });
+                    resolve_b_button.set_sensitive(is_in_conflict);
+                    resolve_b_button.set_opacity(if is_in_conflict { 1.0 } else { 0.5 });
                 } else {
                     // Failsafe if the insert mark doesn't exist.
-                    btn_resolve_a.set_sensitive(false);
-                    btn_resolve_b.set_sensitive(false);
-                    btn_resolve_a.set_opacity(0.5);
-                    btn_resolve_b.set_opacity(0.5);
+                    resolve_a_button.set_sensitive(false);
+                    resolve_b_button.set_sensitive(false);
+                    resolve_a_button.set_opacity(0.5);
+                    resolve_b_button.set_opacity(0.5);
                 }
             })
         };
@@ -338,10 +341,10 @@ impl GMergeView {
         });
 
         let resolve_a = resolve_current.clone();
-        btn_resolve_a.connect_clicked(move |_| resolve_a(true));
+        resolve_a_button.connect_clicked(move |_| resolve_a(true));
 
         let resolve_b = resolve_current;
-        btn_resolve_b.connect_clicked(move |_| resolve_b(false));
+        resolve_b_button.connect_clicked(move |_| resolve_b(false));
 
         // Navigation functions
         let navigate_to_conflict = {
@@ -396,16 +399,16 @@ impl GMergeView {
             }
         };
 
-        let navigate_prev = navigate_to_conflict.clone();
-        btn_prev.connect_clicked(move |_| navigate_prev(-1));
+        let navigate_previous = navigate_to_conflict.clone();
+        previous_button.connect_clicked(move |_| navigate_previous(-1));
 
         let navigate_next = navigate_to_conflict;
-        btn_next.connect_clicked(move |_| navigate_next(1));
+        next_button.connect_clicked(move |_| navigate_next(1));
 
         // Save button
         let window_clone = window.clone();
         let text_view_clone = text_view.clone();
-        btn_save.connect_clicked(move |_| {
+        save_button.connect_clicked(move |_| {
             let file_chooser = FileChooserNative::builder()
                 .title("Save Merged File")
                 .transient_for(&window_clone)

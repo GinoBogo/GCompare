@@ -107,7 +107,7 @@ impl AppController {
         main_grid.attach(status_bar.container(), 0, 2, 1, 1);
 
         // Hide the auto-compare button as it's now in options
-        control_panel.btn_auto_compare.set_visible(false);
+        control_panel.auto_compare_button.set_visible(false);
 
         // Setup signal handlers
         self.setup_signal_handlers(
@@ -353,7 +353,7 @@ impl AppController {
         let file_service_reload = file_service.clone();
         let window_reload = window.clone();
 
-        control_panel.btn_reload.connect_clicked(move |_| {
+        control_panel.reload_button.connect_clicked(move |_| {
             // Check if files are specified
             let get_path = |combo: &gtk::ComboBoxText| {
                 combo
@@ -475,7 +475,7 @@ impl AppController {
         let window_merge = window.clone();
         let state_merge = self.state.clone();
 
-        control_panel.btn_merge.connect_clicked(move |_| {
+        control_panel.merge_button.connect_clicked(move |_| {
             // Helper to get path string from combo box entry
             let get_path = |combo: &gtk::ComboBoxText| {
                 combo
@@ -1007,7 +1007,7 @@ impl AppController {
 
         app_handlers::setup_compare_interaction(
             window,
-            &control_panel.btn_compare,
+            &control_panel.compare_button,
             &panel_a_text_view,
             &panel_b_text_view,
             &panel_a_combo,
@@ -1023,15 +1023,15 @@ impl AppController {
 
         // Setup navigation buttons
         app_handlers::setup_navigation_interaction(
-            &control_panel.btn_previous,
-            &control_panel.btn_next,
+            &control_panel.previous_button,
+            &control_panel.next_button,
             &panel_a_text_view,
             &diff_map,
         );
 
         // Options button click handler
         app_handlers::setup_options_interaction(
-            &control_panel.btn_options,
+            &control_panel.options_button,
             window,
             self.state.clone(),
             self.config_service.clone(),
