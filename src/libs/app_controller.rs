@@ -922,6 +922,7 @@ impl AppController {
         let state_for_colors = self.state.clone();
         let incremental_diff_service = self.incremental_diff_service.clone();
         let text_highlighter = self.text_highlighter.clone();
+        let is_loading_compare = is_loading.clone();
 
         control_panel.compare_button.connect_clicked(move |_| {
             let buffer_a = panel_a_text_view.content_view().buffer();
@@ -1093,8 +1094,10 @@ impl AppController {
             }
 
             // Batch update buffers with single operations
+            is_loading_compare.set(true);
             buffer_a.set_text(&content_a);
             buffer_b.set_text(&content_b);
+            is_loading_compare.set(false);
 
             // Apply all tags in batch using character positions
             for (start_char, end_char, tag_name) in tag_ranges_a {
