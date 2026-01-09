@@ -7,11 +7,10 @@
 use gtk::prelude::*;
 use gtk::subclass::prelude::ObjectSubclassIsExt;
 use gtk::{Adjustment, Application, ApplicationWindow, MessageDialog, glib};
-use similar::ChangeTag;
 use std::cell::Cell;
 use std::rc::Rc;
 
-use crate::libs::dialogs::goptionsdlg::GOptionsDlg;
+use crate::libs::app_handlers;
 use crate::libs::services::color_parser::parse_color_with_fallback;
 use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::diff_service::DiffService;
@@ -912,370 +911,42 @@ impl AppController {
         // Setup Compare Button Handler
         let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
-        let diff_service = self.diff_service.clone();
         let diff_map = comparison_panels.diff_map().clone();
         let status_bar_compare = status_bar.clone();
 
-        // Create additional clones for navigation buttons
-        let diff_map_nav_prev = diff_map.clone();
-        let diff_map_nav_next = diff_map.clone();
-        let state_for_colors = self.state.clone();
-        let incremental_diff_service = self.incremental_diff_service.clone();
-        let text_highlighter = self.text_highlighter.clone();
-        let is_loading_compare = is_loading.clone();
-
-        control_panel.compare_button.connect_clicked(move |_| {
-            let buffer_a = panel_a_text_view.content_view().buffer();
-            let buffer_b = panel_b_text_view.content_view().buffer();
-
-            // If auto-comparison is enabled, just refresh the display
-            if state_for_colors.config().auto_compare {
-                // Get current text content
-                let (start_a, end_a) = buffer_a.bounds();
-                let text_a = buffer_a.text(&start_a, &end_a, true);
-
-                let (start_b, end_b) = buffer_b.bounds();
-                let text_b = buffer_b.text(&start_b, &end_b, true);
-
-                // Compute line differences
-                let diff_result =
-                    incremental_diff_service.compute_line_diff(text_a.as_str(), text_b.as_str());
-
-                // Apply highlighting
-                let config = state_for_colors.config();
-                let (empty_lines_a, empty_lines_b) = if config.ignore_whitespace {
-                    (Vec::new(), Vec::new())
-                } else {
-                    (diff_result.empty_lines_a, diff_result.empty_lines_b)
-                };
-
-                text_highlighter.apply_line_highlighting(
-                    &buffer_a,
-                    &buffer_b,
-                    &diff_result.changed_lines_a,
-                    &diff_result.changed_lines_b,
-                    &empty_lines_a,
-                    &empty_lines_b,
-                    &config,
-                );
-
-                // Update diff map
-                diff_map.set_all_diff_lines(
-                    diff_result.changed_lines_a,
-                    diff_result.changed_lines_b,
-                    empty_lines_a,
-                    empty_lines_b,
-                );
-
-                // Update status bar
-                status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map);
-                return;
-            }
-
-            // Original compare logic (for when auto-comparison is disabled)
-            // Helper to get background color from config
-            let get_theme_bg_color = |class_name: &str| {
-                let config = &state_for_colors.config();
-                let color = match class_name {
-                    "text-diff-remove" => &config.text_diff_remove_bg,
-                    "text-diff-add" => &config.text_diff_add_bg,
-                    "text-diff-empty" => &config.text_diff_empty_bg,
-                    _ => "#ffffff", // White default
-                };
-
-                // Use centralized color parsing
-                parse_color_with_fallback(color, 255, 255, 255, 1.0)
-            };
-
-            // Helper to get foreground color from config
-            let get_theme_fg_color = |class_name: &str| {
-                let config = &state_for_colors.config();
-                let color = match class_name {
-                    "text-diff-remove" => &config.text_diff_remove_fg,
-                    "text-diff-add" => &config.text_diff_add_fg,
-                    "text-diff-empty" => &config.text_diff_empty_fg,
-                    _ => "#000000", // Black default
-                };
-
-                // Use centralized color parsing
-                parse_color_with_fallback(color, 0, 0, 0, 1.0)
-            };
-
-            // Create tags for highlighting if they don't exist
-            let create_tag = |buffer: &gtk::TextBuffer, name: &str, css_class: &str| {
-                if buffer.tag_table().lookup(name).is_none() {
-                    let tag = gtk::TextTag::new(Some(name));
-                    let bg_rgba = get_theme_bg_color(css_class);
-                    let fg_rgba = get_theme_fg_color(css_class);
-                    tag.set_background_rgba(Some(&bg_rgba));
-                    tag.set_foreground_rgba(Some(&fg_rgba));
-                    buffer.tag_table().add(&tag);
-                }
-            };
-
-            create_tag(&buffer_a, "diff_remove", "text-diff-remove");
-            create_tag(&buffer_b, "diff_add", "text-diff-add");
-            create_tag(&buffer_a, "diff_empty", "text-diff-empty");
-            create_tag(&buffer_b, "diff_empty", "text-diff-empty");
-
-            // Get content
-            let (start_a, end_a) = buffer_a.bounds();
-            let text_a = buffer_a.text(&start_a, &end_a, true);
-
-            let (start_b, end_b) = buffer_b.bounds();
-            let text_b = buffer_b.text(&start_b, &end_b, true);
-
-            // Compute Diff
-            let changes = diff_service.compute_diff(text_a.as_str(), text_b.as_str());
-            let ignore_whitespace = state_for_colors.config().ignore_whitespace;
-
-            // Pre-compute all content and tag information using character positions
-            let mut content_a = String::new();
-            let mut content_b = String::new();
-            let mut tag_ranges_a: Vec<(usize, usize, &str)> = Vec::new();
-            let mut tag_ranges_b: Vec<(usize, usize, &str)> = Vec::new();
-            let mut lines_a: Vec<usize> = Vec::new();
-            let mut lines_b: Vec<usize> = Vec::new();
-            let mut empty_lines_a: Vec<usize> = Vec::new();
-            let mut empty_lines_b: Vec<usize> = Vec::new();
-            let mut current_line_a = 0;
-            let mut current_line_b = 0;
-
-            // Build content and tag ranges in batch
-            for change in &changes {
-                match change.tag {
-                    ChangeTag::Equal => {
-                        content_a.push_str(&change.content);
-                        content_b.push_str(&change.content);
-                        current_line_a += 1;
-                        current_line_b += 1;
-                    }
-                    ChangeTag::Delete => {
-                        let start_pos = content_a.chars().count();
-                        content_a.push_str(&change.content);
-                        let end_pos = content_a.chars().count();
-
-                        // Check if content is empty or whitespace-only
-                        let is_empty_or_whitespace = change.content.trim().is_empty();
-
-                        if is_empty_or_whitespace {
-                            if !ignore_whitespace {
-                                empty_lines_a.push(current_line_a);
-                                tag_ranges_a.push((start_pos, end_pos, "diff_empty"));
-                            }
-                        } else {
-                            lines_a.push(current_line_a);
-                            tag_ranges_a.push((start_pos, end_pos, "diff_remove"));
-                        }
-
-                        current_line_a += 1;
-                    }
-                    ChangeTag::Insert => {
-                        let start_pos = content_b.chars().count();
-                        content_b.push_str(&change.content);
-                        let end_pos = content_b.chars().count();
-
-                        // Check if content is empty or whitespace-only
-                        let is_empty_or_whitespace = change.content.trim().is_empty();
-
-                        if is_empty_or_whitespace {
-                            if !ignore_whitespace {
-                                empty_lines_b.push(current_line_b);
-                                tag_ranges_b.push((start_pos, end_pos, "diff_empty"));
-                            }
-                        } else {
-                            lines_b.push(current_line_b);
-                            tag_ranges_b.push((start_pos, end_pos, "diff_add"));
-                        }
-
-                        current_line_b += 1;
-                    }
-                }
-            }
-
-            // Batch update buffers with single operations
-            is_loading_compare.set(true);
-            buffer_a.set_text(&content_a);
-            buffer_b.set_text(&content_b);
-            is_loading_compare.set(false);
-
-            // Apply all tags in batch using character positions
-            for (start_char, end_char, tag_name) in tag_ranges_a {
-                // Convert character positions to iterators
-                let start_iter = buffer_a.iter_at_offset(start_char as i32);
-                let end_iter = buffer_a.iter_at_offset(end_char as i32);
-                buffer_a.apply_tag_by_name(tag_name, &start_iter, &end_iter);
-            }
-
-            for (start_char, end_char, tag_name) in tag_ranges_b {
-                // Convert character positions to iterators
-                let start_iter = buffer_b.iter_at_offset(start_char as i32);
-                let end_iter = buffer_b.iter_at_offset(end_char as i32);
-                buffer_b.apply_tag_by_name(tag_name, &start_iter, &end_iter);
-            }
-
-            diff_map.set_all_diff_lines(lines_a, lines_b, empty_lines_a, empty_lines_b);
-
-            // Update status bar with diff information
-            status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map);
-        });
+        app_handlers::setup_compare_interaction(
+            &control_panel.compare_button,
+            &panel_a_text_view,
+            &panel_b_text_view,
+            &diff_map,
+            &status_bar_compare,
+            self.state.clone(),
+            self.diff_service.clone(),
+            self.incremental_diff_service.clone(),
+            self.text_highlighter.clone(),
+            is_loading.clone(),
+        );
 
         // Setup navigation buttons
-        let panel_a_text_view_nav = comparison_panels.panel_a_text_view().clone();
-        let diff_map_nav = diff_map_nav_prev;
-
-        control_panel.previous_button.connect_clicked(move |_| {
-            // Get current line from panel A
-            if let Some(adj) = panel_a_text_view_nav.content_view().vadjustment() {
-                let y = adj.value().max(0.0) as i32;
-                let (start_iter, _) = panel_a_text_view_nav.content_view().line_at_y(y);
-                let current_line = start_iter.line() as usize;
-
-                if let Some(target_line) = diff_map_nav.previous_difference(current_line) {
-                    // Calculate scroll position for target line
-                    let buffer = panel_a_text_view_nav.content_view().buffer();
-                    if let Some(line_iter) = buffer.iter_at_line(target_line as i32) {
-                        let line_y = panel_a_text_view_nav
-                            .content_view()
-                            .line_yrange(&line_iter)
-                            .0 as f64;
-                        adj.set_value(line_y);
-                    }
-                }
-            }
-        });
-
-        let panel_a_text_view_nav_next = comparison_panels.panel_a_text_view().clone();
-        let diff_map_nav_next = diff_map_nav_next;
-
-        control_panel.next_button.connect_clicked(move |_| {
-            // Get current line from panel A
-            if let Some(adj) = panel_a_text_view_nav_next.content_view().vadjustment() {
-                let y = adj.value().max(0.0) as i32;
-                let (start_iter, _) = panel_a_text_view_nav_next.content_view().line_at_y(y);
-                let current_line = start_iter.line() as usize;
-
-                if let Some(target_line) = diff_map_nav_next.next_difference(current_line) {
-                    // Calculate scroll position for target line
-                    let buffer = panel_a_text_view_nav_next.content_view().buffer();
-                    if let Some(line_iter) = buffer.iter_at_line(target_line as i32) {
-                        let line_y = panel_a_text_view_nav_next
-                            .content_view()
-                            .line_yrange(&line_iter)
-                            .0 as f64;
-                        adj.set_value(line_y);
-                    }
-                }
-            }
-        });
+        app_handlers::setup_navigation_interaction(
+            &control_panel.previous_button,
+            &control_panel.next_button,
+            &panel_a_text_view,
+            &diff_map,
+        );
 
         // Options button click handler
-        let window_clone = window.clone();
-        let state_clone = self.state.clone();
-        let config_service_clone = self.config_service.clone();
-        let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
-        let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
-        let css_provider_clone = self.css_provider.clone();
-        let diff_map = comparison_panels.diff_map().clone();
-        let sync_enabled = sync_enabled.clone();
-        control_panel.options_button.connect_clicked(move |_| {
-            // Reload config from file to get latest values
-            let current_config = config_service_clone.load_config();
-            let dialog = GOptionsDlg::new(
-                &window_clone,
-                &current_config.font_family,
-                current_config.font_size as f64,
-                &current_config,
-            );
-
-            let state_clone_apply = state_clone.clone();
-            let config_service_apply = config_service_clone.clone();
-            let panel_a_text_view_apply = panel_a_text_view.clone();
-            let panel_b_text_view_apply = panel_b_text_view.clone();
-            let css_provider_apply = css_provider_clone.clone();
-            let diff_map_apply = diff_map.clone();
-            let sync_enabled_apply = sync_enabled.clone();
-            dialog.show({
-                let panel_a_text_view = panel_a_text_view.clone();
-                let panel_b_text_view = panel_b_text_view.clone();
-                move |result| {
-                    if let Some((font_family, font_size, color_config)) = result {
-                        // Apply font changes to text views
-                        let css_provider = gtk::CssProvider::new();
-                        let css = format!(
-                            "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
-                            font_family, font_size
-                        );
-                        css_provider.load_from_data(&css);
-
-                        // Apply to both text views (content and gutter)
-                        panel_a_text_view_apply
-                            .content_view()
-                            .style_context()
-                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                        panel_a_text_view_apply
-                            .gutter_view()
-                            .style_context()
-                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-                        panel_b_text_view_apply
-                            .content_view()
-                            .style_context()
-                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                        panel_b_text_view_apply
-                            .gutter_view()
-                            .style_context()
-                            .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-                        // Update the in-memory state with new settings
-                        let mut updated_config = state_clone_apply.config().clone();
-                        updated_config.font_family = font_family.clone();
-                        updated_config.font_size = font_size as i32;
-                        updated_config.auto_compare = color_config.auto_compare;
-                        updated_config.sync_scroll = color_config.sync_scroll;
-                        updated_config.ignore_whitespace = color_config.ignore_whitespace;
-
-                        // Update color settings
-                        updated_config.text_diff_remove_bg = color_config.text_diff_remove_bg;
-                        updated_config.text_diff_remove_fg = color_config.text_diff_remove_fg;
-                        updated_config.text_diff_add_bg = color_config.text_diff_add_bg;
-                        updated_config.text_diff_add_fg = color_config.text_diff_add_fg;
-                        updated_config.text_diff_empty_bg = color_config.text_diff_empty_bg;
-                        updated_config.text_diff_empty_fg = color_config.text_diff_empty_fg;
-                        updated_config.gutter_numbers_bg = color_config.gutter_numbers_bg;
-                        updated_config.gutter_numbers_fg = color_config.gutter_numbers_fg;
-                        updated_config.minimap_bg = color_config.minimap_bg;
-                        updated_config.minimap_fg = color_config.minimap_fg;
-                        updated_config.minimap_diff_remove = color_config.minimap_diff_remove;
-                        updated_config.minimap_diff_add = color_config.minimap_diff_add;
-                        updated_config.minimap_diff_empty = color_config.minimap_diff_empty;
-                        updated_config.minimap_cursor_bg = color_config.minimap_cursor_bg;
-
-                        // Update the state in memory
-                        state_clone_apply.update_config(updated_config.clone());
-
-                        // Update runtime sync state
-                        sync_enabled_apply.set(updated_config.sync_scroll);
-
-                        // Update theme with new colors
-                        theme::update_provider_with_config(&css_provider_apply, &updated_config);
-
-                        // Redraw minimap to pick up new cursor color
-                        gtk::prelude::WidgetExt::queue_draw(&diff_map_apply);
-
-                        // Update text tag colors for real-time changes
-                        let panel_a_text_view_apply = panel_a_text_view.clone();
-                        let panel_b_text_view_apply = panel_b_text_view.clone();
-                        let buffer_a = panel_a_text_view_apply.content_view().buffer();
-                        let buffer_b = panel_b_text_view_apply.content_view().buffer();
-                        theme::update_text_tag_colors(&[&buffer_a, &buffer_b], &updated_config);
-
-                        // Save config to disk
-                        config_service_apply.save_config(&updated_config);
-                    }
-                }
-            });
-        });
+        app_handlers::setup_options_interaction(
+            &control_panel.options_button,
+            window,
+            self.state.clone(),
+            self.config_service.clone(),
+            &panel_a_text_view,
+            &panel_b_text_view,
+            self.css_provider.clone(),
+            &diff_map,
+            sync_enabled.clone(),
+        );
 
         // TODO: Connect Sync Scroll Toggle Button
     }

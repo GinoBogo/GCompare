@@ -5,6 +5,7 @@
 //! * Version: 1.0
 
 pub mod app_controller;
+pub mod app_handlers;
 pub mod dialogs;
 pub mod services;
 pub mod state;
