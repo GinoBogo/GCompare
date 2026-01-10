@@ -4,6 +4,7 @@
 //! * License: MIT
 //! * Version: 1.0
 
+use crate::libs::theme::{get_background_color_hex, get_color_hex};
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, ComboBoxText, Entry};
 use serde::{Deserialize, Serialize};
@@ -54,23 +55,23 @@ impl Default for AppConfig {
             auto_compare: true,
             sync_scroll: true,
             ignore_whitespace: false,
-            // Color settings - using hex values from CSS
-            text_diff_remove_bg: "#ffcccc".to_string(), // Light red
-            text_diff_remove_fg: "#990000".to_string(), // Dark red
-            text_diff_add_bg: "#ccffcc".to_string(),    // Light green
-            text_diff_add_fg: "#009900".to_string(),    // Dark green
-            text_diff_empty_bg: "#fffacd".to_string(),  // Light yellow
-            text_diff_empty_fg: "#ffcc00".to_string(),  // Dark yellow
-            merge_conflict_bg: "#00ccff".to_string(),   // Light blue
-            merge_conflict_fg: "#000000".to_string(),   // Black
-            gutter_numbers_bg: "#f0f0f0".to_string(),   // Light gray
-            gutter_numbers_fg: "#888888".to_string(),   // Medium gray
-            minimap_bg: "#ffffff".to_string(),          // White
-            minimap_fg: "#cccccc".to_string(),          // Light gray
-            minimap_diff_remove: "#990000".to_string(), // Dark red
-            minimap_diff_add: "#009900".to_string(),    // Dark green
-            minimap_diff_empty: "#ffcc00".to_string(),  // Dark yellow
-            minimap_cursor_bg: "#00000008".to_string(), // Black with 5% alpha (0x08 ≈ 5%)
+            // Color settings - using CSS-based theme functions
+            text_diff_remove_bg: get_background_color_hex("text-diff-remove"),
+            text_diff_remove_fg: get_color_hex("text-diff-remove"),
+            text_diff_add_bg: get_background_color_hex("text-diff-add"),
+            text_diff_add_fg: get_color_hex("text-diff-add"),
+            text_diff_empty_bg: get_background_color_hex("text-diff-empty"),
+            text_diff_empty_fg: get_color_hex("text-diff-empty"),
+            merge_conflict_bg: get_background_color_hex("merge-conflict"),
+            merge_conflict_fg: get_color_hex("merge-conflict"),
+            gutter_numbers_bg: get_background_color_hex("gutter-numbers"),
+            gutter_numbers_fg: get_color_hex("gutter-numbers"),
+            minimap_bg: get_background_color_hex("minimap"),
+            minimap_fg: get_color_hex("minimap"),
+            minimap_diff_remove: get_color_hex("minimap-diff-remove"),
+            minimap_diff_add: get_color_hex("minimap-diff-add"),
+            minimap_diff_empty: get_color_hex("minimap-diff-empty"),
+            minimap_cursor_bg: get_background_color_hex("minimap-cursor"),
         }
     }
 }

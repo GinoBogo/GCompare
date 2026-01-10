@@ -255,6 +255,28 @@ pub fn get_background_color(class_name: &str) -> gdk::RGBA {
     })
 }
 
+/// Get background color from a CSS class and return as hex string.
+pub fn get_background_color_hex(class_name: &str) -> String {
+    let rgba = get_background_color(class_name);
+    format!(
+        "#{:02x}{:02x}{:02x}",
+        (rgba.red() * 255.0) as u8,
+        (rgba.green() * 255.0) as u8,
+        (rgba.blue() * 255.0) as u8
+    )
+}
+
+/// Get foreground color from a CSS class and return as hex string.
+pub fn get_color_hex(class_name: &str) -> String {
+    let rgba = get_color(class_name);
+    format!(
+        "#{:02x}{:02x}{:02x}",
+        (rgba.red() * 255.0) as u8,
+        (rgba.green() * 255.0) as u8,
+        (rgba.blue() * 255.0) as u8
+    )
+}
+
 /// Parse any CSS property value as color using centralized parser.
 fn parse_css_property(class_name: &str, property: &str) -> Option<gdk::RGBA> {
     let css_content = get_css_content();
