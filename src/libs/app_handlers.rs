@@ -356,6 +356,8 @@ pub fn setup_options_interaction(
                     updated_config.text_diff_add_fg = color_config.text_diff_add_fg;
                     updated_config.text_diff_empty_bg = color_config.text_diff_empty_bg;
                     updated_config.text_diff_empty_fg = color_config.text_diff_empty_fg;
+                    updated_config.merge_conflict_bg = color_config.merge_conflict_bg;
+                    updated_config.merge_conflict_fg = color_config.merge_conflict_fg;
                     updated_config.gutter_numbers_bg = color_config.gutter_numbers_bg;
                     updated_config.gutter_numbers_fg = color_config.gutter_numbers_fg;
                     updated_config.minimap_bg = color_config.minimap_bg;

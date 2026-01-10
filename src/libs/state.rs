@@ -29,6 +29,8 @@ pub struct AppConfig {
     pub text_diff_add_fg: String,
     pub text_diff_empty_bg: String,
     pub text_diff_empty_fg: String,
+    pub merge_conflict_bg: String,
+    pub merge_conflict_fg: String,
     pub gutter_numbers_bg: String,
     pub gutter_numbers_fg: String,
     pub minimap_bg: String,
@@ -59,6 +61,8 @@ impl Default for AppConfig {
             text_diff_add_fg: "#009900".to_string(),    // Dark green
             text_diff_empty_bg: "#fffacd".to_string(),  // Light yellow
             text_diff_empty_fg: "#ffcc00".to_string(),  // Dark yellow
+            merge_conflict_bg: "#00ccff".to_string(),   // Light blue
+            merge_conflict_fg: "#000000".to_string(),   // Black
             gutter_numbers_bg: "#f0f0f0".to_string(),   // Light gray
             gutter_numbers_fg: "#888888".to_string(),   // Medium gray
             minimap_bg: "#ffffff".to_string(),          // White
@@ -163,6 +167,8 @@ impl ApplicationState {
             text_diff_add_fg: current_config.text_diff_add_fg.clone(),
             text_diff_empty_bg: current_config.text_diff_empty_bg.clone(),
             text_diff_empty_fg: current_config.text_diff_empty_fg.clone(),
+            merge_conflict_bg: current_config.merge_conflict_bg.clone(),
+            merge_conflict_fg: current_config.merge_conflict_fg.clone(),
             gutter_numbers_bg: current_config.gutter_numbers_bg.clone(),
             gutter_numbers_fg: current_config.gutter_numbers_fg.clone(),
             minimap_bg: current_config.minimap_bg.clone(),

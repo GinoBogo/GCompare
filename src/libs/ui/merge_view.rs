@@ -97,10 +97,12 @@ impl GMergeView {
         let bottom_bar = Box::new(Orientation::Horizontal, 6);
         bottom_bar.set_halign(gtk::Align::Center);
         let resolve_a_button = GButton::new("Accept Current A");
-        resolve_a_button.set_tooltip_text(Some("Accept changes from File A for the current conflict"));
+        resolve_a_button
+            .set_tooltip_text(Some("Accept changes from File A for the current conflict"));
         resolve_a_button.set_theme(ButtonTheme::LightGreen);
         let resolve_b_button = GButton::new("Accept Current B");
-        resolve_b_button.set_tooltip_text(Some("Accept changes from File B for the current conflict"));
+        resolve_b_button
+            .set_tooltip_text(Some("Accept changes from File B for the current conflict"));
         resolve_b_button.set_theme(ButtonTheme::LightBlue);
         let previous_button = GButton::new(" Prev ▲");
         previous_button.set_tooltip_text(Some("Navigate to previous conflict"));
@@ -138,7 +140,11 @@ impl GMergeView {
             &config.text_diff_add_bg,
             &config.text_diff_add_fg,
         );
-        create_tag("conflict", "#ffcc00", "#000000");
+        create_tag(
+            "conflict",
+            &config.merge_conflict_bg,
+            &config.merge_conflict_fg,
+        );
 
         window.set_child(Some(&container));
 

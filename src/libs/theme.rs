@@ -154,6 +154,12 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
             &config.text_diff_empty_bg,
         ),
         (".text-diff-empty", "color", &config.text_diff_empty_fg),
+        (
+            ".merge-conflict",
+            "background-color",
+            &config.merge_conflict_bg,
+        ),
+        (".merge-conflict", "color", &config.merge_conflict_fg),
         // Gutter numbers colors
         (
             ".gutter-numbers",

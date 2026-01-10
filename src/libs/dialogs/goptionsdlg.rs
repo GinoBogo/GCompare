@@ -30,6 +30,8 @@ pub struct GOptionsDlg {
     text_diff_add_fg_picker: GColorPicker,
     text_diff_empty_bg_picker: GColorPicker,
     text_diff_empty_fg_picker: GColorPicker,
+    merge_conflict_bg_picker: GColorPicker,
+    merge_conflict_fg_picker: GColorPicker,
     gutter_numbers_bg_picker: GColorPicker,
     gutter_numbers_fg_picker: GColorPicker,
     minimap_bg_picker: GColorPicker,
@@ -285,47 +287,57 @@ impl GOptionsDlg {
             GColorPicker::new_simple("Empty Text Color", &config.text_diff_empty_fg);
         colors_grid.attach(text_diff_empty_fg_picker.container(), 0, 6, 1, 1);
 
+        // Merge Conflict Background
+        let merge_conflict_bg_picker =
+            GColorPicker::new_simple("Merge Conflict Background", &config.merge_conflict_bg);
+        colors_grid.attach(merge_conflict_bg_picker.container(), 0, 7, 1, 1);
+
+        // Merge Conflict Text
+        let merge_conflict_fg_picker =
+            GColorPicker::new_simple("Merge Conflict Text", &config.merge_conflict_fg);
+        colors_grid.attach(merge_conflict_fg_picker.container(), 0, 8, 1, 1);
+
         // Gutter Numbers section
         let gutter_numbers_label = Label::new(Some("Gutter Numbers"));
         gutter_numbers_label.set_halign(gtk::Align::Start);
         gutter_numbers_label.set_markup("<b>Gutter Numbers</b>");
-        colors_grid.attach(&gutter_numbers_label, 0, 7, 2, 1);
+        colors_grid.attach(&gutter_numbers_label, 0, 9, 2, 1);
 
         let gutter_numbers_bg_picker =
             GColorPicker::new_simple("Gutter Background", &config.gutter_numbers_bg);
-        colors_grid.attach(gutter_numbers_bg_picker.container(), 0, 8, 1, 1);
+        colors_grid.attach(gutter_numbers_bg_picker.container(), 0, 10, 1, 1);
 
         let gutter_numbers_fg_picker =
             GColorPicker::new_simple("Numbers Color", &config.gutter_numbers_fg);
-        colors_grid.attach(gutter_numbers_fg_picker.container(), 0, 9, 1, 1);
+        colors_grid.attach(gutter_numbers_fg_picker.container(), 0, 11, 1, 1);
 
         // Minimap section
         let minimap_label = Label::new(Some("Minimap"));
         minimap_label.set_halign(gtk::Align::Start);
         minimap_label.set_markup("<b>Minimap</b>");
-        colors_grid.attach(&minimap_label, 0, 10, 2, 1);
+        colors_grid.attach(&minimap_label, 0, 12, 2, 1);
 
         let minimap_bg_picker = GColorPicker::new_simple("Minimap Background", &config.minimap_bg);
-        colors_grid.attach(minimap_bg_picker.container(), 0, 11, 1, 1);
+        colors_grid.attach(minimap_bg_picker.container(), 0, 13, 1, 1);
 
         let minimap_fg_picker = GColorPicker::new_simple("Vertical Separator", &config.minimap_fg);
-        colors_grid.attach(minimap_fg_picker.container(), 0, 12, 1, 1);
+        colors_grid.attach(minimap_fg_picker.container(), 0, 14, 1, 1);
 
         let minimap_diff_remove_picker =
             GColorPicker::new_simple("Removed Lines Color", &config.minimap_diff_remove);
-        colors_grid.attach(minimap_diff_remove_picker.container(), 0, 13, 1, 1);
+        colors_grid.attach(minimap_diff_remove_picker.container(), 0, 15, 1, 1);
 
         let minimap_diff_add_picker =
             GColorPicker::new_simple("Added Lines Color", &config.minimap_diff_add);
-        colors_grid.attach(minimap_diff_add_picker.container(), 0, 14, 1, 1);
+        colors_grid.attach(minimap_diff_add_picker.container(), 0, 16, 1, 1);
 
         let minimap_diff_empty_picker =
             GColorPicker::new_simple("Empty Lines Color", &config.minimap_diff_empty);
-        colors_grid.attach(minimap_diff_empty_picker.container(), 0, 15, 1, 1);
+        colors_grid.attach(minimap_diff_empty_picker.container(), 0, 17, 1, 1);
 
         let minimap_cursor_bg_picker =
             GColorPicker::new("Cursor Background", &config.minimap_cursor_bg, true);
-        colors_grid.attach(minimap_cursor_bg_picker.container(), 0, 16, 1, 1);
+        colors_grid.attach(minimap_cursor_bg_picker.container(), 0, 18, 1, 1);
 
         // Create scrolled window for colors tab
         let colors_scrolled = ScrolledWindow::new();
@@ -372,6 +384,8 @@ impl GOptionsDlg {
             text_diff_add_fg_picker,
             text_diff_empty_bg_picker,
             text_diff_empty_fg_picker,
+            merge_conflict_bg_picker,
+            merge_conflict_fg_picker,
             gutter_numbers_bg_picker,
             gutter_numbers_fg_picker,
             minimap_bg_picker,
@@ -406,6 +420,8 @@ impl GOptionsDlg {
         let text_diff_add_fg_picker = self.text_diff_add_fg_picker.clone();
         let text_diff_empty_bg_picker = self.text_diff_empty_bg_picker.clone();
         let text_diff_empty_fg_picker = self.text_diff_empty_fg_picker.clone();
+        let merge_conflict_bg_picker = self.merge_conflict_bg_picker.clone();
+        let merge_conflict_fg_picker = self.merge_conflict_fg_picker.clone();
         let gutter_numbers_bg_picker = self.gutter_numbers_bg_picker.clone();
         let gutter_numbers_fg_picker = self.gutter_numbers_fg_picker.clone();
         let minimap_bg_picker = self.minimap_bg_picker.clone();
@@ -450,6 +466,8 @@ impl GOptionsDlg {
                 text_diff_add_fg: text_diff_add_fg_picker.get_color(),
                 text_diff_empty_bg: text_diff_empty_bg_picker.get_color(),
                 text_diff_empty_fg: text_diff_empty_fg_picker.get_color(),
+                merge_conflict_bg: merge_conflict_bg_picker.get_color(),
+                merge_conflict_fg: merge_conflict_fg_picker.get_color(),
                 gutter_numbers_bg: gutter_numbers_bg_picker.get_color(),
                 gutter_numbers_fg: gutter_numbers_fg_picker.get_color(),
                 minimap_bg: minimap_bg_picker.get_color(),
