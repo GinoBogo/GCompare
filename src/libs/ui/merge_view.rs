@@ -99,11 +99,11 @@ impl GMergeView {
         let resolve_a_button = GButton::new("Accept Current A");
         resolve_a_button
             .set_tooltip_text(Some("Accept changes from File A for the current conflict"));
-        resolve_a_button.set_theme(ButtonTheme::LightGreen);
+        resolve_a_button.set_theme(ButtonTheme::Action2);
         let resolve_b_button = GButton::new("Accept Current B");
         resolve_b_button
             .set_tooltip_text(Some("Accept changes from File B for the current conflict"));
-        resolve_b_button.set_theme(ButtonTheme::LightBlue);
+        resolve_b_button.set_theme(ButtonTheme::Action1);
         let previous_button = GButton::new(" Prev ▲");
         previous_button.set_tooltip_text(Some("Navigate to previous conflict"));
         previous_button.set_theme(ButtonTheme::Highlight);

@@ -39,14 +39,14 @@ impl ComparisonPanelsWidget {
         let panel_a = FilePanelWidget::new(
             "File A",
             &config.file_a_history,
-            ButtonTheme::LightGreen,
+            ButtonTheme::Action2,
             &font_provider,
         );
 
         let panel_b = FilePanelWidget::new(
             "File B",
             &config.file_b_history,
-            ButtonTheme::LightBlue,
+            ButtonTheme::Action1,
             &font_provider,
         );
 

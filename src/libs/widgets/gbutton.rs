@@ -15,8 +15,9 @@ pub enum ButtonTheme {
     Primary,
     Secondary,
     Highlight,
-    LightBlue,
-    LightGreen,
+    Action1,
+    Action2,
+    Action3,
 }
 
 mod imp {
@@ -76,16 +77,18 @@ impl GButton {
         self.remove_css_class("gbutton-primary");
         self.remove_css_class("gbutton-secondary");
         self.remove_css_class("gbutton-highlight");
-        self.remove_css_class("gbutton-lightblue");
-        self.remove_css_class("gbutton-lightgreen");
+        self.remove_css_class("gbutton-action_1");
+        self.remove_css_class("gbutton-action_2");
+        self.remove_css_class("gbutton-action_3");
 
         match theme {
             ButtonTheme::Default => self.add_css_class("gbutton-default"),
             ButtonTheme::Primary => self.add_css_class("gbutton-primary"),
             ButtonTheme::Secondary => self.add_css_class("gbutton-secondary"),
             ButtonTheme::Highlight => self.add_css_class("gbutton-highlight"),
-            ButtonTheme::LightBlue => self.add_css_class("gbutton-lightblue"),
-            ButtonTheme::LightGreen => self.add_css_class("gbutton-lightgreen"),
+            ButtonTheme::Action1 => self.add_css_class("gbutton-action_1"),
+            ButtonTheme::Action2 => self.add_css_class("gbutton-action_2"),
+            ButtonTheme::Action3 => self.add_css_class("gbutton-action_3"),
         }
     }
 }
