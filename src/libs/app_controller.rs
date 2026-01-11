@@ -21,7 +21,7 @@ use crate::libs::state::ApplicationState;
 use crate::libs::theme;
 use crate::libs::ui::comparison_panels::ComparisonPanelsWidget;
 use crate::libs::ui::control_panel::ControlPanelWidget;
-use crate::libs::widgets::gdiffmap::GDiffMap;
+use crate::libs::widgets::gminimap::GMiniMap;
 use crate::libs::widgets::gstatusbar::GStatusBar;
 
 /// Main application controller that coordinates all components.
@@ -37,7 +37,7 @@ pub struct AppController {
     control_panel: Option<ControlPanelWidget>,
     comparison_panels: Option<ComparisonPanelsWidget>,
     status_bar: Option<GStatusBar>,
-    diff_map: Option<GDiffMap>,
+    minimap: Option<GMiniMap>,
 }
 
 impl AppController {
@@ -64,7 +64,7 @@ impl AppController {
             control_panel: None,
             comparison_panels: None,
             status_bar: None,
-            diff_map: None,
+            minimap: None,
         }
     }
 
@@ -98,7 +98,7 @@ impl AppController {
 
         // Create UI components
         let mut control_panel = ControlPanelWidget::new();
-        let (comparison_panels, diff_map) = ComparisonPanelsWidget::new(&self.state.config());
+        let (comparison_panels, minimap) = ComparisonPanelsWidget::new(&self.state.config());
         let status_bar = GStatusBar::new();
 
         // Add components to main grid
@@ -121,7 +121,7 @@ impl AppController {
         self.setup_realtime_diff(
             comparison_panels.panel_a_text_view(),
             comparison_panels.panel_b_text_view(),
-            &diff_map,
+            &minimap,
             &status_bar,
         );
 
@@ -130,7 +130,7 @@ impl AppController {
         self.control_panel = Some(control_panel);
         self.comparison_panels = Some(comparison_panels);
         self.status_bar = Some(status_bar);
-        self.diff_map = Some(diff_map);
+        self.minimap = Some(minimap);
 
         // Load files from command-line arguments if provided
         self.load_files_from_args(file_a_path, file_b_path);
@@ -227,7 +227,7 @@ impl AppController {
         let panel_a_text_view_reload = panel_a_text_view.clone();
         let panel_b_text_view_reload = panel_b_text_view.clone();
         let status_bar_clone = status_bar.clone();
-        let diff_map = comparison_panels.diff_map().clone();
+        let minimap = comparison_panels.minimap().clone();
 
         let panel_a_path_combo_reload = panel_a_path_combo.clone();
         let panel_b_path_combo_reload = panel_b_path_combo.clone();
@@ -393,7 +393,7 @@ impl AppController {
                 let panel_a_path_combo_reset = panel_a_path_combo_reset.clone();
                 let panel_b_path_combo_reset = panel_b_path_combo_reset.clone();
                 let status_bar_clone = status_bar_clone.clone();
-                let diff_map = diff_map.clone();
+                let minimap = minimap.clone();
                 Rc::new(move || {
                     let (bytes_a, lines_a) = file_service.reload_file_from_path(
                         &panel_a_text_view_reload,
@@ -415,7 +415,7 @@ impl AppController {
                     status_bar_clone.set_status_b_file_info(bytes_b, lines_b);
 
                     // Clear diff map
-                    diff_map.clear_diff_lines();
+                    minimap.clear_diff_lines();
                 })
             };
 
@@ -778,21 +778,21 @@ impl AppController {
             glib::Propagation::Proceed
         });
 
-        let diff_map = comparison_panels.diff_map().clone();
+        let minimap = comparison_panels.minimap().clone();
 
         // Panel A text changes
         let panel_a_buffer = panel_a_text_view.content_view().buffer();
         let panel_a_buffer_clone = panel_a_buffer.clone();
         let panel_a_buffer_for_changed = panel_a_buffer.clone();
         let panel_a_text_view_for_changed = panel_a_text_view.clone();
-        let diff_map_a = diff_map.clone();
+        let minimap_a = minimap.clone();
         let status_bar_a = status_bar.clone();
         let panel_b_buffer_for_status = panel_b_text_view.content_view().buffer().clone();
         let panel_a_path_combo_for_changed = panel_a_path_combo.clone();
         let is_loading_a = is_loading.clone();
         panel_a_buffer.connect_changed(move |_| {
             let line_count = panel_a_buffer_for_changed.line_count() as usize;
-            let imp = diff_map_a.imp();
+            let imp = minimap_a.imp();
             let info = imp.text_info.get();
             let current_visible_lines = info.a.visible_lines;
 
@@ -817,8 +817,8 @@ impl AppController {
                 current_visible_lines
             };
 
-            diff_map_a.update_text_info(
-                crate::libs::widgets::gdiffmap::PanelId::A,
+            minimap_a.update_text_info(
+                crate::libs::widgets::gminimap::PanelId::A,
                 info.a.upper_line,
                 line_count,
                 visible_lines,
@@ -828,7 +828,7 @@ impl AppController {
             status_bar_a.update_status_from_buffers(
                 &panel_a_buffer_for_changed,
                 &panel_b_buffer_for_status,
-                &diff_map_a,
+                &minimap_a,
             );
 
             // Update label "File A" to "File A*"
@@ -842,14 +842,14 @@ impl AppController {
         let panel_b_buffer_clone = panel_b_buffer.clone();
         let panel_b_buffer_for_changed = panel_b_buffer.clone();
         let panel_b_text_view_for_changed = panel_b_text_view.clone();
-        let diff_map_b = diff_map.clone();
+        let minimap_b = minimap.clone();
         let status_bar_b = status_bar.clone();
         let panel_a_buffer_for_status = panel_a_text_view.content_view().buffer().clone();
         let panel_b_path_combo_for_changed = panel_b_path_combo.clone();
         let is_loading_b = is_loading.clone();
         panel_b_buffer.connect_changed(move |_| {
             let line_count = panel_b_buffer_for_changed.line_count() as usize;
-            let imp = diff_map_b.imp();
+            let imp = minimap_b.imp();
             let info = imp.text_info.get();
             let current_visible_lines = info.b.visible_lines;
 
@@ -874,8 +874,8 @@ impl AppController {
                 current_visible_lines
             };
 
-            diff_map_b.update_text_info(
-                crate::libs::widgets::gdiffmap::PanelId::B,
+            minimap_b.update_text_info(
+                crate::libs::widgets::gminimap::PanelId::B,
                 info.b.upper_line,
                 line_count,
                 visible_lines,
@@ -885,7 +885,7 @@ impl AppController {
             status_bar_b.update_status_from_buffers(
                 &panel_a_buffer_for_status,
                 &panel_b_buffer_for_changed,
-                &diff_map_b,
+                &minimap_b,
             );
 
             // Update label "File B" to "File B*"
@@ -899,7 +899,7 @@ impl AppController {
             panel_a_text_view.content_view().vadjustment(),
             panel_b_text_view.content_view().vadjustment(),
         ) {
-            let diff_map_a = diff_map.clone();
+            let minimap_a = minimap.clone();
             let panel_a_buffer_clone = panel_a_buffer_clone.clone();
             let panel_a_text_view_clone = panel_a_text_view.clone();
             let sync_enabled = sync_enabled.clone();
@@ -925,8 +925,8 @@ impl AppController {
                     .line_at_y(y + visible_height as i32);
                 let visible_lines = (end_iter.line() - start_iter.line()) as usize;
 
-                diff_map_a.update_text_info(
-                    crate::libs::widgets::gdiffmap::PanelId::A,
+                minimap_a.update_text_info(
+                    crate::libs::widgets::gminimap::PanelId::A,
                     upper_line,
                     line_count,
                     visible_lines,
@@ -939,7 +939,7 @@ impl AppController {
             panel_a_text_view.content_view().vadjustment(),
             panel_b_text_view.content_view().vadjustment(),
         ) {
-            let diff_map_b = diff_map.clone();
+            let minimap_b = minimap.clone();
             let panel_b_buffer_clone = panel_b_buffer_clone.clone();
             let panel_b_text_view_clone = panel_b_text_view.clone();
             let sync_enabled = sync_enabled.clone();
@@ -965,8 +965,8 @@ impl AppController {
                     .line_at_y(y + visible_height as i32);
                 let visible_lines = (end_iter.line() - start_iter.line()) as usize;
 
-                diff_map_b.update_text_info(
-                    crate::libs::widgets::gdiffmap::PanelId::B,
+                minimap_b.update_text_info(
+                    crate::libs::widgets::gminimap::PanelId::B,
                     upper_line,
                     line_count,
                     visible_lines,
@@ -974,12 +974,12 @@ impl AppController {
             });
         }
 
-        // Connect GDiffMap scroll-to signal (Drag support)
+        // Connect GMiniMap scroll-to signal (Drag support)
         if let (Some(adj_a), Some(adj_b)) = (
             panel_a_text_view.content_view().vadjustment(),
             panel_b_text_view.content_view().vadjustment(),
         ) {
-            diff_map.connect_local("scroll-to", false, move |values| {
+            minimap.connect_local("scroll-to", false, move |values| {
                 let ratio = values[1].get::<f64>().unwrap();
 
                 // Helper to set adjustment based on ratio
@@ -1002,7 +1002,7 @@ impl AppController {
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
         let panel_a_combo = comparison_panels.panel_a_path_combo().clone();
         let panel_b_combo = comparison_panels.panel_b_path_combo().clone();
-        let diff_map = comparison_panels.diff_map().clone();
+        let minimap = comparison_panels.minimap().clone();
         let status_bar_compare = status_bar.clone();
 
         app_handlers::setup_compare_interaction(
@@ -1012,7 +1012,7 @@ impl AppController {
             &panel_b_text_view,
             &panel_a_combo,
             &panel_b_combo,
-            &diff_map,
+            &minimap,
             &status_bar_compare,
             self.state.clone(),
             self.diff_service.clone(),
@@ -1026,7 +1026,7 @@ impl AppController {
             &control_panel.previous_button,
             &control_panel.next_button,
             &panel_a_text_view,
-            &diff_map,
+            &minimap,
         );
 
         // Options button click handler
@@ -1038,7 +1038,7 @@ impl AppController {
             &panel_a_text_view,
             &panel_b_text_view,
             self.css_provider.clone(),
-            &diff_map,
+            &minimap,
             sync_enabled.clone(),
         );
     }
@@ -1048,7 +1048,7 @@ impl AppController {
         &self,
         panel_a_text_view: &crate::libs::widgets::gtextview::GTextView,
         panel_b_text_view: &crate::libs::widgets::gtextview::GTextView,
-        diff_map: &crate::libs::widgets::gdiffmap::GDiffMap,
+        minimap: &crate::libs::widgets::gminimap::GMiniMap,
         status_bar: &crate::libs::widgets::gstatusbar::GStatusBar,
     ) {
         use std::rc::Rc;
@@ -1098,7 +1098,7 @@ impl AppController {
         // Clone needed values for the closure
         let incremental_diff_service = self.incremental_diff_service.clone();
         let text_highlighter = self.text_highlighter.clone();
-        let diff_map_clone = diff_map.clone();
+        let minimap_clone = minimap.clone();
         let status_bar_clone = status_bar.clone();
         let state = self.state.clone();
 
@@ -1107,7 +1107,7 @@ impl AppController {
             let is_computing = is_computing.clone();
             let incremental_diff_service = incremental_diff_service.clone();
             let text_highlighter = text_highlighter.clone();
-            let diff_map_clone = diff_map_clone.clone();
+            let minimap_clone = minimap_clone.clone();
             let status_bar_clone = status_bar_clone.clone();
             let state = state.clone();
 
@@ -1149,7 +1149,7 @@ impl AppController {
                 );
 
                 // Update diff map
-                diff_map_clone.set_all_diff_lines(
+                minimap_clone.set_all_diff_lines(
                     diff_result.changed_lines_a,
                     diff_result.changed_lines_b,
                     empty_lines_a,
@@ -1157,7 +1157,7 @@ impl AppController {
                 );
 
                 // Update status bar
-                status_bar_clone.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map_clone);
+                status_bar_clone.update_status_from_buffers(&buffer_a, &buffer_b, &minimap_clone);
 
                 is_computing.set(false);
             }

@@ -19,7 +19,7 @@ use crate::libs::services::text_highlighter::TextHighlighter;
 use crate::libs::state::ApplicationState;
 use crate::libs::theme;
 use crate::libs::widgets::gbutton::GButton;
-use crate::libs::widgets::gdiffmap::GDiffMap;
+use crate::libs::widgets::gminimap::GMiniMap;
 use crate::libs::widgets::gstatusbar::GStatusBar;
 use crate::libs::widgets::gtextview::GTextView;
 
@@ -31,7 +31,7 @@ pub fn setup_compare_interaction(
     panel_b: &GTextView,
     panel_a_combo: &gtk::ComboBoxText,
     panel_b_combo: &gtk::ComboBoxText,
-    diff_map: &GDiffMap,
+    minimap: &GMiniMap,
     status_bar: &GStatusBar,
     state: Rc<ApplicationState>,
     diff_service: DiffService,
@@ -44,7 +44,7 @@ pub fn setup_compare_interaction(
     let panel_b_text_view = panel_b.clone();
     let panel_a_combo = panel_a_combo.clone();
     let panel_b_combo = panel_b_combo.clone();
-    let diff_map = diff_map.clone();
+    let minimap = minimap.clone();
     let status_bar_compare = status_bar.clone();
     let state_for_colors = state;
 
@@ -110,7 +110,7 @@ pub fn setup_compare_interaction(
             );
 
             // Update diff map
-            diff_map.set_all_diff_lines(
+            minimap.set_all_diff_lines(
                 diff_result.changed_lines_a,
                 diff_result.changed_lines_b,
                 empty_lines_a,
@@ -118,7 +118,7 @@ pub fn setup_compare_interaction(
             );
 
             // Update status bar
-            status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map);
+            status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &minimap);
             return;
         }
 
@@ -264,10 +264,10 @@ pub fn setup_compare_interaction(
             buffer_b.apply_tag_by_name(tag_name, &start_iter, &end_iter);
         }
 
-        diff_map.set_all_diff_lines(lines_a, lines_b, empty_lines_a, empty_lines_b);
+        minimap.set_all_diff_lines(lines_a, lines_b, empty_lines_a, empty_lines_b);
 
         // Update status bar with diff information
-        status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &diff_map);
+        status_bar_compare.update_status_from_buffers(&buffer_a, &buffer_b, &minimap);
     });
 }
 
@@ -280,7 +280,7 @@ pub fn setup_options_interaction(
     panel_a: &GTextView,
     panel_b: &GTextView,
     css_provider: Rc<gtk::CssProvider>,
-    diff_map: &GDiffMap,
+    minimap: &GMiniMap,
     sync_enabled: Rc<Cell<bool>>,
 ) {
     let window_clone = window.clone();
@@ -289,7 +289,7 @@ pub fn setup_options_interaction(
     let panel_a_text_view = panel_a.clone();
     let panel_b_text_view = panel_b.clone();
     let css_provider_clone = css_provider;
-    let diff_map = diff_map.clone();
+    let minimap = minimap.clone();
     let sync_enabled = sync_enabled;
 
     button.connect_clicked(move |_| {
@@ -307,7 +307,7 @@ pub fn setup_options_interaction(
         let panel_a_text_view_apply = panel_a_text_view.clone();
         let panel_b_text_view_apply = panel_b_text_view.clone();
         let css_provider_apply = css_provider_clone.clone();
-        let diff_map_apply = diff_map.clone();
+        let minimap_apply = minimap.clone();
         let sync_enabled_apply = sync_enabled.clone();
         dialog.show({
             let panel_a_text_view = panel_a_text_view.clone();
@@ -377,7 +377,7 @@ pub fn setup_options_interaction(
                     theme::update_provider_with_config(&css_provider_apply, &updated_config);
 
                     // Redraw minimap to pick up new cursor color
-                    gtk::prelude::WidgetExt::queue_draw(&diff_map_apply);
+                    gtk::prelude::WidgetExt::queue_draw(&minimap_apply);
 
                     // Update text tag colors for real-time changes
                     let panel_a_text_view_apply = panel_a_text_view.clone();
@@ -400,10 +400,10 @@ pub fn setup_navigation_interaction(
     prev_button: &GButton,
     next_button: &GButton,
     panel_a: &GTextView,
-    diff_map: &GDiffMap,
+    minimap: &GMiniMap,
 ) {
     let panel_a_text_view_nav = panel_a.clone();
-    let diff_map_nav = diff_map.clone();
+    let minimap_nav = minimap.clone();
 
     prev_button.connect_clicked(move |_| {
         // Get current line from panel A
@@ -412,7 +412,7 @@ pub fn setup_navigation_interaction(
             let (start_iter, _) = panel_a_text_view_nav.content_view().line_at_y(y);
             let current_line = start_iter.line() as usize;
 
-            if let Some(target_line) = diff_map_nav.previous_difference(current_line) {
+            if let Some(target_line) = minimap_nav.previous_difference(current_line) {
                 // Calculate scroll position for target line
                 let buffer = panel_a_text_view_nav.content_view().buffer();
                 if let Some(line_iter) = buffer.iter_at_line(target_line as i32) {
@@ -427,7 +427,7 @@ pub fn setup_navigation_interaction(
     });
 
     let panel_a_text_view_nav_next = panel_a.clone();
-    let diff_map_nav_next = diff_map.clone();
+    let minimap_nav_next = minimap.clone();
 
     next_button.connect_clicked(move |_| {
         // Get current line from panel A
@@ -436,7 +436,7 @@ pub fn setup_navigation_interaction(
             let (start_iter, _) = panel_a_text_view_nav_next.content_view().line_at_y(y);
             let current_line = start_iter.line() as usize;
 
-            if let Some(target_line) = diff_map_nav_next.next_difference(current_line) {
+            if let Some(target_line) = minimap_nav_next.next_difference(current_line) {
                 // Calculate scroll position for target line
                 let buffer = panel_a_text_view_nav_next.content_view().buffer();
                 if let Some(line_iter) = buffer.iter_at_line(target_line as i32) {

@@ -163,7 +163,7 @@ impl GStatusBar {
         &self,
         panel_a_buffer: &gtk::TextBuffer,
         panel_b_buffer: &gtk::TextBuffer,
-        diff_map: &crate::libs::widgets::gdiffmap::GDiffMap,
+        minimap: &crate::libs::widgets::gminimap::GMiniMap,
     ) {
         // Update file info for panel A
         let (start_a, end_a) = panel_a_buffer.bounds();
@@ -178,7 +178,7 @@ impl GStatusBar {
         let lines_b = panel_b_buffer.line_count() as usize;
 
         // Get diff line counts (separate regular and empty)
-        let imp = diff_map.imp();
+        let imp = minimap.imp();
         let regular_diffs_a = imp.diff_lines_a.borrow().len();
         let empty_diffs_a = imp.empty_lines_a.borrow().len();
         let regular_diffs_b = imp.diff_lines_b.borrow().len();

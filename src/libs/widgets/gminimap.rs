@@ -1,4 +1,4 @@
-//! Custom GDiffMap widget implementation.
+//! Custom GMiniMap widget implementation.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT
@@ -60,7 +60,7 @@ mod imp {
     use super::*;
 
     #[derive(Default)]
-    pub struct GDiffMap {
+    pub struct GMiniMap {
         pub text_info: Cell<TextInfo>,
         pub draw_info: Cell<DrawInfo>,
         pub last_updated_panel: Cell<PanelId>,
@@ -73,13 +73,13 @@ mod imp {
     }
 
     #[glib::object_subclass]
-    impl ObjectSubclass for GDiffMap {
-        const NAME: &'static str = "GDiffMap";
-        type Type = super::GDiffMap;
+    impl ObjectSubclass for GMiniMap {
+        const NAME: &'static str = "GMiniMap";
+        type Type = super::GMiniMap;
         type ParentType = Frame;
     }
 
-    impl ObjectImpl for GDiffMap {
+    impl ObjectImpl for GMiniMap {
         fn signals() -> &'static [glib::subclass::Signal] {
             static SIGNALS: Lazy<Vec<glib::subclass::Signal>> = Lazy::new(|| {
                 vec![
@@ -173,18 +173,18 @@ mod imp {
         }
     }
 
-    impl WidgetImpl for GDiffMap {}
-    impl FrameImpl for GDiffMap {}
+    impl WidgetImpl for GMiniMap {}
+    impl FrameImpl for GMiniMap {}
 }
 
 glib::wrapper! {
-    pub struct GDiffMap(ObjectSubclass<imp::GDiffMap>)
+    pub struct GMiniMap(ObjectSubclass<imp::GMiniMap>)
         @extends Frame, gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget;
 }
 
-impl GDiffMap {
-    /// Create a new GDiffMap widget.
+impl GMiniMap {
+    /// Create a new GMiniMap widget.
     pub fn new() -> Self {
         glib::Object::builder().build()
     }

@@ -9,20 +9,20 @@ use gtk::{Box, ComboBoxText, CssProvider, Frame};
 
 use crate::libs::state::AppConfig;
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
-use crate::libs::widgets::gdiffmap::GDiffMap;
+use crate::libs::widgets::gminimap::GMiniMap;
 use crate::libs::widgets::gtextview::GTextView;
 
-/// Widget containing file comparison panels and diff map.
+/// Widget containing file comparison panels and minimap.
 pub struct ComparisonPanelsWidget {
     container: Box,
     panel_a: FilePanelWidget,
     panel_b: FilePanelWidget,
-    diff_map: GDiffMap,
+    minimap: GMiniMap,
 }
 
 impl ComparisonPanelsWidget {
     /// Create a new comparison panels widget.
-    pub fn new(config: &AppConfig) -> (Self, GDiffMap) {
+    pub fn new(config: &AppConfig) -> (Self, GMiniMap) {
         let container = Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(6)
@@ -50,21 +50,21 @@ impl ComparisonPanelsWidget {
             &font_provider,
         );
 
-        let diff_map = GDiffMap::new();
+        let minimap = GMiniMap::new();
 
         // Add to container
         container.append(&panel_a.container);
-        container.append(&diff_map);
+        container.append(&minimap);
         container.append(&panel_b.container);
 
         let widget = Self {
             container,
             panel_a,
             panel_b,
-            diff_map: diff_map.clone(),
+            minimap: minimap.clone(),
         };
 
-        (widget, diff_map)
+        (widget, minimap)
     }
 
     /// Get the container widget.
@@ -112,9 +112,9 @@ impl ComparisonPanelsWidget {
         &self.panel_b.save_button
     }
 
-    /// Get diff map reference.
-    pub fn diff_map(&self) -> &GDiffMap {
-        &self.diff_map
+    /// Get minimap reference.
+    pub fn minimap(&self) -> &GMiniMap {
+        &self.minimap
     }
 }
 
