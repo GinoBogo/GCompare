@@ -476,6 +476,10 @@ impl GOptionsDlg {
                 minimap_diff_add: minimap_diff_add_picker.get_color(),
                 minimap_diff_empty: minimap_diff_empty_picker.get_color(),
                 minimap_cursor_bg: minimap_cursor_bg_picker.get_color(),
+                // Merge window geometry - not updated in this dialog
+                merge_window_width: 0,
+                merge_window_height: 0,
+                merge_window_maximized: false,
             };
 
             callback_apply(Some((font_family, font_size, color_config)));

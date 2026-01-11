@@ -7,16 +7,16 @@
 use gtk::prelude::*;
 use gtk::{
     ApplicationWindow, Box, FileChooserAction, FileChooserNative, Frame, Orientation, ResponseType,
-    SizeGroup, SizeGroupMode, Window,
+    SizeGroup, SizeGroupMode, Window, glib,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
 
 use crate::libs::services::color_parser::parse_color_with_fallback;
+use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::merge_service::{
     MergeSegment, MergeService, MergeStrategy, SegmentType,
 };
-use crate::libs::state::AppConfig;
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
 use crate::libs::widgets::gtextview::GTextView;
 
@@ -29,12 +29,13 @@ impl GMergeView {
         _parent: &ApplicationWindow,
         text_a: &str,
         text_b: &str,
-        config: &AppConfig,
+        config_service: ConfigService,
     ) -> Self {
+        let config = config_service.get_config();
         let window = Window::builder()
             .title("Merge Result")
-            .default_width(800)
-            .default_height(600)
+            .default_width(config.merge_window_width)
+            .default_height(config.merge_window_height)
             .build();
 
         let container = Box::new(Orientation::Vertical, 6);
@@ -445,6 +446,35 @@ impl GMergeView {
 
         // Initial state
         update_view(MergeStrategy::MarkConflicts);
+
+        // Save window geometry when window is closed
+        let window_clone = window.clone();
+        let config_service_clone = config_service.clone();
+        window.connect_close_request(move |_| {
+            // Save current window geometry directly to in-memory config
+            let current_width = window_clone.width();
+            let current_height = window_clone.height();
+            let default_width = window_clone.default_width();
+            let default_height = window_clone.default_height();
+
+            // Use default_size if current size is 0 or seems wrong
+            let width = if current_width > 0 {
+                current_width
+            } else {
+                default_width
+            };
+            let height = if current_height > 0 {
+                current_height
+            } else {
+                default_height
+            };
+            let maximized = window_clone.is_maximized();
+
+            // Update merge window geometry in memory (no file I/O)
+            config_service_clone.update_merge_window_geometry(width, height, maximized);
+
+            glib::Propagation::Proceed
+        });
 
         Self { window }
     }

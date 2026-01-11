@@ -44,7 +44,7 @@ impl AppController {
     /// Create a new application controller.
     pub fn new() -> Self {
         let config_service = ConfigService::new();
-        let state = Rc::new(ApplicationState::new(config_service.load_config()));
+        let state = Rc::new(ApplicationState::new(config_service.get_config()));
 
         // Initialize theme and get CSS provider
         let css_provider = Rc::new(theme::init());
@@ -473,7 +473,7 @@ impl AppController {
         let panel_a_text_view_merge = comparison_panels.panel_a_text_view().clone();
         let panel_b_text_view_merge = comparison_panels.panel_b_text_view().clone();
         let window_merge = window.clone();
-        let state_merge = self.state.clone();
+        let config_service_merge = self.config_service.clone();
 
         control_panel.merge_button.connect_clicked(move |_| {
             // Helper to get path string from combo box entry
@@ -524,7 +524,7 @@ impl AppController {
                     &window_merge,
                     text_a.as_str(),
                     text_b.as_str(),
-                    &state_merge.config(),
+                    config_service_merge.clone(),
                 );
                 merge_view.show();
             }
@@ -714,7 +714,8 @@ impl AppController {
                             &panel_a_combo_for_close,
                             &panel_b_combo_for_close,
                         );
-                        config_service.save_config(&updated_config);
+                        config_service.update_config(updated_config);
+                        config_service.save_config();
                         window_for_destroy.destroy();
                     })
                 };
@@ -766,12 +767,11 @@ impl AppController {
                 return glib::Propagation::Stop;
             }
 
-            // Update configuration with current state
+            // Update configuration with current state and save to disk
             let updated_config =
                 state_for_close.update_config_from_ui(window, &panel_a_combo, &panel_b_combo);
-
-            // Save configuration to disk
-            config_service.save_config(&updated_config);
+            config_service.update_config(updated_config);
+            config_service.save_config();
 
             // Quit the application
             window.destroy();

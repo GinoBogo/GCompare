@@ -293,8 +293,8 @@ pub fn setup_options_interaction(
     let sync_enabled = sync_enabled;
 
     button.connect_clicked(move |_| {
-        // Reload config from file to get latest values
-        let current_config = config_service_clone.load_config();
+        // Get current config from memory (no file I/O)
+        let current_config = config_service_clone.get_config();
         let dialog = GOptionsDlg::new(
             &window_clone,
             &current_config.font_family,
@@ -386,8 +386,9 @@ pub fn setup_options_interaction(
                     let buffer_b = panel_b_text_view_apply.content_view().buffer();
                     theme::update_text_tag_colors(&[&buffer_a, &buffer_b], &updated_config);
 
-                    // Save config to disk
-                    config_service_apply.save_config(&updated_config);
+                    // Update in-memory config and save to disk
+                    config_service_apply.update_config(updated_config);
+                    config_service_apply.save_config();
                 }
             }
         });

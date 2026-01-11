@@ -40,6 +40,10 @@ pub struct AppConfig {
     pub minimap_diff_add: String,
     pub minimap_diff_empty: String,
     pub minimap_cursor_bg: String,
+    // Merge window geometry
+    pub merge_window_width: i32,
+    pub merge_window_height: i32,
+    pub merge_window_maximized: bool,
 }
 
 impl Default for AppConfig {
@@ -70,8 +74,12 @@ impl Default for AppConfig {
             minimap_fg: get_color_hex("minimap"),
             minimap_diff_remove: get_color_hex("minimap-diff-remove"),
             minimap_diff_add: get_color_hex("minimap-diff-add"),
-            minimap_diff_empty: get_color_hex("minimap-diff-empty"),
-            minimap_cursor_bg: get_background_color_hex("minimap-cursor"),
+            minimap_diff_empty: get_background_color_hex("minimap-diff-empty"),
+            minimap_cursor_bg: get_color_hex("minimap-cursor"),
+            // Merge window geometry defaults
+            merge_window_width: 800,
+            merge_window_height: 600,
+            merge_window_maximized: false,
         }
     }
 }
@@ -178,6 +186,10 @@ impl ApplicationState {
             minimap_diff_add: current_config.minimap_diff_add.clone(),
             minimap_diff_empty: current_config.minimap_diff_empty.clone(),
             minimap_cursor_bg: current_config.minimap_cursor_bg.clone(),
+            // Preserve merge window geometry
+            merge_window_width: current_config.merge_window_width,
+            merge_window_height: current_config.merge_window_height,
+            merge_window_maximized: current_config.merge_window_maximized,
         }
     }
 }
