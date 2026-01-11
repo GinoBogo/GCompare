@@ -402,7 +402,6 @@ impl GMiniMap {
             let _ = cr.fill();
         }
 
-        // Draw A empty/whitespace lines (Left to Half) - Yellow
         let color_empty = crate::libs::theme::get_color("minimap-diff-empty");
         cr.set_source_rgba(
             color_empty.red() as f64,
@@ -410,13 +409,15 @@ impl GMiniMap {
             color_empty.blue() as f64,
             color_empty.alpha() as f64,
         );
+
+        // Draw A empty/whitespace lines (Left to Half)
         for &line in imp.empty_lines_a.borrow().iter() {
             let y = gap + (line as f64 * scale_y);
             cr.rectangle(0.0, y, width / 2.0, scale_y.max(1.0));
             let _ = cr.fill();
         }
 
-        // Draw B empty/whitespace lines (Half to Right) - Yellow
+        // Draw B empty/whitespace lines (Half to Right)
         for &line in imp.empty_lines_b.borrow().iter() {
             let y = gap + (line as f64 * scale_y);
             cr.rectangle(width / 2.0, y, width / 2.0, scale_y.max(1.0));

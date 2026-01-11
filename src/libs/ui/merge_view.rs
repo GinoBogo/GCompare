@@ -6,8 +6,8 @@
 
 use gtk::prelude::*;
 use gtk::{
-    ApplicationWindow, Box, FileChooserAction, FileChooserNative, Frame, Orientation, ResponseType,
-    SizeGroup, SizeGroupMode, Window, glib,
+    Adjustment, ApplicationWindow, Box, FileChooserAction, FileChooserNative, Frame, Orientation,
+    ResponseType, SizeGroup, SizeGroupMode, Window, glib,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -18,10 +18,13 @@ use crate::libs::services::merge_service::{
     MergeSegment, MergeService, MergeStrategy, SegmentType,
 };
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
+use crate::libs::widgets::gminimap::GMiniMap;
 use crate::libs::widgets::gtextview::GTextView;
 
 pub struct GMergeView {
     window: Window,
+    #[allow(dead_code)]
+    minimap: GMiniMap,
 }
 
 impl GMergeView {
@@ -37,6 +40,9 @@ impl GMergeView {
             .default_width(config.merge_window_width)
             .default_height(config.merge_window_height)
             .build();
+
+        // Create minimap
+        let minimap = GMiniMap::new();
 
         let container = Box::new(Orientation::Vertical, 6);
         container.set_margin_top(6);
@@ -87,12 +93,27 @@ impl GMergeView {
 
         container.append(&toolbar);
 
-        // Text View
+        // Text View with Minimap
         let text_view = GTextView::new();
-        let frame = Frame::new(None);
-        frame.set_vexpand(true);
-        frame.set_child(Some(&text_view));
-        container.append(&frame);
+        let text_frame = Frame::new(None);
+        text_frame.set_vexpand(true);
+        text_frame.set_child(Some(&text_view));
+
+        // Create horizontal container for text frame and minimap
+        let text_container = Box::new(Orientation::Horizontal, 6);
+        text_container.set_vexpand(true);
+
+        // Add text frame (expandable)
+        text_frame.set_hexpand(true);
+        text_container.append(&text_frame);
+
+        // Create and add minimap frame (fixed width)
+        let minimap_frame = Frame::new(None);
+        minimap_frame.set_size_request(40, -1); // Fixed 40px width
+        minimap_frame.set_child(Some(&minimap));
+        text_container.append(&minimap_frame);
+
+        container.append(&text_container);
 
         // Bottom Bar
         let bottom_bar = Box::new(Orientation::Horizontal, 6);
@@ -195,13 +216,13 @@ impl GMergeView {
             let merge_service = merge_service.clone();
             let text_a = text_a.clone();
             let text_b = text_b.clone();
-
             let btn_ours = btn_ours.clone();
             let btn_theirs = btn_theirs.clone();
             let btn_union = btn_union.clone();
             let btn_conflicts = btn_conflicts.clone();
             let segments_store = segments_store.clone();
             let update_sensitivity_on_view_update = update_resolve_buttons_sensitivity.clone();
+            let minimap = minimap.clone();
 
             Rc::new(move |strategy: MergeStrategy| {
                 btn_ours.set_sensitive(strategy != MergeStrategy::AcceptOurs);
@@ -214,6 +235,54 @@ impl GMergeView {
                 let result = merge_service.merge(&text_a, &text_b, strategy);
                 text_view.set_text(&result.text);
                 *segments_store.borrow_mut() = result.segments.clone();
+
+                // Update minimap with merged text segments
+                let mut diff_lines_a = Vec::new();
+                let mut diff_lines_b = Vec::new();
+
+                // Extract diff lines from merge segments (merged text content)
+                for segment in &result.segments {
+                    let start_iter = buffer.iter_at_offset(segment.start as i32);
+                    let end_iter = buffer.iter_at_offset(segment.end as i32);
+                    let start_line = start_iter.line() as usize;
+                    let end_line = end_iter.line() as usize;
+
+                    for line in start_line..=end_line {
+                        match segment.segment_type {
+                            SegmentType::FileA => diff_lines_a.push(line),
+                            SegmentType::FileB => diff_lines_b.push(line),
+                            _ => {}
+                        }
+                    }
+                }
+
+                // Update minimap with merged text content
+                minimap.set_all_diff_lines(
+                    diff_lines_a, // File A content in merged text
+                    diff_lines_b, // File B content in merged text
+                    Vec::new(),   // No empty lines for simplicity
+                    Vec::new(),   // No empty lines for simplicity
+                );
+
+                // Update cursor setup to use merged text line counts
+                let buffer = text_view.content_view().buffer();
+                let total_lines = buffer.line_count() as usize;
+
+                // Calculate visible lines based on window height
+                let visible_lines = if total_lines > 0 {
+                    let window_height = text_view.content_view().allocation().height() as f64;
+                    let line_height = 20.0;
+                    (window_height / line_height) as usize
+                } else {
+                    35
+                };
+
+                minimap.update_text_info(
+                    crate::libs::widgets::gminimap::PanelId::A,
+                    0, // Start at top initially
+                    total_lines,
+                    visible_lines.max(5), // Ensure minimum cursor height
+                );
 
                 let buffer = text_view.content_view().buffer();
                 for segment in result.segments {
@@ -233,6 +302,146 @@ impl GMergeView {
                 update_sensitivity_on_view_update();
             })
         };
+
+        // Set up minimap cursor and scroll connection for merged text
+        // Use default visible lines initially, will be updated when window is realized
+        let initial_visible_lines = 35; // Default value
+
+        minimap.update_text_info(
+            crate::libs::widgets::gminimap::PanelId::A,
+            0,                            // Start at top initially
+            1,                            // Start with 1 line (will be updated after merge)
+            initial_visible_lines.max(5), // Ensure minimum cursor height
+        );
+
+        // Update cursor when window is mapped (has proper allocation)
+        let minimap_realize = minimap.clone();
+        let text_view_realize = text_view.clone();
+
+        window.connect_map(move |_| {
+            // Calculate visible lines based on actual window height
+            let visible_lines = {
+                let window_height = text_view_realize.content_view().allocation().height() as f64;
+                let line_height = 20.0;
+                if window_height > 0.0 {
+                    (window_height / line_height) as usize
+                } else {
+                    35
+                }
+            };
+
+            // Get actual merged text line count
+            let buffer = text_view_realize.content_view().buffer();
+            let total_lines = buffer.line_count() as usize;
+
+            minimap_realize.update_text_info(
+                crate::libs::widgets::gminimap::PanelId::A,
+                0,
+                total_lines.max(1),
+                visible_lines.max(5),
+            );
+        });
+
+        // Connect text view scroll to minimap for cursor visibility
+        if let Some(adj) = text_view.content_view().vadjustment() {
+            let minimap_clone = minimap.clone();
+
+            adj.connect_value_changed(move |adj| {
+                let upper = adj.upper();
+                let page_size = adj.page_size();
+                let current_value = adj.value();
+
+                // Ensure proper boundaries
+                let max_value = (upper - page_size).max(0.0);
+                let clamped_value = current_value.clamp(0.0, max_value);
+
+                if max_value > 0.0 {
+                    let ratio = clamped_value / max_value;
+                    let upper_line = (ratio * upper) as usize;
+
+                    minimap_clone.update_text_info(
+                        crate::libs::widgets::gminimap::PanelId::A,
+                        upper_line,
+                        upper as usize,
+                        page_size as usize,
+                    );
+                }
+            });
+        }
+
+        // Connect minimap scroll-to signal to text view scrolling
+        if let Some(adj) = text_view.content_view().vadjustment() {
+            minimap.connect_local("scroll-to", false, move |values| {
+                let ratio = values[1].get::<f64>().unwrap();
+
+                // Helper to set adjustment based on ratio
+                let set_adj_ratio = |adj: &Adjustment, r: f64| {
+                    let upper = adj.upper();
+                    let page_size = adj.page_size();
+                    let max_value = (upper - page_size).max(0.0);
+                    let new_value = (r * max_value).clamp(0.0, max_value);
+                    adj.set_value(new_value);
+                };
+
+                set_adj_ratio(&adj, ratio);
+                None
+            });
+        }
+
+        // Add window resize handlers to update minimap cursor
+        let minimap_clone_width = minimap.clone();
+        let text_view_clone_width = text_view.clone();
+        let text_a_clone_width = text_a.clone();
+        let text_b_clone_width = text_b.clone();
+
+        let minimap_clone_height = minimap.clone();
+        let text_view_clone_height = text_view.clone();
+        let text_a_clone_height = text_a.clone();
+        let text_b_clone_height = text_b.clone();
+
+        window.connect_default_width_notify(move |_| {
+            // Update minimap when window width changes
+            let total_lines_a = text_a_clone_width.lines().count();
+            let total_lines_b = text_b_clone_width.lines().count();
+            let total_lines = total_lines_a.max(total_lines_b);
+
+            let window_height = text_view_clone_width.content_view().allocation().height() as f64;
+            let line_height = 20.0;
+            let visible_lines = if total_lines > 0 {
+                (window_height / line_height) as usize
+            } else {
+                35
+            };
+
+            minimap_clone_width.update_text_info(
+                crate::libs::widgets::gminimap::PanelId::A,
+                0,
+                total_lines,
+                visible_lines.max(5),
+            );
+        });
+
+        window.connect_default_height_notify(move |_| {
+            // Update minimap when window height changes
+            let total_lines_a = text_a_clone_height.lines().count();
+            let total_lines_b = text_b_clone_height.lines().count();
+            let total_lines = total_lines_a.max(total_lines_b);
+
+            let window_height = text_view_clone_height.content_view().allocation().height() as f64;
+            let line_height = 20.0;
+            let visible_lines = if total_lines > 0 {
+                (window_height / line_height) as usize
+            } else {
+                35
+            };
+
+            minimap_clone_height.update_text_info(
+                crate::libs::widgets::gminimap::PanelId::A,
+                0,
+                total_lines,
+                visible_lines.max(5),
+            );
+        });
 
         // Connect buttons
         let update_ours = update_view.clone();
@@ -259,6 +468,7 @@ impl GMergeView {
         // Resolve Current Logic
         let segments_store_resolve = segments_store.clone();
         let text_view_resolve = text_view.clone();
+        let minimap_resolve = minimap.clone();
 
         let resolve_current = Rc::new(move |use_a: bool| {
             let buffer = text_view_resolve.content_view().buffer();
@@ -344,6 +554,35 @@ impl GMergeView {
                 let start_iter = buffer.iter_at_offset(start_offset as i32);
                 let end_iter = buffer.iter_at_offset((start_offset + new_len) as i32);
                 buffer.apply_tag_by_name(tag_name, &start_iter, &end_iter);
+
+                // Update minimap to reflect the resolved conflict
+                let mut conflict_lines = Vec::new();
+                let mut diff_lines_a = Vec::new();
+                let mut diff_lines_b = Vec::new();
+
+                for segment in segments.iter() {
+                    // Convert byte offsets to actual line numbers
+                    let start_iter = buffer.iter_at_offset(segment.start as i32);
+                    let end_iter = buffer.iter_at_offset(segment.end as i32);
+                    let start_line = start_iter.line() as usize;
+                    let end_line = end_iter.line() as usize;
+
+                    for line in start_line..=end_line {
+                        match segment.segment_type {
+                            SegmentType::FileA => diff_lines_a.push(line),
+                            SegmentType::FileB => diff_lines_b.push(line),
+                            SegmentType::Conflict => conflict_lines.push(line),
+                            _ => {}
+                        }
+                    }
+                }
+
+                minimap_resolve.set_all_diff_lines(
+                    diff_lines_a,
+                    diff_lines_b,
+                    conflict_lines.clone(), // empty_a - use conflict lines for now
+                    Vec::new(),             // empty_b - no empty lines for merge view
+                );
             }
         });
 
@@ -476,7 +715,7 @@ impl GMergeView {
             glib::Propagation::Proceed
         });
 
-        Self { window }
+        Self { window, minimap }
     }
 
     /// Display the merge view window to the user.
