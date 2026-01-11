@@ -709,11 +709,22 @@ impl AppController {
                     let panel_a_combo_for_close = panel_a_combo.clone();
                     let panel_b_combo_for_close = panel_b_combo.clone();
                     Rc::new(move || {
-                        let updated_config = state_for_close.update_config_from_ui(
+                        let mut updated_config = state_for_close.update_config_from_ui(
                             &window_for_destroy,
                             &panel_a_combo_for_close,
                             &panel_b_combo_for_close,
                         );
+
+                        // Get current config from service to preserve merge
+                        // window geometry updates
+                        let current_service_config = config_service.get_config();
+                        updated_config.merge_window_width =
+                            current_service_config.merge_window_width;
+                        updated_config.merge_window_height =
+                            current_service_config.merge_window_height;
+                        updated_config.merge_window_maximized =
+                            current_service_config.merge_window_maximized;
+
                         config_service.update_config(updated_config);
                         config_service.save_config();
                         window_for_destroy.destroy();
@@ -767,9 +778,16 @@ impl AppController {
                 return glib::Propagation::Stop;
             }
 
-            // Update configuration with current state and save to disk
-            let updated_config =
+            // Update configuration with current state and preserve merge window geometry from ConfigService
+            let mut updated_config =
                 state_for_close.update_config_from_ui(window, &panel_a_combo, &panel_b_combo);
+
+            // Get current config from service to preserve merge window geometry updates
+            let current_service_config = config_service.get_config();
+            updated_config.merge_window_width = current_service_config.merge_window_width;
+            updated_config.merge_window_height = current_service_config.merge_window_height;
+            updated_config.merge_window_maximized = current_service_config.merge_window_maximized;
+
             config_service.update_config(updated_config);
             config_service.save_config();
 

@@ -709,8 +709,9 @@ impl GMergeView {
             };
             let maximized = window_clone.is_maximized();
 
-            // Update merge window geometry in memory (no file I/O)
+            // Update merge window geometry in memory and save to disk
             config_service_clone.update_merge_window_geometry(width, height, maximized);
+            config_service_clone.save_config();
 
             glib::Propagation::Proceed
         });
