@@ -4,6 +4,7 @@
 //! * License: MIT
 //! * Version: 1.0
 
+use gtk::glib::translate::IntoGlib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{Adjustment, Box, GestureClick, PolicyType, ScrolledWindow, TextView, glib};
@@ -166,12 +167,31 @@ mod imp {
                                         &imp.numbering_blocks.borrow(),
                                     );
                                     imp.line_count_cache.set(new_line_count);
+
+                                    // Re-apply highlight as buffer might have been reset
+                                    let insert = content_buffer.get_insert();
+                                    let iter = content_buffer.iter_at_mark(&insert);
+                                    highlight_gutter_line(&gutter_view, iter.line());
                                 }
                             },
                         );
 
                         // Store new timeout ID
                         *imp.debounce_timeout.borrow_mut() = Some(new_timeout_id);
+                    }
+                });
+
+            // Setup cursor movement handler for highlighting
+            let gutter_view_weak = gutter_view.downgrade();
+            content_view
+                .buffer()
+                .connect_mark_set(move |_, location, mark| {
+                    if let Some(name) = mark.name() {
+                        if name == "insert" {
+                            if let Some(gutter_view) = gutter_view_weak.upgrade() {
+                                highlight_gutter_line(&gutter_view, location.line());
+                            }
+                        }
                     }
                 });
 
@@ -205,6 +225,36 @@ glib::wrapper! {
     pub struct GTextView(ObjectSubclass<imp::GTextView>)
         @extends Box, gtk::Widget,
         @implements gtk::Accessible, gtk::Buildable, gtk::ConstraintTarget, gtk::Orientable;
+}
+
+/// Highlights the specified line in the gutter.
+fn highlight_gutter_line(gutter_view: &TextView, line: i32) {
+    let buffer = gutter_view.buffer();
+    let tag_table = buffer.tag_table();
+
+    // Create tag if it doesn't exist
+    if tag_table.lookup("current-line").is_none() {
+        let tag = gtk::TextTag::builder()
+            .name("current-line")
+            .weight(gtk::pango::Weight::Bold.into_glib())
+            .build();
+        tag_table.add(&tag);
+    }
+
+    // Remove existing highlight
+    let start = buffer.start_iter();
+    let end = buffer.end_iter();
+    buffer.remove_tag_by_name("current-line", &start, &end);
+
+    // Apply new highlight
+    if let Some(iter) = buffer.iter_at_line(line) {
+        let mut end_iter = iter.clone();
+        if !end_iter.ends_line() {
+            end_iter.forward_to_line_end();
+        }
+        end_iter.forward_line();
+        buffer.apply_tag_by_name("current-line", &iter, &end_iter);
+    }
 }
 
 /// Efficiently updates line number display.
@@ -425,6 +475,11 @@ impl GTextView {
             &imp.numbering_blocks.borrow(),
         );
         imp.line_count_cache.set(new_line_count);
+
+        // Highlight current line
+        let insert = content_view.buffer().get_insert();
+        let iter = content_view.buffer().iter_at_mark(&insert);
+        highlight_gutter_line(&gutter_view, iter.line());
     }
 
     /// Get current text content.
@@ -485,5 +540,10 @@ impl GTextView {
         );
         // Update cache to prevent immediate redundant updates
         imp.line_count_cache.set(count);
+
+        // Highlight current line
+        let insert = content_view.buffer().get_insert();
+        let iter = content_view.buffer().iter_at_mark(&insert);
+        highlight_gutter_line(&gutter_view, iter.line());
     }
 }
