@@ -234,28 +234,39 @@ impl AppController {
 
         let is_loading_reload = is_loading.clone();
 
-        // Helper to check if modified
-        let is_modified = |combo: &gtk::ComboBoxText, base_text: &str| -> bool {
-            let mut current_parent = combo.parent();
-            for _ in 0..3 {
-                if let Some(parent) = current_parent {
-                    let mut child = parent.first_child();
-                    while let Some(widget) = child {
-                        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
-                            let text = label.label();
-                            if text.contains(base_text) && text.contains('*') {
-                                return true;
+        // Helper to find the status label associated with a combo box
+        let find_status_label = Rc::new(
+            |combo: &gtk::ComboBoxText, base_text: &str| -> Option<gtk::Label> {
+                let mut current_parent = combo.parent();
+                for _ in 0..3 {
+                    if let Some(parent) = current_parent {
+                        let mut child = parent.first_child();
+                        while let Some(widget) = child {
+                            if let Some(label) = widget.downcast_ref::<gtk::Label>() {
+                                if label.label().contains(base_text) {
+                                    return Some(label.clone());
+                                }
                             }
+                            child = widget.next_sibling();
                         }
-                        child = widget.next_sibling();
+                        current_parent = parent.parent();
+                    } else {
+                        break;
                     }
-                    current_parent = parent.parent();
-                } else {
-                    break;
                 }
+                None
+            },
+        );
+
+        // Helper to check if modified
+        let is_modified = Rc::new({
+            let find_status_label = find_status_label.clone();
+            move |combo: &gtk::ComboBoxText, base_text: &str| -> bool {
+                (*find_status_label)(combo, base_text)
+                    .map(|l| l.label().contains('*'))
+                    .unwrap_or(false)
             }
-            false
-        };
+        });
 
         // Helper to prompt for save
         let prompt_save = {
@@ -301,50 +312,27 @@ impl AppController {
         };
 
         // Helper to reset label (remove *)
-        let reset_label = |combo: &gtk::ComboBoxText, base_text: &str| {
-            let mut current_parent = combo.parent();
-            for _ in 0..3 {
-                if let Some(parent) = current_parent {
-                    let mut child = parent.first_child();
-                    while let Some(widget) = child {
-                        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
-                            if label.label().contains(base_text) {
-                                label.set_label(base_text);
-                                return;
-                            }
-                        }
-                        child = widget.next_sibling();
-                    }
-                    current_parent = parent.parent();
-                } else {
-                    break;
+        let reset_label = Rc::new({
+            let find_status_label = find_status_label.clone();
+            move |combo: &gtk::ComboBoxText, base_text: &str| {
+                if let Some(label) = (*find_status_label)(combo, base_text) {
+                    label.set_label(base_text);
                 }
             }
-        };
+        });
 
         // Helper to set label to modified state (add *)
-        let set_modified_label = |combo: &gtk::ComboBoxText, base_text: &str| {
-            let mut current_parent = combo.parent();
-            // Search up to 3 levels of parents to find the label
-            for _ in 0..3 {
-                if let Some(parent) = current_parent {
-                    let mut child = parent.first_child();
-                    while let Some(widget) = child {
-                        if let Some(label) = widget.downcast_ref::<gtk::Label>() {
-                            let text = label.label();
-                            if text.contains(base_text) && !text.contains('*') {
-                                label.set_label(&format!("{}*", base_text));
-                                return;
-                            }
-                        }
-                        child = widget.next_sibling();
+        let set_modified_label = Rc::new({
+            let find_status_label = find_status_label.clone();
+            move |combo: &gtk::ComboBoxText, base_text: &str| {
+                if let Some(label) = (*find_status_label)(combo, base_text) {
+                    let text = label.label();
+                    if !text.contains('*') {
+                        label.set_label(&format!("{}*", base_text));
                     }
-                    current_parent = parent.parent();
-                } else {
-                    break;
                 }
             }
-        };
+        });
 
         let panel_a_path_combo_reset = panel_a_path_combo.clone();
         let panel_b_path_combo_reset = panel_b_path_combo.clone();
@@ -352,6 +340,9 @@ impl AppController {
         let prompt_save_reload = prompt_save.clone();
         let file_service_reload = file_service.clone();
         let window_reload = window.clone();
+
+        let is_modified_reload = is_modified.clone();
+        let reset_label_reload = reset_label.clone();
 
         control_panel.reload_button.connect_clicked(move |_| {
             // Check if files are specified
@@ -380,8 +371,8 @@ impl AppController {
                 return;
             }
 
-            let mod_a = is_modified(&panel_a_path_combo_reload, "File A");
-            let mod_b = is_modified(&panel_b_path_combo_reload, "File B");
+            let mod_a = (*is_modified_reload)(&panel_a_path_combo_reload, "File A");
+            let mod_b = (*is_modified_reload)(&panel_b_path_combo_reload, "File B");
 
             let do_reload = {
                 let file_service = file_service.clone();
@@ -394,6 +385,7 @@ impl AppController {
                 let panel_b_path_combo_reset = panel_b_path_combo_reset.clone();
                 let status_bar_clone = status_bar_clone.clone();
                 let minimap = minimap.clone();
+                let reset_label = reset_label_reload.clone();
                 Rc::new(move || {
                     let (bytes_a, lines_a) = file_service.reload_file_from_path(
                         &panel_a_text_view_reload,
@@ -407,8 +399,8 @@ impl AppController {
                     );
 
                     // Reset labels to clean state
-                    reset_label(&panel_a_path_combo_reset, "File A");
-                    reset_label(&panel_b_path_combo_reset, "File B");
+                    (*reset_label)(&panel_a_path_combo_reset, "File A");
+                    (*reset_label)(&panel_b_path_combo_reset, "File B");
 
                     // Update status bar with file information
                     status_bar_clone.set_status_a_file_info(bytes_a, lines_a);
@@ -566,8 +558,10 @@ impl AppController {
                 }
             });
 
+            let is_modified = is_modified.clone();
+
             button.connect_clicked(move |_| {
-                let mod_file = is_modified(&combo, if is_panel_a { "File A" } else { "File B" });
+                let mod_file = (*is_modified)(&combo, if is_panel_a { "File A" } else { "File B" });
 
                 let do_open = {
                     let file_service = file_service.clone();
@@ -697,9 +691,11 @@ impl AppController {
         let panel_a_text_view_close = comparison_panels.panel_a_text_view().clone();
         let panel_b_text_view_close = comparison_panels.panel_b_text_view().clone();
 
+        let is_modified_close = is_modified.clone();
+
         window.connect_close_request(move |window| {
-            let mod_a = is_modified(&panel_a_combo, "File A");
-            let mod_b = is_modified(&panel_b_combo, "File B");
+            let mod_a = (*is_modified_close)(&panel_a_combo, "File A");
+            let mod_b = (*is_modified_close)(&panel_b_combo, "File B");
 
             if mod_a || mod_b {
                 let do_close = {
@@ -778,11 +774,13 @@ impl AppController {
                 return glib::Propagation::Stop;
             }
 
-            // Update configuration with current state and preserve merge window geometry from ConfigService
+            // Update configuration with current state and preserve merge window
+            // geometry from ConfigService
             let mut updated_config =
                 state_for_close.update_config_from_ui(window, &panel_a_combo, &panel_b_combo);
 
-            // Get current config from service to preserve merge window geometry updates
+            // Get current config from service to preserve merge window geometry
+            // updates
             let current_service_config = config_service.get_config();
             updated_config.merge_window_width = current_service_config.merge_window_width;
             updated_config.merge_window_height = current_service_config.merge_window_height;
@@ -798,198 +796,180 @@ impl AppController {
 
         let minimap = comparison_panels.minimap().clone();
 
-        // Panel A text changes
+        // Helper for buffer change handling
+        let setup_buffer_handler = {
+            let set_modified_label = set_modified_label.clone();
+            move |buffer: &gtk::TextBuffer,
+                  other_buffer: &gtk::TextBuffer,
+                  text_view: &crate::libs::widgets::gtextview::GTextView,
+                  minimap: &crate::libs::widgets::gminimap::GMiniMap,
+                  status_bar: &crate::libs::widgets::gstatusbar::GStatusBar,
+                  combo: &gtk::ComboBoxText,
+                  is_loading: &Rc<Cell<bool>>,
+                  panel_id: crate::libs::widgets::gminimap::PanelId,
+                  label_text: &'static str| {
+                let buffer_for_changed = buffer.clone();
+                let other_buffer_for_status = other_buffer.clone();
+                let text_view_for_changed = text_view.clone();
+                let minimap = minimap.clone();
+                let status_bar = status_bar.clone();
+                let combo_for_changed = combo.clone();
+                let is_loading = is_loading.clone();
+                let set_modified_label = set_modified_label.clone();
+
+                buffer.connect_changed(move |_| {
+                    let line_count = buffer_for_changed.line_count() as usize;
+                    let imp = minimap.imp();
+                    let info = imp.text_info.get();
+
+                    let current_visible_lines = match panel_id {
+                        crate::libs::widgets::gminimap::PanelId::A => info.a.visible_lines,
+                        crate::libs::widgets::gminimap::PanelId::B => info.b.visible_lines,
+                    };
+
+                    let visible_lines = if current_visible_lines == 0 {
+                        if let Some(adj) = text_view_for_changed.content_view().vadjustment() {
+                            let y = adj.value().max(0.0) as i32;
+                            let visible_height = adj.page_size();
+                            let (start_iter, _) = text_view_for_changed.content_view().line_at_y(y);
+                            let (end_iter, _) = text_view_for_changed
+                                .content_view()
+                                .line_at_y(y + visible_height as i32);
+                            let calculated = (end_iter.line() - start_iter.line()) as usize;
+                            if calculated > 50 || calculated == 0 {
+                                35
+                            } else {
+                                calculated
+                            }
+                        } else {
+                            35
+                        }
+                    } else {
+                        current_visible_lines
+                    };
+
+                    let upper_line = match panel_id {
+                        crate::libs::widgets::gminimap::PanelId::A => info.a.upper_line,
+                        crate::libs::widgets::gminimap::PanelId::B => info.b.upper_line,
+                    };
+
+                    minimap.update_text_info(panel_id, upper_line, line_count, visible_lines);
+
+                    // Update status bar with current info
+                    let (buf_a, buf_b) = match panel_id {
+                        crate::libs::widgets::gminimap::PanelId::A => {
+                            (&buffer_for_changed, &other_buffer_for_status)
+                        }
+                        crate::libs::widgets::gminimap::PanelId::B => {
+                            (&other_buffer_for_status, &buffer_for_changed)
+                        }
+                    };
+                    status_bar.update_status_from_buffers(buf_a, buf_b, &minimap);
+
+                    // Update label
+                    if !is_loading.get() {
+                        (*set_modified_label)(&combo_for_changed, label_text);
+                    }
+                })
+            }
+        };
+
+        // Setup Panel A text changes
         let panel_a_buffer = panel_a_text_view.content_view().buffer();
-        let panel_a_buffer_clone = panel_a_buffer.clone();
-        let panel_a_buffer_for_changed = panel_a_buffer.clone();
-        let panel_a_text_view_for_changed = panel_a_text_view.clone();
-        let minimap_a = minimap.clone();
-        let status_bar_a = status_bar.clone();
-        let panel_b_buffer_for_status = panel_b_text_view.content_view().buffer().clone();
-        let panel_a_path_combo_for_changed = panel_a_path_combo.clone();
-        let is_loading_a = is_loading.clone();
-        panel_a_buffer.connect_changed(move |_| {
-            let line_count = panel_a_buffer_for_changed.line_count() as usize;
-            let imp = minimap_a.imp();
-            let info = imp.text_info.get();
-            let current_visible_lines = info.a.visible_lines;
-
-            let visible_lines = if current_visible_lines == 0 {
-                if let Some(adj) = panel_a_text_view_for_changed.content_view().vadjustment() {
-                    let y = adj.value().max(0.0) as i32;
-                    let visible_height = adj.page_size();
-                    let (start_iter, _) = panel_a_text_view_for_changed.content_view().line_at_y(y);
-                    let (end_iter, _) = panel_a_text_view_for_changed
-                        .content_view()
-                        .line_at_y(y + visible_height as i32);
-                    let calculated = (end_iter.line() - start_iter.line()) as usize;
-                    if calculated > 50 || calculated == 0 {
-                        35
-                    } else {
-                        calculated
-                    }
-                } else {
-                    35
-                }
-            } else {
-                current_visible_lines
-            };
-
-            minimap_a.update_text_info(
-                crate::libs::widgets::gminimap::PanelId::A,
-                info.a.upper_line,
-                line_count,
-                visible_lines,
-            );
-
-            // Update status bar with current info
-            status_bar_a.update_status_from_buffers(
-                &panel_a_buffer_for_changed,
-                &panel_b_buffer_for_status,
-                &minimap_a,
-            );
-
-            // Update label "File A" to "File A*"
-            if !is_loading_a.get() {
-                set_modified_label(&panel_a_path_combo_for_changed, "File A");
-            }
-        });
-
-        // Panel B text changes
         let panel_b_buffer = panel_b_text_view.content_view().buffer();
-        let panel_b_buffer_clone = panel_b_buffer.clone();
-        let panel_b_buffer_for_changed = panel_b_buffer.clone();
-        let panel_b_text_view_for_changed = panel_b_text_view.clone();
-        let minimap_b = minimap.clone();
-        let status_bar_b = status_bar.clone();
-        let panel_a_buffer_for_status = panel_a_text_view.content_view().buffer().clone();
-        let panel_b_path_combo_for_changed = panel_b_path_combo.clone();
-        let is_loading_b = is_loading.clone();
-        panel_b_buffer.connect_changed(move |_| {
-            let line_count = panel_b_buffer_for_changed.line_count() as usize;
-            let imp = minimap_b.imp();
-            let info = imp.text_info.get();
-            let current_visible_lines = info.b.visible_lines;
 
-            let visible_lines = if current_visible_lines == 0 {
-                if let Some(adj) = panel_b_text_view_for_changed.content_view().vadjustment() {
+        setup_buffer_handler(
+            &panel_a_buffer,
+            &panel_b_buffer,
+            &panel_a_text_view,
+            &minimap,
+            &status_bar,
+            &panel_a_path_combo,
+            &is_loading,
+            crate::libs::widgets::gminimap::PanelId::A,
+            "File A",
+        );
+
+        // Setup Panel B text changes
+        setup_buffer_handler(
+            &panel_b_buffer,
+            &panel_a_buffer,
+            &panel_b_text_view,
+            &minimap,
+            &status_bar,
+            &panel_b_path_combo,
+            &is_loading,
+            crate::libs::widgets::gminimap::PanelId::B,
+            "File B",
+        );
+
+        // Helper for scroll handling
+        let setup_scroll_handler =
+            |adj: &Adjustment,
+             other_adj: &Adjustment,
+             text_view: &crate::libs::widgets::gtextview::GTextView,
+             buffer: &gtk::TextBuffer,
+             minimap: &crate::libs::widgets::gminimap::GMiniMap,
+             sync_enabled: &Rc<Cell<bool>>,
+             is_syncing: &Rc<Cell<bool>>,
+             panel_id: crate::libs::widgets::gminimap::PanelId| {
+                let minimap = minimap.clone();
+                let buffer = buffer.clone();
+                let text_view = text_view.clone();
+                let sync_enabled = sync_enabled.clone();
+                let is_syncing = is_syncing.clone();
+                let other_adj = other_adj.clone();
+
+                adj.connect_value_changed(move |adj: &Adjustment| {
+                    // Handle Sync Scroll
+                    if sync_enabled.get() && !is_syncing.get() {
+                        is_syncing.set(true);
+                        other_adj.set_value(adj.value());
+                        is_syncing.set(false);
+                    }
+
+                    // Update DiffMap
                     let y = adj.value().max(0.0) as i32;
+                    let (start_iter, _) = text_view.content_view().line_at_y(y);
+                    let upper_line = start_iter.line() as usize;
+                    let line_count = buffer.line_count() as usize;
+
                     let visible_height = adj.page_size();
-                    let (start_iter, _) = panel_b_text_view_for_changed.content_view().line_at_y(y);
-                    let (end_iter, _) = panel_b_text_view_for_changed
+                    let (end_iter, _) = text_view
                         .content_view()
                         .line_at_y(y + visible_height as i32);
-                    let calculated = (end_iter.line() - start_iter.line()) as usize;
-                    if calculated > 50 || calculated == 0 {
-                        35
-                    } else {
-                        calculated
-                    }
-                } else {
-                    35
-                }
-            } else {
-                current_visible_lines
+                    let visible_lines = (end_iter.line() - start_iter.line()) as usize;
+
+                    minimap.update_text_info(panel_id, upper_line, line_count, visible_lines);
+                })
             };
 
-            minimap_b.update_text_info(
+        // Setup Scroll Handlers
+        if let (Some(adj_a), Some(adj_b)) = (
+            panel_a_text_view.content_view().vadjustment(),
+            panel_b_text_view.content_view().vadjustment(),
+        ) {
+            setup_scroll_handler(
+                &adj_a,
+                &adj_b,
+                &panel_a_text_view,
+                &panel_a_buffer,
+                &minimap,
+                &sync_enabled,
+                &is_syncing,
+                crate::libs::widgets::gminimap::PanelId::A,
+            );
+
+            setup_scroll_handler(
+                &adj_b,
+                &adj_a,
+                &panel_b_text_view,
+                &panel_b_buffer,
+                &minimap,
+                &sync_enabled,
+                &is_syncing,
                 crate::libs::widgets::gminimap::PanelId::B,
-                info.b.upper_line,
-                line_count,
-                visible_lines,
             );
-
-            // Update status bar with current info
-            status_bar_b.update_status_from_buffers(
-                &panel_a_buffer_for_status,
-                &panel_b_buffer_for_changed,
-                &minimap_b,
-            );
-
-            // Update label "File B" to "File B*"
-            if !is_loading_b.get() {
-                set_modified_label(&panel_b_path_combo_for_changed, "File B");
-            }
-        });
-
-        // Panel A scroll changes
-        if let (Some(adj_a), Some(adj_b)) = (
-            panel_a_text_view.content_view().vadjustment(),
-            panel_b_text_view.content_view().vadjustment(),
-        ) {
-            let minimap_a = minimap.clone();
-            let panel_a_buffer_clone = panel_a_buffer_clone.clone();
-            let panel_a_text_view_clone = panel_a_text_view.clone();
-            let sync_enabled = sync_enabled.clone();
-            let is_syncing = is_syncing.clone();
-
-            adj_a.connect_value_changed(move |adj: &Adjustment| {
-                // Handle Sync Scroll
-                if sync_enabled.get() && !is_syncing.get() {
-                    is_syncing.set(true);
-                    adj_b.set_value(adj.value());
-                    is_syncing.set(false);
-                }
-
-                // Update DiffMap
-                let y = adj.value().max(0.0) as i32;
-                let (start_iter, _) = panel_a_text_view_clone.content_view().line_at_y(y);
-                let upper_line = start_iter.line() as usize;
-                let line_count = panel_a_buffer_clone.line_count() as usize;
-
-                let visible_height = adj.page_size();
-                let (end_iter, _) = panel_a_text_view_clone
-                    .content_view()
-                    .line_at_y(y + visible_height as i32);
-                let visible_lines = (end_iter.line() - start_iter.line()) as usize;
-
-                minimap_a.update_text_info(
-                    crate::libs::widgets::gminimap::PanelId::A,
-                    upper_line,
-                    line_count,
-                    visible_lines,
-                );
-            });
-        }
-
-        // Panel B scroll changes
-        if let (Some(adj_a), Some(adj_b)) = (
-            panel_a_text_view.content_view().vadjustment(),
-            panel_b_text_view.content_view().vadjustment(),
-        ) {
-            let minimap_b = minimap.clone();
-            let panel_b_buffer_clone = panel_b_buffer_clone.clone();
-            let panel_b_text_view_clone = panel_b_text_view.clone();
-            let sync_enabled = sync_enabled.clone();
-            let is_syncing = is_syncing.clone();
-
-            adj_b.connect_value_changed(move |adj: &Adjustment| {
-                // Handle Sync Scroll
-                if sync_enabled.get() && !is_syncing.get() {
-                    is_syncing.set(true);
-                    adj_a.set_value(adj.value());
-                    is_syncing.set(false);
-                }
-
-                // Update DiffMap
-                let y = adj.value().max(0.0) as i32;
-                let (start_iter, _) = panel_b_text_view_clone.content_view().line_at_y(y);
-                let upper_line = start_iter.line() as usize;
-                let line_count = panel_b_buffer_clone.line_count() as usize;
-
-                let visible_height = adj.page_size();
-                let (end_iter, _) = panel_b_text_view_clone
-                    .content_view()
-                    .line_at_y(y + visible_height as i32);
-                let visible_lines = (end_iter.line() - start_iter.line()) as usize;
-
-                minimap_b.update_text_info(
-                    crate::libs::widgets::gminimap::PanelId::B,
-                    upper_line,
-                    line_count,
-                    visible_lines,
-                );
-            });
         }
 
         // Connect GMiniMap scroll-to signal (Drag support)
