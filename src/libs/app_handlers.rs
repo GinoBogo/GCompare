@@ -397,6 +397,7 @@ pub fn setup_options_interaction(
 
 /// Setup navigation buttons (Previous/Next) interaction.
 pub fn setup_navigation_interaction(
+    window: &ApplicationWindow,
     prev_button: &GButton,
     next_button: &GButton,
     panel_a: &GTextView,
@@ -404,8 +405,22 @@ pub fn setup_navigation_interaction(
 ) {
     let panel_a_text_view_nav = panel_a.clone();
     let minimap_nav = minimap.clone();
+    let window_prev = window.clone();
 
     prev_button.connect_clicked(move |_| {
+        if !minimap_nav.has_differences() {
+            let dialog = gtk::MessageDialog::builder()
+                .transient_for(&window_prev)
+                .modal(true)
+                .message_type(gtk::MessageType::Info)
+                .buttons(gtk::ButtonsType::Ok)
+                .text("No Differences Found")
+                .secondary_text("Please ensure a comparison has been performed.")
+                .build();
+            dialog.connect_response(|dlg, _| dlg.close());
+            dialog.show();
+            return;
+        }
         // Get current line from panel A
         if let Some(adj) = panel_a_text_view_nav.content_view().vadjustment() {
             let y = adj.value().max(0.0) as i32;
@@ -428,8 +443,22 @@ pub fn setup_navigation_interaction(
 
     let panel_a_text_view_nav_next = panel_a.clone();
     let minimap_nav_next = minimap.clone();
+    let window_next = window.clone();
 
     next_button.connect_clicked(move |_| {
+        if !minimap_nav_next.has_differences() {
+            let dialog = gtk::MessageDialog::builder()
+                .transient_for(&window_next)
+                .modal(true)
+                .message_type(gtk::MessageType::Info)
+                .buttons(gtk::ButtonsType::Ok)
+                .text("No Differences Found")
+                .secondary_text("Please ensure a comparison has been performed.")
+                .build();
+            dialog.connect_response(|dlg, _| dlg.close());
+            dialog.show();
+            return;
+        }
         // Get current line from panel A
         if let Some(adj) = panel_a_text_view_nav_next.content_view().vadjustment() {
             let y = adj.value().max(0.0) as i32;

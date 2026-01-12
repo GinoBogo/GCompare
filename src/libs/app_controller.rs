@@ -1021,6 +1021,7 @@ impl AppController {
 
         // Setup navigation buttons
         app_handlers::setup_navigation_interaction(
+            window,
             &control_panel.previous_button,
             &control_panel.next_button,
             &panel_a_text_view,

@@ -275,6 +275,15 @@ impl GMiniMap {
         self.set_all_diff_lines(Vec::new(), Vec::new(), Vec::new(), Vec::new());
     }
 
+    /// Check if there are any differences recorded.
+    pub fn has_differences(&self) -> bool {
+        let imp = self.imp();
+        !imp.diff_lines_a.borrow().is_empty()
+            || !imp.diff_lines_b.borrow().is_empty()
+            || !imp.empty_lines_a.borrow().is_empty()
+            || !imp.empty_lines_b.borrow().is_empty()
+    }
+
     /// Navigate to the next difference and return the line number to scroll to
     pub fn next_difference(&self, current_line: usize) -> Option<usize> {
         let imp = self.imp();
