@@ -7,16 +7,16 @@
 use crate::libs::services::font_service::{FontInfo, FontService};
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
 use crate::libs::widgets::gcolorpicker::GColorPicker;
-use crate::libs::widgets::gcombofont::GComboFont;
+use crate::libs::widgets::gcomboboxfont::GComboBoxFont;
 use gtk::prelude::*;
 use gtk::{
     ApplicationWindow, CheckButton, Dialog, Grid, Label, Notebook, ScrolledWindow, SpinButton,
     TextView,
 };
 
-pub struct GOptionsDlg {
+pub struct GOptionsDialog {
     dialog: Dialog,
-    font_family_combo: GComboFont,
+    font_family_combo: GComboBoxFont,
     font_size_spin: SpinButton,
     auto_compare_check: CheckButton,
     sync_scroll_check: CheckButton,
@@ -42,7 +42,7 @@ pub struct GOptionsDlg {
     minimap_cursor_bg_picker: GColorPicker,
 }
 
-impl GOptionsDlg {
+impl GOptionsDialog {
     /// Create a new options dialog.
     ///
     /// # Arguments
@@ -96,8 +96,8 @@ impl GOptionsDlg {
         font_family_label.set_halign(gtk::Align::End);
         fonts_grid.attach(&font_family_label, 0, 0, 1, 1);
 
-        // Create GComboFont widget for font selection
-        let font_family_combo = GComboFont::new();
+        // Create GComboBoxFont widget for font selection
+        let font_family_combo = GComboBoxFont::new();
 
         // Get system monospace fonts
         let font_service = FontService::new();

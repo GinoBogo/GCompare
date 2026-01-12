@@ -10,7 +10,7 @@ use similar::ChangeTag;
 use std::cell::Cell;
 use std::rc::Rc;
 
-use crate::libs::dialogs::goptionsdlg::GOptionsDlg;
+use crate::libs::dialogs::goptionsdialog::GOptionsDialog;
 use crate::libs::services::color_parser::parse_color_with_fallback;
 use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::diff_service::DiffService;
@@ -295,7 +295,7 @@ pub fn setup_options_interaction(
     button.connect_clicked(move |_| {
         // Get current config from memory (no file I/O)
         let current_config = config_service_clone.get_config();
-        let dialog = GOptionsDlg::new(
+        let dialog = GOptionsDialog::new(
             &window_clone,
             &current_config.font_family,
             current_config.font_size as f64,

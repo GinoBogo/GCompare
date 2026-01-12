@@ -6,7 +6,7 @@
 
 pub mod gbutton;
 pub mod gcolorpicker;
-pub mod gcombofont;
+pub mod gcomboboxfont;
 pub mod gminimap;
 pub mod gstatusbar;
 pub mod gtextview;

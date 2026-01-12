@@ -27,8 +27,8 @@ impl FileService {
         }
     }
 
-    /// Reload file content from a given path into a GTextView.
-    pub fn reload_file_from_path(
+    /// Load file content from a given path into a GTextView.
+    pub fn load_file_from_path(
         &self,
         text_view: &GTextView,
         path_combo: &ComboBoxText,

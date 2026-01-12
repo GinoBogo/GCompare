@@ -1,4 +1,4 @@
-//! Custom GComboFont widget implementation for font selection with markup support.
+//! Custom GComboBoxFont widget implementation for font selection with markup support.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT
@@ -12,14 +12,14 @@ use std::process::Command;
 
 /// Custom font selection combo box with Pango markup support for alias fonts.
 #[derive(Clone)]
-pub struct GComboFont {
+pub struct GComboBoxFont {
     combo: ComboBox,
     list_store: ListStore,
     font_families: RefCell<Vec<FontInfo>>,
 }
 
-impl GComboFont {
-    /// Create a new GComboFont widget.
+impl GComboBoxFont {
+    /// Create a new GComboBoxFont widget.
     pub fn new() -> Self {
         let list_store = ListStore::new(&[
             gtk::glib::Type::STRING, // Display name (with markup)
@@ -156,7 +156,7 @@ impl GComboFont {
     }
 }
 
-impl Default for GComboFont {
+impl Default for GComboBoxFont {
     fn default() -> Self {
         Self::new()
     }

@@ -4,4 +4,4 @@
 //! * License: MIT
 //! * Version: 1.0
 
-pub mod goptionsdlg;
+pub mod goptionsdialog;

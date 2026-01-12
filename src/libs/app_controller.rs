@@ -171,7 +171,7 @@ impl AppController {
                 }
 
                 // Load the file content
-                let (bytes_a, lines_a) = self.file_service.reload_file_from_path(
+                let (bytes_a, lines_a) = self.file_service.load_file_from_path(
                     panel_a_text_view,
                     panel_a_path_combo,
                     None,
@@ -192,7 +192,7 @@ impl AppController {
                 }
 
                 // Load the file content
-                let (bytes_b, lines_b) = self.file_service.reload_file_from_path(
+                let (bytes_b, lines_b) = self.file_service.load_file_from_path(
                     panel_b_text_view,
                     panel_b_path_combo,
                     None,
@@ -217,7 +217,7 @@ impl AppController {
         // Shared state for loading flag to suppress "modified" label updates
         let is_loading = Rc::new(Cell::new(false));
 
-        // Setup reload button handler
+        // Setup load button handler
         let panel_a_text_view = comparison_panels.panel_a_text_view().clone();
         let panel_a_path_combo = comparison_panels.panel_a_path_combo().clone();
         let panel_b_text_view = comparison_panels.panel_b_text_view().clone();
@@ -344,7 +344,7 @@ impl AppController {
         let is_modified_reload = is_modified.clone();
         let reset_label_reload = reset_label.clone();
 
-        control_panel.reload_button.connect_clicked(move |_| {
+        control_panel.load_button.connect_clicked(move |_| {
             // Check if files are specified
             let get_path = |combo: &gtk::ComboBoxText| {
                 combo
@@ -364,7 +364,7 @@ impl AppController {
                     .message_type(gtk::MessageType::Warning)
                     .buttons(gtk::ButtonsType::Ok)
                     .text("No Files Specified")
-                    .secondary_text("Please specify at least one file to reload.")
+                    .secondary_text("Please specify at least one file to load.")
                     .build();
                 dialog.connect_response(|dlg, _| dlg.close());
                 dialog.show();
@@ -387,12 +387,12 @@ impl AppController {
                 let minimap = minimap.clone();
                 let reset_label = reset_label_reload.clone();
                 Rc::new(move || {
-                    let (bytes_a, lines_a) = file_service.reload_file_from_path(
+                    let (bytes_a, lines_a) = file_service.load_file_from_path(
                         &panel_a_text_view_reload,
                         &panel_a_path_combo_reload,
                         Some(is_loading_reload.clone()),
                     );
-                    let (bytes_b, lines_b) = file_service.reload_file_from_path(
+                    let (bytes_b, lines_b) = file_service.load_file_from_path(
                         &panel_b_text_view_reload,
                         &panel_b_path_combo_reload,
                         Some(is_loading_reload.clone()),
