@@ -515,6 +515,15 @@ impl GTextView {
         }
     }
 
+    /// Sets whether to show line numbers.
+    pub fn set_show_line_numbers(&self, show: bool) {
+        self.imp()
+            .gutter_scrolled_window
+            .get()
+            .expect("Scrolled window not initialized")
+            .set_visible(show);
+    }
+
     /// Forces a full recalculation and redraw of the line number gutter.
     fn force_gutter_update(&self) {
         let imp = self.imp();

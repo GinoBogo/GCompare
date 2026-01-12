@@ -348,6 +348,7 @@ pub fn setup_options_interaction(
                     updated_config.auto_compare = color_config.auto_compare;
                     updated_config.sync_scroll = color_config.sync_scroll;
                     updated_config.ignore_whitespace = color_config.ignore_whitespace;
+                    updated_config.show_line_numbers = color_config.show_line_numbers;
 
                     // Update color settings
                     updated_config.text_diff_remove_bg = color_config.text_diff_remove_bg;
@@ -372,6 +373,10 @@ pub fn setup_options_interaction(
 
                     // Update runtime sync state
                     sync_enabled_apply.set(updated_config.sync_scroll);
+
+                    // Update line numbers visibility
+                    panel_a_text_view.set_show_line_numbers(updated_config.show_line_numbers);
+                    panel_b_text_view.set_show_line_numbers(updated_config.show_line_numbers);
 
                     // Update theme with new colors
                     theme::update_provider_with_config(&css_provider_apply, &updated_config);

@@ -95,6 +95,7 @@ impl GMergeView {
 
         // Text View with Minimap
         let text_view = GTextView::new();
+        text_view.set_show_line_numbers(config.show_line_numbers);
         let text_frame = Frame::new(None);
         text_frame.set_vexpand(true);
         text_frame.set_child(Some(&text_view));

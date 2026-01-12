@@ -23,6 +23,7 @@ pub struct AppConfig {
     pub auto_compare: bool,
     pub sync_scroll: bool,
     pub ignore_whitespace: bool,
+    pub show_line_numbers: bool,
     // Color settings
     pub text_diff_remove_bg: String,
     pub text_diff_remove_fg: String,
@@ -59,6 +60,7 @@ impl Default for AppConfig {
             auto_compare: true,
             sync_scroll: true,
             ignore_whitespace: false,
+            show_line_numbers: true,
             // Color settings - using CSS-based theme functions
             text_diff_remove_bg: get_background_color_hex("text-diff-remove"),
             text_diff_remove_fg: get_color_hex("text-diff-remove"),
@@ -169,6 +171,7 @@ impl ApplicationState {
             auto_compare: current_config.auto_compare,
             sync_scroll: current_config.sync_scroll,
             ignore_whitespace: current_config.ignore_whitespace,
+            show_line_numbers: current_config.show_line_numbers,
             // Preserve color settings
             text_diff_remove_bg: current_config.text_diff_remove_bg.clone(),
             text_diff_remove_fg: current_config.text_diff_remove_fg.clone(),
