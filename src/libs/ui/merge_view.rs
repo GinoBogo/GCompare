@@ -211,7 +211,7 @@ impl GMergeView {
             })
         };
 
-        // Helper for minimap content updates
+        // Helpers for minimap updates
         let update_minimap_content = {
             let minimap = minimap.clone();
             Rc::new(move |segments: &[MergeSegment], buffer: &gtk::TextBuffer| {
@@ -239,7 +239,6 @@ impl GMergeView {
             })
         };
 
-        // Helper for minimap geometry updates
         let update_minimap_geometry = {
             let minimap = minimap.clone();
             let text_view = text_view.clone();
@@ -279,16 +278,85 @@ impl GMergeView {
             let update_minimap_geometry = update_minimap_geometry.clone();
 
             Rc::new(move |strategy: MergeStrategy| {
-                btn_ours.set_sensitive(strategy != MergeStrategy::AcceptOurs);
-                btn_theirs.set_sensitive(strategy != MergeStrategy::AcceptTheirs);
-                btn_union.set_sensitive(strategy != MergeStrategy::Union);
-                let is_conflicts = strategy == MergeStrategy::MarkConflicts;
-                btn_conflicts.set_sensitive(!is_conflicts);
-                btn_conflicts.set_opacity(if is_conflicts { 0.5 } else { 1.0 });
+                // Helper to update button visual state based on active strategy
+                let update_btn_state = |btn: &GButton, is_active: bool| {
+                    btn.set_sensitive(!is_active);
+                    btn.set_opacity(if is_active { 0.5 } else { 1.0 });
+                };
+                update_btn_state(&btn_ours, strategy == MergeStrategy::AcceptOurs);
+                update_btn_state(&btn_theirs, strategy == MergeStrategy::AcceptTheirs);
+                update_btn_state(&btn_union, strategy == MergeStrategy::Union);
+                update_btn_state(&btn_conflicts, strategy == MergeStrategy::MarkConflicts);
 
                 let result = merge_service.merge(&text_a, &text_b, strategy);
                 text_view.set_text(&result.text);
                 *segments_store.borrow_mut() = result.segments.clone();
+
+                if strategy == MergeStrategy::MarkConflicts {
+                    let buffer = text_view.content_view().buffer();
+                    let start = buffer.start_iter();
+                    let end = buffer.end_iter();
+                    let text = buffer.text(&start, &end, false);
+
+                    let mut numbering_blocks = Vec::new();
+                    let mut current_line_num = 1;
+                    let mut saved_start_num = 1;
+                    let mut max_num_reached = 1;
+
+                    let mut current_block_start = 0;
+                    let mut current_block_start_num = 1;
+                    let mut in_block = true;
+
+                    for (idx, line) in text.lines().enumerate() {
+                        let is_marker = line.starts_with("<<<<<<<")
+                            || line.starts_with("=======")
+                            || line.starts_with(">>>>>>>");
+
+                        if is_marker {
+                            // Close current block if open
+                            if in_block {
+                                if idx > current_block_start {
+                                    numbering_blocks
+                                        .push((current_block_start..idx, current_block_start_num));
+                                }
+                                in_block = false;
+                            }
+
+                            // Handle marker logic
+                            if line.starts_with("<<<<<<<") {
+                                saved_start_num = current_line_num;
+                            } else if line.starts_with("=======") {
+                                max_num_reached = std::cmp::max(max_num_reached, current_line_num);
+                                current_line_num = saved_start_num;
+                            } else if line.starts_with(">>>>>>>") {
+                                max_num_reached = std::cmp::max(max_num_reached, current_line_num);
+                                current_line_num = max_num_reached;
+                            }
+                        } else {
+                            // Content line
+                            if !in_block {
+                                current_block_start = idx;
+                                current_block_start_num = current_line_num;
+                                in_block = true;
+                            }
+                            current_line_num += 1;
+                        }
+                    }
+
+                    // Close final block
+                    if in_block {
+                        let total_lines = buffer.line_count() as usize;
+                        if total_lines > current_block_start {
+                            numbering_blocks
+                                .push((current_block_start..total_lines, current_block_start_num));
+                        }
+                    }
+
+                    text_view.set_numbering_blocks(numbering_blocks);
+                } else {
+                    // For other strategies, ensure continuous numbering
+                    text_view.clear_numbering_blocks();
+                }
 
                 let buffer = text_view.content_view().buffer();
                 update_minimap_content(&result.segments, &buffer);

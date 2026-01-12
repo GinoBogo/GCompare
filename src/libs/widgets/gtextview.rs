@@ -26,6 +26,7 @@ mod imp {
         // State management
         pub line_count_cache: Cell<usize>,
         pub debounce_timeout: RefCell<Option<glib::SourceId>>,
+        pub numbering_blocks: RefCell<Vec<(std::ops::Range<usize>, usize)>>,
     }
 
     #[glib::object_subclass]
@@ -147,8 +148,10 @@ mod imp {
                                     let new_line_count = content_buffer.line_count() as usize;
                                     let cached_count = imp.line_count_cache.get();
 
-                                    // Skip update if line count unchanged
-                                    if new_line_count == cached_count {
+                                    // Skip update if line count unchanged and no blocks defined
+                                    if new_line_count == cached_count
+                                        && imp.numbering_blocks.borrow().is_empty()
+                                    {
                                         return;
                                     }
 
@@ -159,6 +162,7 @@ mod imp {
                                         &main_vadj,
                                         new_line_count,
                                         cached_count,
+                                        &imp.numbering_blocks.borrow(),
                                     );
                                     imp.line_count_cache.set(new_line_count);
                                 }
@@ -216,6 +220,7 @@ fn update_line_numbers(
     main_vadj: &Adjustment,
     new_line_count: usize,
     old_line_count: usize,
+    blocks: &[(std::ops::Range<usize>, usize)],
 ) {
     let gutter_buffer = gutter_view.buffer();
 
@@ -235,25 +240,52 @@ fn update_line_numbers(
     };
 
     // Determine update strategy
+    let has_blocks = !blocks.is_empty();
     let needs_full_update = new_line_count > old_line_count + 10
         || new_line_count < old_line_count.saturating_sub(10)
         || new_digit_count != old_digit_count
-        || old_line_count == 0;
+        || old_line_count == 0
+        || has_blocks;
 
     // Full Update Strategy (large changes)
 
     if needs_full_update {
         let mut line_numbers = String::with_capacity(new_line_count * (new_digit_count + 1));
+        if has_blocks {
+            let mut block_iter = blocks.iter().peekable();
+            let mut current_block = block_iter.next();
 
-        for line in 1..=new_line_count {
-            use std::fmt::Write;
-            let _ = writeln!(line_numbers, "{}", line);
-        }
-        // Remove trailing newline
-        if new_line_count > 0 {
-            line_numbers.pop();
+            for line_idx in 0..new_line_count {
+                use std::fmt::Write;
+
+                if let Some((range, start_num)) = current_block {
+                    if range.contains(&line_idx) {
+                        let num = start_num + (line_idx - range.start);
+                        let _ = writeln!(line_numbers, "{}", num);
+                    } else {
+                        let _ = writeln!(line_numbers, "");
+                    }
+
+                    // If we just processed the last line of the block, advance
+                    if line_idx + 1 == range.end {
+                        current_block = block_iter.next();
+                    }
+                } else {
+                    let _ = writeln!(line_numbers, "");
+                }
+            }
+        } else {
+            // Default continuous numbering
+            for line in 1..=new_line_count {
+                use std::fmt::Write;
+                let _ = writeln!(line_numbers, "{}", line);
+            }
         }
 
+        // Remove trailing newline and set text
+        if !line_numbers.is_empty() {
+            line_numbers.pop(); // Remove final \n from writeln!
+        }
         gutter_buffer.set_text(&line_numbers);
     }
     // Incremental Update Strategy (small changes)
@@ -361,6 +393,9 @@ impl GTextView {
             timeout_id.remove();
         }
 
+        // Clear numbering blocks as text is changing
+        self.clear_numbering_blocks();
+
         // Get current cursor position to preserve it
         let buffer = content_view.buffer();
         let cursor_iter = buffer.iter_at_offset(buffer.cursor_position());
@@ -390,6 +425,7 @@ impl GTextView {
             &content_scrolled_window.vadjustment(),
             new_line_count,
             imp.line_count_cache.get(),
+            &imp.numbering_blocks.borrow(),
         );
         imp.line_count_cache.set(new_line_count);
     }
@@ -407,5 +443,50 @@ impl GTextView {
     /// Clear text content.
     pub fn clear(&self) {
         self.set_text("");
+    }
+
+    /// Sets blocks of lines to be numbered. Each block restarts the count from 1.
+    /// Lines outside of these blocks will not be numbered.
+    pub fn set_numbering_blocks(&self, blocks: Vec<(std::ops::Range<usize>, usize)>) {
+        let imp = self.imp();
+        imp.numbering_blocks.replace(blocks);
+        self.force_gutter_update();
+    }
+
+    /// Clears any numbering blocks, reverting the gutter to continuous numbering.
+    pub fn clear_numbering_blocks(&self) {
+        let imp = self.imp();
+        let mut blocks = imp.numbering_blocks.borrow_mut();
+        if !blocks.is_empty() {
+            blocks.clear();
+            self.force_gutter_update();
+        }
+    }
+
+    /// Forces a full recalculation and redraw of the line number gutter.
+    fn force_gutter_update(&self) {
+        let imp = self.imp();
+        let content_view = self.content_view();
+        let gutter_view = self.gutter_view();
+        let gutter_scrolled_window = imp
+            .gutter_scrolled_window
+            .get()
+            .expect("Scrolled window not initialized");
+        let content_scrolled_window = imp
+            .content_scrolled_window
+            .get()
+            .expect("Scrolled window not initialized");
+        let count = content_view.buffer().line_count() as usize;
+
+        update_line_numbers(
+            &gutter_view,
+            gutter_scrolled_window,
+            &content_scrolled_window.vadjustment(),
+            count, // new line count
+            0,     // Force full update
+            &imp.numbering_blocks.borrow(),
+        );
+        // Update cache to prevent immediate redundant updates
+        imp.line_count_cache.set(count);
     }
 }
