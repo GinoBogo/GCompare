@@ -9,6 +9,7 @@ use gtk::subclass::prelude::*;
 use gtk::{Adjustment, Box, GestureClick, PolicyType, ScrolledWindow, TextView, glib};
 use once_cell::sync::OnceCell;
 use std::cell::{Cell, RefCell};
+use std::fmt::Write;
 
 mod imp {
     use super::*;
@@ -256,8 +257,6 @@ fn update_line_numbers(
             let mut current_block = block_iter.next();
 
             for line_idx in 0..new_line_count {
-                use std::fmt::Write;
-
                 if let Some((range, start_num)) = current_block {
                     if range.contains(&line_idx) {
                         let num = start_num + (line_idx - range.start);
@@ -277,7 +276,6 @@ fn update_line_numbers(
         } else {
             // Default continuous numbering
             for line in 1..=new_line_count {
-                use std::fmt::Write;
                 let _ = writeln!(line_numbers, "{}", line);
             }
         }
@@ -301,7 +299,6 @@ fn update_line_numbers(
             }
 
             for line in (old_line_count + 1)..=new_line_count {
-                use std::fmt::Write;
                 let _ = write!(additions, "{}", line);
                 if line < new_line_count {
                     additions.push('\n');
