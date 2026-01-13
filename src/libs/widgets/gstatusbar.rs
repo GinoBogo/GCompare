@@ -35,9 +35,10 @@ impl GStatusBar {
 
         // Status bar A label
         let status_bar_a_label = Label::builder()
-            .label("by Gino Bogo")
+            .label("<i>Rusted by Gino Bogo</i>")
             .xalign(0.01)
             .width_chars(80)
+            .use_markup(true)
             .hexpand(true)
             .build();
 
@@ -54,6 +55,7 @@ impl GStatusBar {
             .label("")
             .xalign(0.02)
             .width_chars(80)
+            .use_markup(true)
             .hexpand(true)
             .build();
 
@@ -85,13 +87,13 @@ impl GStatusBar {
     /// Update the status bar A label with file information.
     pub fn set_status_a_file_info(&self, bytes: usize, lines: usize) {
         let status = format!("{} bytes, {} lines", bytes, lines);
-        self.status_bar_a.set_text(&status);
+        self.status_bar_a.set_markup(&status);
     }
 
     /// Update the status bar B label with file information.
     pub fn set_status_b_file_info(&self, bytes: usize, lines: usize) {
         let status = format!("{} bytes, {} lines", bytes, lines);
-        self.status_bar_b.set_text(&status);
+        self.status_bar_b.set_markup(&status);
     }
 
     /// Update the status bar A label with file and diff information.
@@ -105,25 +107,25 @@ impl GStatusBar {
         let status = match (regular_diffs, empty_diffs) {
             (0, 0) => format!("{} bytes, {} lines", bytes, lines),
             (0, empty) => format!(
-                "{} bytes, {} lines, {} empty line{}",
+                "{} bytes, {} lines, <b>{}</b> empty line{}",
                 bytes,
                 lines,
                 empty,
                 if empty == 1 { "" } else { "s" }
             ),
             (regular, 0) => format!(
-                "{} bytes, {} lines, {} differing line{}",
+                "{} bytes, {} lines, <b>{}</b> differing line{}",
                 bytes,
                 lines,
                 regular,
                 if regular == 1 { "" } else { "s" }
             ),
             (regular, empty) => format!(
-                "{} bytes, {} lines, {} differing, {} empty",
+                "{} bytes, {} lines, <b>{}</b> differing, <b>{}</b> empty",
                 bytes, lines, regular, empty
             ),
         };
-        self.status_bar_a.set_text(&status);
+        self.status_bar_a.set_markup(&status);
     }
 
     /// Update the status bar B label with file and diff information.
@@ -137,25 +139,25 @@ impl GStatusBar {
         let status = match (regular_diffs, empty_diffs) {
             (0, 0) => format!("{} bytes, {} lines", bytes, lines),
             (0, empty) => format!(
-                "{} bytes, {} lines, {} empty line{}",
+                "{} bytes, {} lines, <b>{}</b> empty line{}",
                 bytes,
                 lines,
                 empty,
                 if empty == 1 { "" } else { "s" }
             ),
             (regular, 0) => format!(
-                "{} bytes, {} lines, {} differing line{}",
+                "{} bytes, {} lines, <b>{}</b> differing line{}",
                 bytes,
                 lines,
                 regular,
                 if regular == 1 { "" } else { "s" }
             ),
             (regular, empty) => format!(
-                "{} bytes, {} lines, {} differing, {} empty",
+                "{} bytes, {} lines, <b>{}</b> differing, <b>{}</b> empty",
                 bytes, lines, regular, empty
             ),
         };
-        self.status_bar_b.set_text(&status);
+        self.status_bar_b.set_markup(&status);
     }
 
     /// Update status with current buffer and diff information
