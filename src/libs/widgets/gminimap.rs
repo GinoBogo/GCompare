@@ -118,7 +118,7 @@ mod imp {
             // Create Cursor widget
             let cursor = Box::new(gtk::Orientation::Horizontal, 0);
             cursor.add_css_class("minimap-cursor");
-            cursor.set_cursor_from_name(Some("grab"));
+            cursor.set_cursor_from_name(Some("pointer"));
 
             // Setup Drag Gesture
             let drag = GestureDrag::new();
@@ -136,7 +136,7 @@ mod imp {
                 {
                     imp.is_dragging.set(true);
                     imp.drag_start_y.set(cursor_size.y);
-                    obj.set_cursor_from_name(Some("grabbing"));
+                    obj.set_cursor_from_name(Some("move"));
                 } else {
                     gesture.set_state(gtk::EventSequenceState::Denied);
                 }
