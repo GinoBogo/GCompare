@@ -29,6 +29,8 @@ mod imp {
         pub line_count_cache: Cell<usize>,
         pub debounce_timeout: RefCell<Option<glib::SourceId>>,
         pub numbering_blocks: RefCell<Vec<(std::ops::Range<usize>, usize)>>,
+        pub font_family: RefCell<String>,
+        pub font_size: Cell<f64>,
     }
 
     #[glib::object_subclass]
@@ -60,6 +62,11 @@ mod imp {
                 .vexpand(true)
                 .justification(gtk::Justification::Right)
                 .monospace(true)
+                .pixels_above_lines(0)
+                .pixels_below_lines(0)
+                .pixels_inside_wrap(0)
+                .top_margin(0)
+                .bottom_margin(0)
                 .build();
 
             // Disable context menu on gutter
@@ -72,6 +79,7 @@ mod imp {
             gutter_view.add_controller(gesture);
 
             gutter_view.add_css_class("gutter-numbers");
+            gutter_view.add_css_class("gtextview-view");
 
             let gutter_scrolled_window = ScrolledWindow::builder()
                 .hexpand(false)
@@ -87,7 +95,14 @@ mod imp {
                 .hexpand(true)
                 .vexpand(true)
                 .monospace(true)
+                .pixels_above_lines(0)
+                .pixels_below_lines(0)
+                .pixels_inside_wrap(0)
+                .top_margin(0)
+                .bottom_margin(0)
                 .build();
+
+            content_view.add_css_class("gtextview-view");
 
             let content_scrolled_window = ScrolledWindow::builder()
                 .hexpand(true)
@@ -201,6 +216,9 @@ mod imp {
             self.content_scrolled_window
                 .set(content_scrolled_window)
                 .unwrap();
+
+            // Apply default font settings to ensure synchronization
+            obj.set_font("Monospace", 10.0);
         }
 
         /// Cleanup resources on widget destruction.
@@ -223,6 +241,11 @@ glib::wrapper! {
 }
 
 /// Highlights the specified line in the gutter.
+///
+/// # Arguments
+///
+/// * `gutter_view` - The text view used for the gutter.
+/// * `line` - The line number to highlight (0-based).
 fn highlight_gutter_line(gutter_view: &TextView, line: i32) {
     let buffer = gutter_view.buffer();
     let tag_table = buffer.tag_table();
@@ -260,6 +283,7 @@ fn highlight_gutter_line(gutter_view: &TextView, line: i32) {
 /// * `gutter_scrolled_window` - ScrolledWindow containing the gutter view.
 /// * `new_line_count` - Current number of lines in content.
 /// * `old_line_count` - Previous number of lines in content.
+/// * `blocks` - Optional blocks of lines for non-continuous numbering.
 fn update_line_numbers(
     gutter_view: &TextView,
     _gutter_scrolled_window: &ScrolledWindow,
@@ -477,6 +501,10 @@ impl GTextView {
 
     /// Sets blocks of lines to be numbered. Each block restarts the count from 1.
     /// Lines outside of these blocks will not be numbered.
+    ///
+    /// # Arguments
+    ///
+    /// * `blocks` - A vector of ranges and their starting numbers.
     pub fn set_numbering_blocks(&self, blocks: Vec<(std::ops::Range<usize>, usize)>) {
         let imp = self.imp();
         imp.numbering_blocks.replace(blocks);
@@ -494,6 +522,10 @@ impl GTextView {
     }
 
     /// Sets whether to show line numbers.
+    ///
+    /// # Arguments
+    ///
+    /// * `show` - Whether to show the gutter.
     pub fn set_show_line_numbers(&self, show: bool) {
         self.imp()
             .gutter_scrolled_window
@@ -527,5 +559,60 @@ impl GTextView {
         let insert = content_view.buffer().get_insert();
         let iter = content_view.buffer().iter_at_mark(&insert);
         highlight_gutter_line(&gutter_view, iter.line());
+    }
+
+    /// Set the font family and size for both views to ensure perfect alignment.
+    ///
+    /// # Arguments
+    ///
+    /// * `family` - Font family name (e.g. "Monospace").
+    /// * `size_pt` - Font size in points.
+    pub fn set_font(&self, family: &str, size_pt: f64) {
+        let imp = self.imp();
+        imp.font_family.replace(family.to_string());
+        imp.font_size.set(size_pt);
+        self.update_font_css();
+    }
+
+    /// Set the font family.
+    ///
+    /// # Arguments
+    ///
+    /// * `family` - Font family name (e.g. "Monospace").
+    pub fn set_font_family(&self, family: &str) {
+        self.imp().font_family.replace(family.to_string());
+        self.update_font_css();
+    }
+
+    /// Set the font size.
+    ///
+    /// # Arguments
+    ///
+    /// * `size_pt` - Font size in points.
+    pub fn set_font_size(&self, size_pt: f64) {
+        self.imp().font_size.set(size_pt);
+        self.update_font_css();
+    }
+
+    /// Update CSS styles for font synchronization.
+    fn update_font_css(&self) {
+        let imp = self.imp();
+        let family = imp.font_family.borrow();
+        let size = imp.font_size.get();
+
+        let css = format!(
+            ".gtextview-view {{ font-family: '{}'; font-size: {}pt; }}",
+            family, size
+        );
+        let provider = gtk::CssProvider::new();
+        provider.load_from_data(&css);
+
+        let priority = gtk::STYLE_PROVIDER_PRIORITY_APPLICATION;
+        self.content_view()
+            .style_context()
+            .add_provider(&provider, priority);
+        self.gutter_view()
+            .style_context()
+            .add_provider(&provider, priority);
     }
 }

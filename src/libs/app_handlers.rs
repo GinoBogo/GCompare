@@ -315,31 +315,8 @@ pub fn setup_options_interaction(
             move |result| {
                 if let Some((font_family, font_size, color_config)) = result {
                     // Apply font changes to text views
-                    let css_provider = gtk::CssProvider::new();
-                    let css = format!(
-                        "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
-                        font_family, font_size
-                    );
-                    css_provider.load_from_data(&css);
-
-                    // Apply to both text views (content and gutter)
-                    panel_a_text_view_apply
-                        .content_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    panel_a_text_view_apply
-                        .gutter_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-                    panel_b_text_view_apply
-                        .content_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-                    panel_b_text_view_apply
-                        .gutter_view()
-                        .style_context()
-                        .add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+                    panel_a_text_view_apply.set_font(&font_family, font_size);
+                    panel_b_text_view_apply.set_font(&font_family, font_size);
 
                     // Update the in-memory state with new settings
                     let mut updated_config = state_clone_apply.config().clone();
