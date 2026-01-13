@@ -4,6 +4,8 @@
 //! * License: MIT
 //! * Version: 1.0
 
+#![windows_subsystem = "windows"]
+
 use gtk::Application;
 use gtk::prelude::*;
 

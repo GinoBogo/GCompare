@@ -62,8 +62,20 @@ impl GComboBoxFont {
         }
 
         // If we didn't find enough fonts, try a broader search using fc-list
-        if fonts.len() < 5
-            && let Ok(output) = Command::new("fc-list").args([":family", ":style"]).output()
+        let output = if fonts.len() < 5 {
+            let mut cmd = Command::new("fc-list");
+            cmd.args([":family", ":style"]);
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
+            cmd.output().ok()
+        } else {
+            None
+        };
+
+        if let Some(output) = output
             && output.status.success()
         {
             let stdout = String::from_utf8_lossy(&output.stdout);

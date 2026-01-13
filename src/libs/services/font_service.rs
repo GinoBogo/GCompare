@@ -40,8 +40,17 @@ impl FontService {
         let mut fonts = Vec::new();
         
         // First try to get monospace fonts specifically
-        if let Ok(output) = Command::new("fc-list")
-            .output()
+        let output = {
+            let mut cmd = Command::new("fc-list");
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
+            cmd.output().ok()
+        };
+
+        if let Some(output) = output
             && output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 for line in stdout.lines() {
@@ -76,11 +85,21 @@ impl FontService {
             }
 
         // If we didn't find enough fonts, try a broader search
-        if fonts.len() < 5
-            && let Ok(output) = Command::new("fc-list")
-                .args([":family", ":style"])
-                .output()
-                && output.status.success() {
+        let output = if fonts.len() < 5 {
+            let mut cmd = Command::new("fc-list");
+            cmd.args([":family", ":style"]);
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
+            cmd.output().ok()
+        } else {
+            None
+        };
+
+        if let Some(output) = output
+            && output.status.success() {
                     let stdout = String::from_utf8_lossy(&output.stdout);
                     for line in stdout.lines() {
                         let line = line.trim();
@@ -150,9 +169,18 @@ impl FontService {
 
     /// Get the best monospace font match for a given font family.
     pub fn get_best_monospace_match(&self, font_family: &str) -> String {
-        if let Ok(output) = Command::new("fc-match")
-            .args(["-f", "%{family}", font_family])
-            .output()
+        let output = {
+            let mut cmd = Command::new("fc-match");
+            cmd.args(["-f", "%{family}", font_family]);
+            #[cfg(target_os = "windows")]
+            {
+                use std::os::windows::process::CommandExt;
+                cmd.creation_flags(0x08000000); // CREATE_NO_WINDOW
+            }
+            cmd.output().ok()
+        };
+
+        if let Some(output) = output
             && output.status.success() {
                 let stdout = String::from_utf8_lossy(&output.stdout);
                 let font_family = stdout.trim();
