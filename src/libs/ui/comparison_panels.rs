@@ -5,7 +5,7 @@
 //! * Version: 1.0
 
 use gtk::prelude::*;
-use gtk::{Box, ComboBoxText, CssProvider, Frame};
+use gtk::{Box, ComboBoxText, Frame};
 
 use crate::libs::state::AppConfig;
 use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
@@ -28,26 +28,21 @@ impl ComparisonPanelsWidget {
             .spacing(6)
             .build();
 
-        // Create font provider
-        let font_provider = CssProvider::new();
-        font_provider.load_from_data(&format!(
-            "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
-            config.font_family, config.font_size
-        ));
-
         // Create panels
         let panel_a = FilePanelWidget::new(
             "File A",
             &config.file_a_history,
             ButtonTheme::Action2,
-            &font_provider,
+            &config.font_family,
+            config.font_size as f64,
         );
 
         let panel_b = FilePanelWidget::new(
             "File B",
             &config.file_b_history,
             ButtonTheme::Action1,
-            &font_provider,
+            &config.font_family,
+            config.font_size as f64,
         );
 
         let minimap = GMiniMap::new();
@@ -133,7 +128,8 @@ impl FilePanelWidget {
         title: &str,
         history: &[String],
         button_theme: ButtonTheme,
-        font_provider: &CssProvider,
+        font_family: &str,
+        font_size: f64,
     ) -> Self {
         // Create panel grid
         let panel_grid = gtk::Grid::builder()
@@ -155,15 +151,7 @@ impl FilePanelWidget {
         panel_grid.attach(&text_view, 0, 1, 1, 1);
 
         // Apply font styling
-        text_view
-            .content_view()
-            .style_context()
-            .add_provider(font_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
-
-        text_view
-            .gutter_view()
-            .style_context()
-            .add_provider(font_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+        text_view.set_font(font_family, font_size);
 
         // Wrap in frame
         let container = Frame::builder()
