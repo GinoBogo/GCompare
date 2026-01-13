@@ -6,8 +6,8 @@
 
 use gtk::prelude::*;
 use gtk::{
-    Adjustment, ApplicationWindow, Box, FileChooserAction, FileChooserNative, Frame, Orientation,
-    ResponseType, SizeGroup, SizeGroupMode, Window, glib,
+    Adjustment, ApplicationWindow, Box, CssProvider, FileChooserAction, FileChooserNative, Frame,
+    Orientation, ResponseType, SizeGroup, SizeGroupMode, Window, glib,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -35,6 +35,14 @@ impl GMergeView {
         config_service: ConfigService,
     ) -> Self {
         let config = config_service.get_config();
+
+        // Create font provider
+        let font_provider = CssProvider::new();
+        font_provider.load_from_data(&format!(
+            "textview {{ font-family: \"{}\"; font-size: {}pt; }}",
+            config.font_family, config.font_size
+        ));
+
         let window = Window::builder()
             .title("Merge Result")
             .default_width(config.merge_window_width)
@@ -96,6 +104,16 @@ impl GMergeView {
         // Text View
         let text_view = GTextView::new();
         text_view.set_show_line_numbers(config.show_line_numbers);
+
+        text_view
+            .content_view()
+            .style_context()
+            .add_provider(&font_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+        text_view
+            .gutter_view()
+            .style_context()
+            .add_provider(&font_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+
         let text_frame = Frame::new(None);
         text_frame.set_vexpand(true);
         text_frame.set_child(Some(&text_view));
