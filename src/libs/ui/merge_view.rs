@@ -41,7 +41,7 @@ impl GMergeView {
             .default_height(config.merge_window_height)
             .build();
 
-        // Create minimap
+        // Minimap
         let minimap = GMiniMap::new();
 
         let container = Box::new(Orientation::Vertical, 6);
@@ -93,24 +93,24 @@ impl GMergeView {
 
         container.append(&toolbar);
 
-        // Text View with Minimap
+        // Text View
         let text_view = GTextView::new();
         text_view.set_show_line_numbers(config.show_line_numbers);
         let text_frame = Frame::new(None);
         text_frame.set_vexpand(true);
         text_frame.set_child(Some(&text_view));
 
-        // Create horizontal container for text frame and minimap
+        // Text container
         let text_container = Box::new(Orientation::Horizontal, 6);
         text_container.set_vexpand(true);
 
-        // Add text frame (expandable)
+        // Text frame
         text_frame.set_hexpand(true);
         text_container.append(&text_frame);
 
-        // Create and add minimap frame (fixed width)
+        // Minimap frame
         let minimap_frame = Frame::new(None);
-        minimap_frame.set_size_request(40, -1); // Fixed 40px width
+        minimap_frame.set_size_request(40, -1);
         minimap_frame.set_child(Some(&minimap));
         text_container.append(&minimap_frame);
 
@@ -140,7 +140,7 @@ impl GMergeView {
         bottom_bar.append(&next_button);
         container.append(&bottom_bar);
 
-        // Setup tags
+        // Tags
         let buffer = text_view.content_view().buffer();
         let create_tag = |name: &str, bg: &str, fg: &str| {
             if buffer.tag_table().lookup(name).is_none() {
@@ -171,14 +171,13 @@ impl GMergeView {
 
         window.set_child(Some(&container));
 
-        // Logic
+        // Services
         let merge_service = MergeService::new();
         let text_a = text_a.to_string();
         let text_b = text_b.to_string();
         let segments_store = Rc::new(RefCell::new(Vec::<MergeSegment>::new()));
 
-        // A closure to update the sensitivity of the resolve buttons based on
-        // cursor position.
+        // Update button sensitivity
         let update_resolve_buttons_sensitivity = {
             let text_view = text_view.clone();
             let segments_store = segments_store.clone();
@@ -192,8 +191,7 @@ impl GMergeView {
                     let offset = iter.offset() as usize;
 
                     let segments = segments_store.borrow();
-                    // A segment is considered active if the cursor is within
-                    // its bounds (exclusive of the end).
+                    // Check if cursor is in conflict segment
                     let is_in_conflict = segments.iter().any(|s| {
                         offset >= s.start && offset < s.end && s.segment_type != SegmentType::Normal
                     });
@@ -203,7 +201,7 @@ impl GMergeView {
                     resolve_b_button.set_sensitive(is_in_conflict);
                     resolve_b_button.set_opacity(if is_in_conflict { 1.0 } else { 0.5 });
                 } else {
-                    // Failsafe if the insert mark doesn't exist.
+                    // Failsafe
                     resolve_a_button.set_sensitive(false);
                     resolve_b_button.set_sensitive(false);
                     resolve_a_button.set_opacity(0.5);
@@ -212,7 +210,7 @@ impl GMergeView {
             })
         };
 
-        // Helpers for minimap updates
+        // Minimap helpers
         let update_minimap_content = {
             let minimap = minimap.clone();
             Rc::new(move |segments: &[MergeSegment], buffer: &gtk::TextBuffer| {
@@ -244,20 +242,28 @@ impl GMergeView {
             let minimap = minimap.clone();
             let text_view = text_view.clone();
             Rc::new(move || {
-                let buffer = text_view.content_view().buffer();
+                let content_view = text_view.content_view();
+                let buffer = content_view.buffer();
                 let total_lines = buffer.line_count() as usize;
-                let height = text_view.content_view().allocation().height() as f64;
-                let line_height = 20.0;
 
-                let visible_lines = if height > 0.0 {
-                    (height / line_height) as usize
+                // Use adjustment for Y position to avoid lag
+                let (y, height) = if let Some(adj) = content_view.vadjustment() {
+                    (adj.value(), adj.page_size())
                 } else {
-                    35
+                    let rect = content_view.visible_rect();
+                    (rect.y() as f64, rect.height() as f64)
                 };
+
+                let y_int = y.max(0.0) as i32;
+                let (start_iter, _) = content_view.line_at_y(y_int);
+                let upper_line = start_iter.line() as usize;
+
+                let (end_iter, _) = content_view.line_at_y(y_int + height as i32);
+                let visible_lines = (end_iter.line() - start_iter.line()) as usize;
 
                 minimap.update_text_info(
                     crate::libs::widgets::gminimap::PanelId::A,
-                    0,
+                    upper_line,
                     total_lines.max(1),
                     visible_lines.max(5),
                 );
@@ -279,7 +285,7 @@ impl GMergeView {
             let update_minimap_geometry = update_minimap_geometry.clone();
 
             Rc::new(move |strategy: MergeStrategy| {
-                // Helper to update button visual state based on active strategy
+                // Update button state
                 let update_btn_state = |btn: &GButton, is_active: bool| {
                     btn.set_sensitive(!is_active);
                     btn.set_opacity(if is_active { 0.5 } else { 1.0 });
@@ -314,7 +320,7 @@ impl GMergeView {
                             || line.starts_with(">>>>>>>");
 
                         if is_marker {
-                            // Close current block if open
+                            // Close block
                             if in_block {
                                 if idx > current_block_start {
                                     numbering_blocks
@@ -323,7 +329,7 @@ impl GMergeView {
                                 in_block = false;
                             }
 
-                            // Handle marker logic
+                            // Handle markers
                             if line.starts_with("<<<<<<<") {
                                 saved_start_num = current_line_num;
                             } else if line.starts_with("=======") {
@@ -334,7 +340,7 @@ impl GMergeView {
                                 current_line_num = max_num_reached;
                             }
                         } else {
-                            // Content line
+                            // Content
                             if !in_block {
                                 current_block_start = idx;
                                 current_block_start_num = current_line_num;
@@ -355,7 +361,7 @@ impl GMergeView {
 
                     text_view.set_numbering_blocks(numbering_blocks);
                 } else {
-                    // For other strategies, ensure continuous numbering
+                    // Continuous numbering
                     text_view.clear_numbering_blocks();
                 }
 
@@ -376,24 +382,22 @@ impl GMergeView {
                     buffer.apply_tag_by_name(tag_name, &start_iter, &end_iter);
                 }
 
-                // After updating view and segments, update button sensitivity based on new cursor position.
+                // Update sensitivity
                 update_sensitivity_on_view_update();
             })
         };
 
-        // Set up minimap cursor and scroll connection for merged text Use
-        // default visible lines initially, will be updated when window is
-        // realized
-        let initial_visible_lines = 35; // Default value
+        // Minimap cursor setup
+        let initial_visible_lines: usize = 35; // Default value
 
         minimap.update_text_info(
             crate::libs::widgets::gminimap::PanelId::A,
-            0,                            // Start at top initially
-            1,                            // Start with 1 line (will be updated after merge)
-            initial_visible_lines.max(5), // Ensure minimum cursor height
+            0,                            // Start top
+            1,                            // Initial lines
+            initial_visible_lines.max(5), // Min height
         );
 
-        // Update cursor when window is mapped (has proper allocation)
+        // Update cursor on map
         let update_geom_map = update_minimap_geometry.clone();
         window.connect_map(move |_| {
             update_geom_map();
@@ -401,37 +405,19 @@ impl GMergeView {
 
         // Connect text view scroll to minimap for cursor visibility
         if let Some(adj) = text_view.content_view().vadjustment() {
-            let minimap_clone = minimap.clone();
-
-            adj.connect_value_changed(move |adj| {
-                let upper = adj.upper();
-                let page_size = adj.page_size();
-                let current_value = adj.value();
-
-                // Ensure proper boundaries
-                let max_value = (upper - page_size).max(0.0);
-                let clamped_value = current_value.clamp(0.0, max_value);
-
-                if max_value > 0.0 {
-                    let ratio = clamped_value / max_value;
-                    let upper_line = (ratio * upper) as usize;
-
-                    minimap_clone.update_text_info(
-                        crate::libs::widgets::gminimap::PanelId::A,
-                        upper_line,
-                        upper as usize,
-                        page_size as usize,
-                    );
-                }
+            let update_geom_scroll = update_minimap_geometry.clone();
+            adj.connect_value_changed(move |_| {
+                // This is more accurate than calculating from adjustment values
+                update_geom_scroll();
             });
         }
 
-        // Connect minimap scroll-to signal to text view scrolling
+        // Sync minimap to scroll
         if let Some(adj) = text_view.content_view().vadjustment() {
             minimap.connect_local("scroll-to", false, move |values| {
                 let ratio = values[1].get::<f64>().unwrap();
 
-                // Helper to set adjustment based on ratio
+                // Set adjustment
                 let set_adj_ratio = |adj: &Adjustment, r: f64| {
                     let upper = adj.upper();
                     let page_size = adj.page_size();
@@ -445,7 +431,7 @@ impl GMergeView {
             });
         }
 
-        // Add window resize handlers to update minimap cursor
+        // Resize handlers
         let update_geom_width = update_minimap_geometry.clone();
         window.connect_default_width_notify(move |_| {
             update_geom_width();
@@ -469,7 +455,7 @@ impl GMergeView {
         let update_conflicts = update_view.clone();
         btn_conflicts.connect_clicked(move |_| update_conflicts(MergeStrategy::MarkConflicts));
 
-        // Update sensitivity on cursor move.
+        // Cursor move sensitivity
         let buffer_cursor = text_view.content_view().buffer();
         let update_sensitivity_on_cursor = update_resolve_buttons_sensitivity.clone();
         buffer_cursor.connect_mark_set(move |_, _, mark| {
@@ -478,10 +464,11 @@ impl GMergeView {
             }
         });
 
-        // Resolve Current Logic
+        // Resolve logic
         let segments_store_resolve = segments_store.clone();
         let text_view_resolve = text_view.clone();
         let update_minimap_content_resolve = update_minimap_content.clone();
+        let update_minimap_geometry_resolve = update_minimap_geometry.clone();
 
         let resolve_current = Rc::new(move |use_a: bool| {
             let buffer = text_view_resolve.content_view().buffer();
@@ -491,7 +478,7 @@ impl GMergeView {
 
             let mut segments = segments_store_resolve.borrow_mut();
 
-            // Find segment at cursor
+            // Find segment
             let segment_info = segments
                 .iter()
                 .find(|s| offset >= s.start && offset < s.end)
@@ -509,7 +496,10 @@ impl GMergeView {
                     return;
                 }
 
-                // Find range of the whole group
+                // Atomic update to prevent tag corruption
+                buffer.begin_user_action();
+
+                // Find group range
                 let group_indices: Vec<usize> = segments
                     .iter()
                     .enumerate()
@@ -545,31 +535,43 @@ impl GMergeView {
                 let new_segment = MergeSegment {
                     start: start_offset,
                     end: start_offset + new_len,
-                    segment_type: if use_a {
-                        SegmentType::FileA
-                    } else {
-                        SegmentType::FileB
-                    },
+                    segment_type: SegmentType::Normal,
                     content_a,
                     content_b,
                     group_id,
                 };
                 segments.insert(first_idx, new_segment);
 
-                // Shift subsequent segments
+                // Shift segments
                 for s in segments.iter_mut().skip(first_idx + 1) {
                     s.start = (s.start as isize + delta) as usize;
                     s.end = (s.end as isize + delta) as usize;
                 }
 
-                // Apply tag
-                let tag_name = if use_a { "diff_remove" } else { "diff_add" };
-                let start_iter = buffer.iter_at_offset(start_offset as i32);
-                let end_iter = buffer.iter_at_offset((start_offset + new_len) as i32);
-                buffer.apply_tag_by_name(tag_name, &start_iter, &end_iter);
+                // Repaint tags
+                let (start_all, end_all) = buffer.bounds();
+                buffer.remove_tag_by_name("diff_remove", &start_all, &end_all);
+                buffer.remove_tag_by_name("diff_add", &start_all, &end_all);
+                buffer.remove_tag_by_name("conflict", &start_all, &end_all);
 
-                // Update minimap to reflect the resolved conflict
+                // Apply tags
+                for segment in segments.iter() {
+                    let tag_name = match segment.segment_type {
+                        SegmentType::FileA => "diff_remove",
+                        SegmentType::FileB => "diff_add",
+                        SegmentType::Conflict => "conflict",
+                        SegmentType::Normal => continue,
+                    };
+                    let start_iter = buffer.iter_at_offset(segment.start as i32);
+                    let end_iter = buffer.iter_at_offset(segment.end as i32);
+                    buffer.apply_tag_by_name(tag_name, &start_iter, &end_iter);
+                }
+
+                buffer.end_user_action();
+
+                // Update minimap
                 update_minimap_content_resolve(&segments, &buffer);
+                update_minimap_geometry_resolve();
             }
         });
 
@@ -579,7 +581,7 @@ impl GMergeView {
         let resolve_b = resolve_current;
         resolve_b_button.connect_clicked(move |_| resolve_b(false));
 
-        // Navigation functions
+        // Navigation
         let navigate_to_conflict = {
             let text_view = text_view.clone();
             let segments_store = segments_store.clone();
@@ -623,7 +625,7 @@ impl GMergeView {
                     let target_iter = buffer.iter_at_offset(target_segment.start as i32);
                     buffer.place_cursor(&target_iter);
 
-                    // Scroll the text view to show the conflict
+                    // Scroll to conflict
                     let text_view_widget = text_view.content_view();
                     let mark = buffer.create_mark(None, &target_iter, true);
                     text_view_widget.scroll_to_mark(&mark, 0.25, false, 0.0, 0.0);
@@ -638,7 +640,7 @@ impl GMergeView {
         let navigate_next = navigate_to_conflict;
         next_button.connect_clicked(move |_| navigate_next(1));
 
-        // Save button
+        // Save
         let window_clone = window.clone();
         let text_view_clone = text_view.clone();
         save_button.connect_clicked(move |_| {
@@ -673,17 +675,17 @@ impl GMergeView {
         // Initial state
         update_view(MergeStrategy::MarkConflicts);
 
-        // Save window geometry when window is closed
+        // Save geometry on close
         let window_clone = window.clone();
         let config_service_clone = config_service.clone();
         window.connect_close_request(move |_| {
-            // Save current window geometry directly to in-memory config
+            // Get geometry
             let current_width = window_clone.width();
             let current_height = window_clone.height();
             let default_width = window_clone.default_width();
             let default_height = window_clone.default_height();
 
-            // Use default_size if current size is 0 or seems wrong
+            // Validate size
             let width = if current_width > 0 {
                 current_width
             } else {
@@ -696,7 +698,7 @@ impl GMergeView {
             };
             let maximized = window_clone.is_maximized();
 
-            // Update merge window geometry in memory and save to disk
+            // Save config
             config_service_clone.update_merge_window_geometry(width, height, maximized);
             config_service_clone.save_config();
 
