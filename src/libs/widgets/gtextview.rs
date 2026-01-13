@@ -7,7 +7,7 @@
 use gtk::glib::translate::IntoGlib;
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{Adjustment, Box, GestureClick, PolicyType, ScrolledWindow, TextView, glib};
+use gtk::{Box, GestureClick, PolicyType, ScrolledWindow, TextView, glib};
 use once_cell::sync::OnceCell;
 use std::cell::{Cell, RefCell};
 use std::fmt::Write;
@@ -99,10 +99,8 @@ mod imp {
 
             // Configure scrolling synchronization
 
-            content_scrolled_window
-                .vadjustment()
-                .bind_property("value", &gutter_scrolled_window.vadjustment(), "value")
-                .build();
+            let vadjustment = content_scrolled_window.vadjustment();
+            gutter_scrolled_window.set_vadjustment(Some(&vadjustment));
 
             // Assemble widget hierarchy
 
@@ -113,7 +111,6 @@ mod imp {
 
             let gutter_view_clone = gutter_view.clone();
             let gutter_scrolled_window_clone = gutter_scrolled_window.clone();
-            let main_vadj = content_scrolled_window.vadjustment();
 
             // Store weak reference to self for closure
             let obj_weak = obj.downgrade();
@@ -134,7 +131,6 @@ mod imp {
                         // Clone captured variables for timeout closure
                         let gutter_view = gutter_view_clone.clone();
                         let gutter_scrolled_window = gutter_scrolled_window_clone.clone();
-                        let main_vadj = main_vadj.clone();
                         let content_buffer = content_buffer.clone();
                         let obj_weak_timeout = obj_weak.clone();
 
@@ -161,7 +157,6 @@ mod imp {
                                     update_line_numbers(
                                         &gutter_view,
                                         &gutter_scrolled_window,
-                                        &main_vadj,
                                         new_line_count,
                                         cached_count,
                                         &imp.numbering_blocks.borrow(),
@@ -267,14 +262,12 @@ fn highlight_gutter_line(gutter_view: &TextView, line: i32) {
 /// * `old_line_count` - Previous number of lines in content.
 fn update_line_numbers(
     gutter_view: &TextView,
-    gutter_scrolled_window: &ScrolledWindow,
-    main_vadj: &Adjustment,
+    _gutter_scrolled_window: &ScrolledWindow,
     new_line_count: usize,
     old_line_count: usize,
     blocks: &[(std::ops::Range<usize>, usize)],
 ) {
     let gutter_buffer = gutter_view.buffer();
-
     // Handle empty content
     if new_line_count == 0 {
         gutter_buffer.set_text("");
@@ -380,14 +373,6 @@ fn update_line_numbers(
         let new_width = (new_digit_count as i32 * 8) + 12;
         gutter_view.set_width_request(new_width);
     }
-
-    // Force sync gutter scroll
-    let gutter_vadj = gutter_scrolled_window.vadjustment();
-    let target_val = main_vadj.value();
-
-    if (gutter_vadj.value() - target_val).abs() > f64::EPSILON {
-        gutter_vadj.set_value(target_val);
-    }
 }
 
 impl GTextView {
@@ -426,12 +411,6 @@ impl GTextView {
             .imp()
             .gutter_scrolled_window
             .get()
-            .expect("Scrolled window not initialized")
-            .clone();
-        let content_scrolled_window = self
-            .imp()
-            .content_scrolled_window
-            .get()
             .expect("Scrolled window not initialized");
         let imp = self.imp();
 
@@ -469,7 +448,6 @@ impl GTextView {
         update_line_numbers(
             &gutter_view,
             &gutter_scrolled_window,
-            &content_scrolled_window.vadjustment(),
             new_line_count,
             imp.line_count_cache.get(),
             &imp.numbering_blocks.borrow(),
@@ -533,16 +511,11 @@ impl GTextView {
             .gutter_scrolled_window
             .get()
             .expect("Scrolled window not initialized");
-        let content_scrolled_window = imp
-            .content_scrolled_window
-            .get()
-            .expect("Scrolled window not initialized");
         let count = content_view.buffer().line_count() as usize;
 
         update_line_numbers(
             &gutter_view,
             gutter_scrolled_window,
-            &content_scrolled_window.vadjustment(),
             count, // new line count
             0,     // Force full update
             &imp.numbering_blocks.borrow(),
