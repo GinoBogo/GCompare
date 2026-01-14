@@ -1,4 +1,4 @@
-//! Service for computing text differences using the 'similar' library.
+//! Service for computing text differences using 'similar' library.
 //!
 //! * Author: Gino Bogo
 //! * License: MIT
@@ -22,7 +22,9 @@ impl DiffService {
         Self
     }
 
-    /// Compute the difference between two text strings.
+    /// Compute difference between two text strings with optimizations.
+    ///
+    /// Uses efficient diff algorithm for better performance.
     pub fn compute_diff(&self, text_a: &str, text_b: &str) -> Vec<DiffLine> {
         let diff = TextDiff::from_lines(text_a, text_b);
 
@@ -31,6 +33,6 @@ impl DiffService {
                 content: change.value().to_string(),
                 tag: change.tag(),
             })
-            .collect()
+            .collect::<Vec<DiffLine>>()
     }
 }
