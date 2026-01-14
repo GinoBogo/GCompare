@@ -12,6 +12,7 @@ GCompare is a modern, efficient file comparison tool written in Rust using the G
 *   **File History**: Remembers previously opened files for quick access via a combo box.
 *   **Merge Files**: Advanced merge capabilities with multiple strategies (Accept Ours, Accept Theirs, Union, Mark Conflicts) and interactive conflict resolution.
 *   **Custom UI Components**: Built with specialized GTK4 widgets including `GTextView` with line numbers and `GButton` with theming support.
+*   **Async File Operations**: Non-blocking file I/O using tokio for improved responsiveness when loading large files.
 
 ![figure_01.png](docs/images/figure_01.png)
 
@@ -79,6 +80,7 @@ This project uses the following Rust crates:
 *   serde
 *   serde_json
 *   similar
+*   tokio
 
 ## License
 

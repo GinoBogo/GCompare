@@ -10,6 +10,7 @@ use gtk::{
 };
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use tokio::runtime::Runtime;
 
 use crate::libs::widgets::gtextview::GTextView;
 
@@ -21,13 +22,30 @@ pub struct FileService {
 
 impl FileService {
     /// Create a new file service.
+    ///
+    /// # Returns
+    ///
+    /// A new FileService instance with no active dialog
     pub fn new() -> Self {
         Self {
             active_dialog: Rc::new(RefCell::new(None)),
         }
     }
 
-    /// Load file content from a given path into a GTextView.
+    /// Load file content from a given path into a GTextView using async approach.
+    ///
+    /// # Arguments
+    ///
+    /// * `text_view` - The GTextView widget to load the content into
+    /// * `path_combo` - ComboBoxText containing the file path to load
+    /// * `loading_flag` - Optional flag to indicate loading state
+    ///                   (set to true during load, false after)
+    ///
+    /// # Returns
+    ///
+    /// A tuple containing:
+    /// * `usize` - Number of bytes in the loaded file
+    /// * `usize` - Number of lines in the loaded file
     pub fn load_file_from_path(
         &self,
         text_view: &GTextView,
@@ -45,17 +63,30 @@ impl FileService {
             return (0, 0);
         }
 
-        match std::fs::read_to_string(&path_str) {
+        // Create tokio runtime for async operations
+        let rt = Runtime::new().unwrap();
+
+        // Load file asynchronously
+        let result = rt.block_on(async { tokio::fs::read_to_string(&path_str).await });
+
+        match result {
             Ok(content) => {
                 let bytes = content.len();
                 let lines = content.lines().count();
+
+                // Set loading flag
                 if let Some(flag) = &loading_flag {
                     flag.set(true);
                 }
+
+                // Update UI with loaded content
                 text_view.set_text(&content);
+
+                // Clear loading flag
                 if let Some(flag) = &loading_flag {
                     flag.set(false);
                 }
+
                 (bytes, lines)
             }
             Err(_) => {
@@ -66,7 +97,16 @@ impl FileService {
         }
     }
 
-    /// Open file dialog and load selected file.
+    /// Open file dialog and load selected file using async approach.
+    ///
+    /// # Arguments
+    ///
+    /// * `window` - The parent application window for the dialog
+    /// * `text_view` - The TextView widget to load content into
+    /// * `path_combo` - ComboBoxText containing the file path
+    /// * `loading_flag` - Optional flag to indicate loading state
+    /// * `on_load` - Optional callback function to execute after
+    ///              successful load
     pub fn open_file_dialog<
         T: IsA<gtk::TextView> + IsA<gtk::Scrollable> + IsA<gtk::Widget> + Clone + 'static,
     >(
@@ -103,7 +143,7 @@ impl FileService {
         let text_view_clone = text_view.clone();
         let path_combo_clone = path_combo.clone();
 
-        // Keep the dialog alive by storing it in the service
+        // Keep dialog alive by storing it in the service
         self.active_dialog.replace(Some(file_chooser.clone()));
         let active_dialog = self.active_dialog.clone();
 
@@ -111,24 +151,38 @@ impl FileService {
             if response == ResponseType::Accept
                 && let Some(file) = dialog.file()
                 && let Some(path) = file.path()
-                && let Ok(file_content) = std::fs::read_to_string(&path)
             {
-                if let Some(flag) = &loading_flag {
-                    flag.set(true);
-                }
-                text_view_clone.buffer().set_text(&file_content);
-                if let Some(flag) = &loading_flag {
-                    flag.set(false);
-                }
+                // Create tokio runtime for async file reading
+                let rt = Runtime::new().unwrap();
+                let path_clone = path.clone();
 
-                if let Some(entry) = path_combo_clone
-                    .child()
-                    .and_then(|child| child.downcast::<Entry>().ok())
-                {
-                    entry.set_text(path.to_str().unwrap_or_default());
-                }
-                if let Some(callback) = &on_load {
-                    callback();
+                // Load file asynchronously
+                let file_content_result =
+                    rt.block_on(async { tokio::fs::read_to_string(&path_clone).await });
+
+                if let Ok(file_content) = file_content_result {
+                    // Set loading flag
+                    if let Some(flag) = &loading_flag {
+                        flag.set(true);
+                    }
+
+                    // Update UI with loaded content
+                    text_view_clone.buffer().set_text(&file_content);
+
+                    // Clear loading flag
+                    if let Some(flag) = &loading_flag {
+                        flag.set(false);
+                    }
+
+                    if let Some(entry) = path_combo_clone
+                        .child()
+                        .and_then(|child| child.downcast::<Entry>().ok())
+                    {
+                        entry.set_text(path.to_str().unwrap_or_default());
+                    }
+                    if let Some(callback) = &on_load {
+                        callback();
+                    }
                 }
             }
             active_dialog.replace(None);
@@ -137,7 +191,15 @@ impl FileService {
         file_chooser.show();
     }
 
-    /// Open save dialog and save TextView content to file.
+    /// Open save dialog and save TextView content to file using async approach.
+    ///
+    /// # Arguments
+    ///
+    /// * `window` - The parent application window for the dialog
+    /// * `text_view` - The TextView widget containing content to save
+    /// * `path_combo` - ComboBoxText containing the file path
+    /// * `on_save` - Optional callback function to execute after
+    ///              successful save
     pub fn save_file_dialog<T: IsA<gtk::TextView> + Clone + 'static>(
         &self,
         window: &ApplicationWindow,
@@ -185,7 +247,17 @@ impl FileService {
                 let (start_iter, end_iter) = buffer.bounds();
                 let file_content = buffer.text(&start_iter, &end_iter, true);
 
-                if std::fs::write(&path, file_content.as_str()).is_ok()
+                // Create tokio runtime for async file writing
+                let rt = Runtime::new().unwrap();
+                let path_clone = path.clone();
+                let content_clone = file_content.clone();
+
+                // Save file asynchronously
+                let save_result = rt.block_on(async {
+                    tokio::fs::write(&path_clone, content_clone.as_str()).await
+                });
+
+                if save_result.is_ok()
                     && let Some(entry) = path_combo_clone
                         .child()
                         .and_then(|child| child.downcast::<Entry>().ok())
