@@ -292,9 +292,15 @@ fn parse_css_property(class_name: &str, property: &str) -> Option<gdk::RGBA> {
             // Parse the specific property
             for rule in class_rules.split(';') {
                 let rule = rule.trim();
-                if rule.starts_with(property)
-                    && let Some(value_part) = rule.split(':').nth(1)
-                {
+
+                // Handle both 'background' and 'background-color' for background property
+                let property_matches = if property == "background-color" {
+                    rule.starts_with("background-color") || rule.starts_with("background")
+                } else {
+                    rule.starts_with(property)
+                };
+
+                if property_matches && let Some(value_part) = rule.split(':').nth(1) {
                     let value = value_part.trim();
                     return Some(parse_color_with_fallback(value, 128, 128, 128, 1.0));
                 }

@@ -548,7 +548,7 @@ impl GTextView {
         update_line_numbers(
             &gutter_view,
             gutter_scrolled_window,
-            count, // new line count
+            count, // New line count
             0,     // Force full update
             &imp.numbering_blocks.borrow(),
         );
