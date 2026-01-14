@@ -77,7 +77,7 @@
     padding-right: 5px;
 }
 
-/* GDiffMap Styles */
+/* GMiniMap Styles */
 .minimap {
     background-color: #ffffff;
     color: #cccccc;
@@ -98,4 +98,10 @@
 .minimap-cursor {
     background-color: #00000008;
     border: 1px solid black;
+}
+
+/* Merge Conflict Styles */
+.merge-conflict {
+    background-color: #cccccc;
+    color: #0099cc;
 }

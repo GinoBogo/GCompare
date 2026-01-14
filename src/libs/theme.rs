@@ -129,6 +129,31 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
 
     // Define color mappings
     let color_mappings = [
+        // Button colors
+        (
+            ".gbutton-default",
+            "background-color",
+            &config.button_default_bg,
+        ),
+        (".gbutton-default", "color", &config.button_default_fg),
+        (
+            ".gbutton-primary",
+            "background-color",
+            &config.button_primary_bg,
+        ),
+        (".gbutton-primary", "color", &config.button_primary_fg),
+        (
+            ".gbutton-secondary",
+            "background-color",
+            &config.button_secondary_bg,
+        ),
+        (".gbutton-secondary", "color", &config.button_secondary_fg),
+        (
+            ".gbutton-highlight",
+            "background-color",
+            &config.button_highlight_bg,
+        ),
+        (".gbutton-highlight", "color", &config.button_highlight_fg),
         // Text diff colors
         (
             ".text-diff-remove",
@@ -142,24 +167,12 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
             &config.text_diff_add_bg,
         ),
         (".text-diff-add", "color", &config.text_diff_add_fg),
-        (".minimap-diff-empty", "color", &config.minimap_diff_empty),
-        (
-            ".minimap-cursor",
-            "background-color",
-            &config.minimap_cursor_bg,
-        ),
         (
             ".text-diff-empty",
             "background-color",
             &config.text_diff_empty_bg,
         ),
         (".text-diff-empty", "color", &config.text_diff_empty_fg),
-        (
-            ".merge-conflict",
-            "background-color",
-            &config.merge_conflict_bg,
-        ),
-        (".merge-conflict", "color", &config.merge_conflict_fg),
         // Gutter numbers colors
         (
             ".gutter-numbers",
@@ -173,6 +186,18 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
         (".minimap-diff-remove", "color", &config.minimap_diff_remove),
         (".minimap-diff-add", "color", &config.minimap_diff_add),
         (".minimap-diff-empty", "color", &config.minimap_diff_empty),
+        (
+            ".minimap-cursor",
+            "background-color",
+            &config.minimap_cursor_bg,
+        ),
+        // Merge conflict colors
+        (
+            ".merge-conflict",
+            "background-color",
+            &config.merge_conflict_bg,
+        ),
+        (".merge-conflict", "color", &config.merge_conflict_fg),
     ];
 
     // Update CSS properties using the structured tree

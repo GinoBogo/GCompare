@@ -265,135 +265,141 @@ impl GOptionsDialog {
         colors_grid.set_margin_start(10);
         colors_grid.set_margin_end(10);
 
+        // Buttons section
+        let buttons_label = Label::new(Some("Buttons"));
+        buttons_label.set_halign(gtk::Align::Start);
+        buttons_label.set_markup("<b>Buttons</b>");
+        colors_grid.attach(&buttons_label, 0, 0, 2, 1);
+
+        // Default button colors
+        let button_default_bg_picker =
+            GColorPicker::new_simple("Default Background", &config.button_default_bg);
+        colors_grid.attach(button_default_bg_picker.container(), 0, 1, 1, 1);
+
+        let button_default_fg_picker =
+            GColorPicker::new_simple("Default Text", &config.button_default_fg);
+        colors_grid.attach(button_default_fg_picker.container(), 0, 2, 1, 1);
+
+        // Primary button colors
+        let button_primary_bg_picker =
+            GColorPicker::new_simple("Primary Background", &config.button_primary_bg);
+        colors_grid.attach(button_primary_bg_picker.container(), 0, 3, 1, 1);
+
+        let button_primary_fg_picker =
+            GColorPicker::new_simple("Primary Text", &config.button_primary_fg);
+        colors_grid.attach(button_primary_fg_picker.container(), 0, 4, 1, 1);
+
+        // Secondary button colors
+        let button_secondary_bg_picker =
+            GColorPicker::new_simple("Secondary Background", &config.button_secondary_bg);
+        colors_grid.attach(button_secondary_bg_picker.container(), 0, 5, 1, 1);
+
+        let button_secondary_fg_picker =
+            GColorPicker::new_simple("Secondary Text", &config.button_secondary_fg);
+        colors_grid.attach(button_secondary_fg_picker.container(), 0, 6, 1, 1);
+
+        // Highlight button colors
+        let button_highlight_bg_picker =
+            GColorPicker::new_simple("Highlight Background", &config.button_highlight_bg);
+        colors_grid.attach(button_highlight_bg_picker.container(), 0, 7, 1, 1);
+
+        let button_highlight_fg_picker =
+            GColorPicker::new_simple("Highlight Text", &config.button_highlight_fg);
+        colors_grid.attach(button_highlight_fg_picker.container(), 0, 8, 1, 1);
+
         // Text Differences section
         let text_diff_label = Label::new(Some("Text Differences"));
         text_diff_label.set_halign(gtk::Align::Start);
         text_diff_label.set_markup("<b>Text Differences</b>");
-        colors_grid.attach(&text_diff_label, 0, 0, 1, 1);
+        colors_grid.attach(&text_diff_label, 0, 9, 1, 1);
 
         // Removed Background
         let text_diff_remove_bg_picker =
             GColorPicker::new_simple("Removed Text Background", &config.text_diff_remove_bg);
-        colors_grid.attach(text_diff_remove_bg_picker.container(), 0, 1, 1, 1);
+        colors_grid.attach(text_diff_remove_bg_picker.container(), 0, 10, 1, 1);
 
         // Removed Text
         let text_diff_remove_fg_picker =
             GColorPicker::new_simple("Removed Text Color", &config.text_diff_remove_fg);
-        colors_grid.attach(text_diff_remove_fg_picker.container(), 0, 2, 1, 1);
+        colors_grid.attach(text_diff_remove_fg_picker.container(), 0, 11, 1, 1);
 
         // Added Background
         let text_diff_add_bg_picker =
             GColorPicker::new_simple("Added Text Background", &config.text_diff_add_bg);
-        colors_grid.attach(text_diff_add_bg_picker.container(), 0, 3, 1, 1);
+        colors_grid.attach(text_diff_add_bg_picker.container(), 0, 12, 1, 1);
 
         // Added Text
         let text_diff_add_fg_picker =
             GColorPicker::new_simple("Added Text Color", &config.text_diff_add_fg);
-        colors_grid.attach(text_diff_add_fg_picker.container(), 0, 4, 1, 1);
+        colors_grid.attach(text_diff_add_fg_picker.container(), 0, 13, 1, 1);
 
         // Empty Background
         let text_diff_empty_bg_picker =
             GColorPicker::new_simple("Empty Text Background", &config.text_diff_empty_bg);
-        colors_grid.attach(text_diff_empty_bg_picker.container(), 0, 5, 1, 1);
+        colors_grid.attach(text_diff_empty_bg_picker.container(), 0, 14, 1, 1);
 
         // Empty Text
         let text_diff_empty_fg_picker =
             GColorPicker::new_simple("Empty Text Color", &config.text_diff_empty_fg);
-        colors_grid.attach(text_diff_empty_fg_picker.container(), 0, 6, 1, 1);
-
-        // Merge Conflict Background
-        let merge_conflict_bg_picker =
-            GColorPicker::new_simple("Merge Conflict Background", &config.merge_conflict_bg);
-        colors_grid.attach(merge_conflict_bg_picker.container(), 0, 7, 1, 1);
-
-        // Merge Conflict Text
-        let merge_conflict_fg_picker =
-            GColorPicker::new_simple("Merge Conflict Text", &config.merge_conflict_fg);
-        colors_grid.attach(merge_conflict_fg_picker.container(), 0, 8, 1, 1);
+        colors_grid.attach(text_diff_empty_fg_picker.container(), 0, 15, 1, 1);
 
         // Gutter Numbers section
         let gutter_numbers_label = Label::new(Some("Gutter Numbers"));
         gutter_numbers_label.set_halign(gtk::Align::Start);
         gutter_numbers_label.set_markup("<b>Gutter Numbers</b>");
-        colors_grid.attach(&gutter_numbers_label, 0, 9, 2, 1);
+        colors_grid.attach(&gutter_numbers_label, 0, 16, 2, 1);
 
         let gutter_numbers_bg_picker =
             GColorPicker::new_simple("Gutter Background", &config.gutter_numbers_bg);
-        colors_grid.attach(gutter_numbers_bg_picker.container(), 0, 10, 1, 1);
+        colors_grid.attach(gutter_numbers_bg_picker.container(), 0, 17, 1, 1);
 
         let gutter_numbers_fg_picker =
             GColorPicker::new_simple("Numbers Color", &config.gutter_numbers_fg);
-        colors_grid.attach(gutter_numbers_fg_picker.container(), 0, 11, 1, 1);
+        colors_grid.attach(gutter_numbers_fg_picker.container(), 0, 18, 1, 1);
 
         // Minimap section
         let minimap_label = Label::new(Some("Minimap"));
         minimap_label.set_halign(gtk::Align::Start);
         minimap_label.set_markup("<b>Minimap</b>");
-        colors_grid.attach(&minimap_label, 0, 12, 2, 1);
+        colors_grid.attach(&minimap_label, 0, 19, 2, 1);
 
         let minimap_bg_picker = GColorPicker::new_simple("Minimap Background", &config.minimap_bg);
-        colors_grid.attach(minimap_bg_picker.container(), 0, 13, 1, 1);
+        colors_grid.attach(minimap_bg_picker.container(), 0, 20, 1, 1);
 
         let minimap_fg_picker = GColorPicker::new_simple("Vertical Separator", &config.minimap_fg);
-        colors_grid.attach(minimap_fg_picker.container(), 0, 14, 1, 1);
+        colors_grid.attach(minimap_fg_picker.container(), 0, 21, 1, 1);
 
         let minimap_diff_remove_picker =
             GColorPicker::new_simple("Removed Lines Color", &config.minimap_diff_remove);
-        colors_grid.attach(minimap_diff_remove_picker.container(), 0, 15, 1, 1);
+        colors_grid.attach(minimap_diff_remove_picker.container(), 0, 22, 1, 1);
 
         let minimap_diff_add_picker =
             GColorPicker::new_simple("Added Lines Color", &config.minimap_diff_add);
-        colors_grid.attach(minimap_diff_add_picker.container(), 0, 16, 1, 1);
+        colors_grid.attach(minimap_diff_add_picker.container(), 0, 23, 1, 1);
 
         let minimap_diff_empty_picker =
             GColorPicker::new_simple("Empty Lines Color", &config.minimap_diff_empty);
-        colors_grid.attach(minimap_diff_empty_picker.container(), 0, 17, 1, 1);
+        colors_grid.attach(minimap_diff_empty_picker.container(), 0, 24, 1, 1);
 
         let minimap_cursor_bg_picker =
             GColorPicker::new("Cursor Background", &config.minimap_cursor_bg, true);
-        colors_grid.attach(minimap_cursor_bg_picker.container(), 0, 18, 1, 1);
+        colors_grid.attach(minimap_cursor_bg_picker.container(), 0, 25, 1, 1);
 
-        // Buttons section
-        let buttons_label = Label::new(Some("Buttons"));
-        buttons_label.set_halign(gtk::Align::Start);
-        buttons_label.set_markup("<b>Buttons</b>");
-        colors_grid.attach(&buttons_label, 0, 19, 2, 1);
+        // Merge Conflict section
+        let merge_conflict_label = Label::new(Some("Merge Conflict"));
+        merge_conflict_label.set_halign(gtk::Align::Start);
+        merge_conflict_label.set_markup("<b>Merge Conflict</b>");
+        colors_grid.attach(&merge_conflict_label, 0, 26, 2, 1);
 
-        // Default button colors
-        let button_default_bg_picker =
-            GColorPicker::new_simple("Default Background", &config.button_default_bg);
-        colors_grid.attach(button_default_bg_picker.container(), 0, 20, 1, 1);
+        // Merge Conflict Background
+        let merge_conflict_bg_picker =
+            GColorPicker::new_simple("Merge Conflict Background", &config.merge_conflict_bg);
+        colors_grid.attach(merge_conflict_bg_picker.container(), 0, 27, 1, 1);
 
-        let button_default_fg_picker =
-            GColorPicker::new_simple("Default Text", &config.button_default_fg);
-        colors_grid.attach(button_default_fg_picker.container(), 0, 21, 1, 1);
-
-        // Primary button colors
-        let button_primary_bg_picker =
-            GColorPicker::new_simple("Primary Background", &config.button_primary_bg);
-        colors_grid.attach(button_primary_bg_picker.container(), 0, 22, 1, 1);
-
-        let button_primary_fg_picker =
-            GColorPicker::new_simple("Primary Text", &config.button_primary_fg);
-        colors_grid.attach(button_primary_fg_picker.container(), 0, 23, 1, 1);
-
-        // Secondary button colors
-        let button_secondary_bg_picker =
-            GColorPicker::new_simple("Secondary Background", &config.button_secondary_bg);
-        colors_grid.attach(button_secondary_bg_picker.container(), 0, 24, 1, 1);
-
-        let button_secondary_fg_picker =
-            GColorPicker::new_simple("Secondary Text", &config.button_secondary_fg);
-        colors_grid.attach(button_secondary_fg_picker.container(), 0, 25, 1, 1);
-
-        // Highlight button colors
-        let button_highlight_bg_picker =
-            GColorPicker::new_simple("Highlight Background", &config.button_highlight_bg);
-        colors_grid.attach(button_highlight_bg_picker.container(), 0, 26, 1, 1);
-
-        let button_highlight_fg_picker =
-            GColorPicker::new_simple("Highlight Text", &config.button_highlight_fg);
-        colors_grid.attach(button_highlight_fg_picker.container(), 0, 27, 1, 1);
+        // Merge Conflict Text
+        let merge_conflict_fg_picker =
+            GColorPicker::new_simple("Merge Conflict Text", &config.merge_conflict_fg);
+        colors_grid.attach(merge_conflict_fg_picker.container(), 0, 28, 1, 1);
 
         // Create scrolled window for colors tab
         let colors_scrolled = ScrolledWindow::new();
