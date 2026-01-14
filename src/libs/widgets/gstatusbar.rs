@@ -18,6 +18,10 @@ pub struct GStatusBar {
 
 impl GStatusBar {
     /// Create a new status bar widget.
+    ///
+    /// # Returns
+    ///
+    /// New GStatusBar instance
     pub fn new() -> Self {
         let container = Box::builder()
             .orientation(Orientation::Horizontal)
@@ -80,23 +84,44 @@ impl GStatusBar {
     }
 
     /// Get the container widget.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the GTK Box container
     pub fn container(&self) -> &Box {
         &self.container
     }
 
     /// Update the status bar A label with file information.
+    ///
+    /// # Arguments
+    ///
+    /// * `bytes` - Number of bytes in the file
+    /// * `lines` - Number of lines in the file
     pub fn set_status_a_file_info(&self, bytes: usize, lines: usize) {
         let status = format!("{} bytes, {} lines", bytes, lines);
         self.status_bar_a.set_markup(&status);
     }
 
     /// Update the status bar B label with file information.
+    ///
+    /// # Arguments
+    ///
+    /// * `bytes` - Number of bytes in the file
+    /// * `lines` - Number of lines in the file
     pub fn set_status_b_file_info(&self, bytes: usize, lines: usize) {
         let status = format!("{} bytes, {} lines", bytes, lines);
         self.status_bar_b.set_markup(&status);
     }
 
     /// Update the status bar A label with file and diff information.
+    ///
+    /// # Arguments
+    ///
+    /// * `bytes` - Number of bytes in the file
+    /// * `lines` - Number of lines in the file
+    /// * `regular_diffs` - Number of regular differences
+    /// * `empty_diffs` - Number of empty line differences
     pub fn set_status_a_complete(
         &self,
         bytes: usize,
@@ -129,6 +154,13 @@ impl GStatusBar {
     }
 
     /// Update the status bar B label with file and diff information.
+    ///
+    /// # Arguments
+    ///
+    /// * `bytes` - Number of bytes in the file
+    /// * `lines` - Number of lines in the file
+    /// * `regular_diffs` - Number of regular differences
+    /// * `empty_diffs` - Number of empty line differences
     pub fn set_status_b_complete(
         &self,
         bytes: usize,
@@ -161,6 +193,12 @@ impl GStatusBar {
     }
 
     /// Update status with current buffer and diff information
+    ///
+    /// # Arguments
+    ///
+    /// * `panel_a_buffer` - Text buffer for panel A
+    /// * `panel_b_buffer` - Text buffer for panel B
+    /// * `minimap` - Minimap widget reference
     pub fn update_status_from_buffers(
         &self,
         panel_a_buffer: &gtk::TextBuffer,

@@ -20,6 +20,10 @@ pub struct GComboBoxFont {
 
 impl GComboBoxFont {
     /// Create a new GComboBoxFont widget.
+    ///
+    /// # Returns
+    ///
+    /// New GComboBoxFont instance
     pub fn new() -> Self {
         let list_store = ListStore::new(&[
             gtk::glib::Type::STRING, // Display name (with markup)
@@ -150,7 +154,11 @@ impl GComboBoxFont {
         *self.font_families.borrow_mut() = font_families;
     }
 
-    /// Get the currently selected font name (clean, without markup).
+    /// Get currently selected font name (clean, without markup).
+    ///
+    /// # Returns
+    ///
+    /// Option containing the selected font name or None
     pub fn active_font(&self) -> Option<String> {
         if let Some(active_iter) = self.combo.active_iter() {
             self.list_store
@@ -163,12 +171,21 @@ impl GComboBoxFont {
     }
 
     /// Get the underlying ComboBox widget.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the ComboBox widget
     pub fn combo_box(&self) -> &ComboBox {
         &self.combo
     }
 }
 
 impl Default for GComboBoxFont {
+    /// Create a default GComboBoxFont instance.
+    ///
+    /// # Returns
+    ///
+    /// New GComboBoxFont instance
     fn default() -> Self {
         Self::new()
     }

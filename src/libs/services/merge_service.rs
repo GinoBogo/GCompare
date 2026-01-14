@@ -54,6 +54,16 @@ impl MergeService {
     }
 
     /// Merge two text strings based on the selected strategy.
+    ///
+    /// # Arguments
+    ///
+    /// * `text_a` - Original text content
+    /// * `text_b` - Modified text content
+    /// * `strategy` - Merge strategy to apply
+    ///
+    /// # Returns
+    ///
+    /// * `MergeResult` - Result containing merged text and segment information
     pub fn merge(&self, text_a: &str, text_b: &str, strategy: MergeStrategy) -> MergeResult {
         let diff = TextDiff::from_lines(text_a, text_b);
 
@@ -64,7 +74,14 @@ impl MergeService {
         }
 
         impl MergeContext {
-            fn append(&mut self, text: &str, seg_type: SegmentType, content_a: &str, content_b: &str, group_id: usize) {
+            fn append(
+                &mut self,
+                text: &str,
+                seg_type: SegmentType,
+                content_a: &str,
+                content_b: &str,
+                group_id: usize,
+            ) {
                 if text.is_empty() {
                     return;
                 }
@@ -116,14 +133,38 @@ impl MergeService {
 
                     match strategy {
                         MergeStrategy::AcceptOurs => {
-                            ctx.append(&content_a, SegmentType::FileA, &content_a, &content_b, group_id);
+                            ctx.append(
+                                &content_a,
+                                SegmentType::FileA,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
                         }
                         MergeStrategy::AcceptTheirs => {
-                            ctx.append(&content_b, SegmentType::FileB, &content_a, &content_b, group_id);
+                            ctx.append(
+                                &content_b,
+                                SegmentType::FileB,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
                         }
                         MergeStrategy::Union => {
-                            ctx.append(&content_a, SegmentType::FileA, &content_a, &content_b, group_id);
-                            ctx.append(&content_b, SegmentType::FileB, &content_a, &content_b, group_id);
+                            ctx.append(
+                                &content_a,
+                                SegmentType::FileA,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
+                            ctx.append(
+                                &content_b,
+                                SegmentType::FileB,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
                         }
                         MergeStrategy::MarkConflicts => {
                             // Ensure we start on a new line if the previous content didn't end with one
@@ -131,21 +172,63 @@ impl MergeService {
                                 ctx.append("\n", SegmentType::Normal, "", "", group_id);
                             }
 
-                            ctx.append("<<<<<<< File A\n", SegmentType::Conflict, &content_a, &content_b, group_id);
-                            ctx.append(&content_a, SegmentType::FileA, &content_a, &content_b, group_id);
+                            ctx.append(
+                                "<<<<<<< File A\n",
+                                SegmentType::Conflict,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
+                            ctx.append(
+                                &content_a,
+                                SegmentType::FileA,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
 
                             if !content_a.is_empty() && !content_a.ends_with('\n') {
-                                ctx.append("\n", SegmentType::Normal, &content_a, &content_b, group_id);
+                                ctx.append(
+                                    "\n",
+                                    SegmentType::Normal,
+                                    &content_a,
+                                    &content_b,
+                                    group_id,
+                                );
                             }
 
-                            ctx.append("=======\n", SegmentType::Conflict, &content_a, &content_b, group_id);
-                            ctx.append(&content_b, SegmentType::FileB, &content_a, &content_b, group_id);
+                            ctx.append(
+                                "=======\n",
+                                SegmentType::Conflict,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
+                            ctx.append(
+                                &content_b,
+                                SegmentType::FileB,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
 
                             if !content_b.is_empty() && !content_b.ends_with('\n') {
-                                ctx.append("\n", SegmentType::Normal, &content_a, &content_b, group_id);
+                                ctx.append(
+                                    "\n",
+                                    SegmentType::Normal,
+                                    &content_a,
+                                    &content_b,
+                                    group_id,
+                                );
                             }
 
-                            ctx.append(">>>>>>> File B\n", SegmentType::Conflict, &content_a, &content_b, group_id);
+                            ctx.append(
+                                ">>>>>>> File B\n",
+                                SegmentType::Conflict,
+                                &content_a,
+                                &content_b,
+                                group_id,
+                            );
                         }
                     }
                 }

@@ -24,6 +24,15 @@ struct CssRule {
 }
 
 impl CssRule {
+    /// Create a new CSS rule with the given selector.
+    ///
+    /// # Arguments
+    ///
+    /// * `selector` - CSS selector string for the rule
+    ///
+    /// # Returns
+    ///
+    /// Returns a new `CssRule` instance with the specified selector
     fn new(selector: String) -> Self {
         Self {
             selector,
@@ -31,6 +40,11 @@ impl CssRule {
         }
     }
 
+    /// Convert the CSS rule to a formatted CSS string.
+    ///
+    /// # Returns
+    ///
+    /// Returns a string containing the CSS rule in proper CSS format
     fn to_css_string(&self) -> String {
         let mut result = format!("{} {{\n", self.selector);
         for (prop, value) in &self.properties {
@@ -48,6 +62,14 @@ impl CssRule {
 }
 
 /// Parse CSS content into structured rules.
+///
+/// # Arguments
+///
+/// * `css_content` - Raw CSS content string to parse
+///
+/// # Returns
+///
+/// Returns a vector of `CssRule` instances representing the parsed CSS
 fn parse_css_rules(css_content: &str) -> Vec<CssRule> {
     let mut rules = Vec::new();
 
@@ -75,6 +97,10 @@ fn parse_css_rules(css_content: &str) -> Vec<CssRule> {
 }
 
 /// Initialize the application theme.
+///
+/// # Returns
+///
+/// Returns a configured `CssProvider` with the default theme loaded
 pub fn init() -> CssProvider {
     static INIT: Once = Once::new();
 
@@ -95,6 +121,15 @@ pub fn init() -> CssProvider {
 }
 
 /// Update a CSS provider with custom colors from config.
+///
+/// # Arguments
+///
+/// * `provider` - CSS provider to update with new colors
+/// * `config` - Application configuration containing color settings
+///
+/// # Returns
+///
+/// Updates the provider in-place with new color values
 pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs::state::AppConfig) {
     // Parse CSS into structured rules
     let mut rules = parse_css_rules(get_css_content());
@@ -224,6 +259,15 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
 }
 
 /// Update text tag colors for real-time theme changes.
+///
+/// # Arguments
+///
+/// * `text_buffers` - Slice of text buffer references to update
+/// * `config` - Application configuration with color settings
+///
+/// # Returns
+///
+/// Updates the text buffers' tag colors in-place
 pub fn update_text_tag_colors(
     text_buffers: &[&gtk::TextBuffer],
     config: &crate::libs::state::AppConfig,
@@ -260,11 +304,28 @@ pub fn update_text_tag_colors(
 }
 
 /// Get color property from a CSS class using the theme provider.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to query
+/// * `property` - CSS property name to retrieve
+///
+/// # Returns
+///
+/// Returns `Some(gdk::RGBA)` if the color is found, `None` otherwise
 pub fn get_css_color(class_name: &str, property: &str) -> Option<gdk::RGBA> {
     parse_css_property(class_name, property)
 }
 
 /// Get foreground color from a CSS class.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to query
+///
+/// # Returns
+///
+/// Returns the foreground color as `gdk::RGBA`, with fallback to gray
 pub fn get_color(class_name: &str) -> gdk::RGBA {
     get_css_color(class_name, "color").unwrap_or_else(|| {
         // Fallback to default gray
@@ -273,6 +334,14 @@ pub fn get_color(class_name: &str) -> gdk::RGBA {
 }
 
 /// Get background color from a CSS class.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to query
+///
+/// # Returns
+///
+/// Returns the background color as `gdk::RGBA`, with fallback to white
 pub fn get_background_color(class_name: &str) -> gdk::RGBA {
     get_css_color(class_name, "background-color").unwrap_or_else(|| {
         // Fallback to white
@@ -281,6 +350,14 @@ pub fn get_background_color(class_name: &str) -> gdk::RGBA {
 }
 
 /// Get background color from a CSS class and return as hex string.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to query
+///
+/// # Returns
+///
+/// Returns the background color as RGB hex string (e.g., "#ff0000")
 pub fn get_background_color_rgb(class_name: &str) -> String {
     let rgba = get_background_color(class_name);
     format!(
@@ -292,6 +369,14 @@ pub fn get_background_color_rgb(class_name: &str) -> String {
 }
 
 /// Get background color from a CSS class and return as hex string with alpha channel.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to query
+///
+/// # Returns
+///
+/// Returns the background color as RGBA hex string (e.g., "#ff0000ff")
 pub fn get_background_color_rgba(class_name: &str) -> String {
     let rgba = get_background_color(class_name);
     format!(
@@ -304,6 +389,14 @@ pub fn get_background_color_rgba(class_name: &str) -> String {
 }
 
 /// Get foreground color from a CSS class and return as hex string.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to query
+///
+/// # Returns
+///
+/// Returns the foreground color as RGB hex string (e.g., "#ff0000")
 pub fn get_color_rgb(class_name: &str) -> String {
     let rgba = get_color(class_name);
     format!(
@@ -315,6 +408,14 @@ pub fn get_color_rgb(class_name: &str) -> String {
 }
 
 /// Get foreground color from a CSS class and return as hex string with alpha channel.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to query
+///
+/// # Returns
+///
+/// Returns the foreground color as RGBA hex string (e.g., "#ff0000ff")
 #[allow(dead_code)]
 pub fn get_color_rgba(class_name: &str) -> String {
     let rgba = get_color(class_name);
@@ -328,6 +429,15 @@ pub fn get_color_rgba(class_name: &str) -> String {
 }
 
 /// Parse any CSS property value as color using centralized parser.
+///
+/// # Arguments
+///
+/// * `class_name` - CSS class name to search in
+/// * `property` - CSS property name to extract
+///
+/// # Returns
+///
+/// Returns `Some(gdk::RGBA)` if the property is found and parsed, `None` otherwise
 fn parse_css_property(class_name: &str, property: &str) -> Option<gdk::RGBA> {
     let css_content = get_css_content();
 

@@ -43,9 +43,7 @@ impl FileService {
     ///
     /// # Returns
     ///
-    /// A tuple containing:
-    /// * `usize` - Number of bytes in the loaded file
-    /// * `usize` - Number of lines in the loaded file
+    /// * `(usize, usize)` - Tuple containing (bytes, lines) of the loaded file
     pub fn load_file_from_path(
         &self,
         text_view: &GTextView,

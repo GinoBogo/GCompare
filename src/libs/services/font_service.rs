@@ -36,9 +36,16 @@ impl FontService {
     }
 
     /// Get a list of available monospace fonts on the system.
+    ///
+    /// Searches for monospace fonts using system font utilities and filters
+    /// out style variants to provide clean font family names.
+    ///
+    /// # Returns
+    ///
+    /// * `Vec<FontInfo>` - Vector of available monospace font information
     pub fn get_monospace_fonts(&self) -> Vec<FontInfo> {
         let mut fonts = Vec::new();
-        
+
         // First try to get monospace fonts specifically
         let output = {
             let mut cmd = Command::new("fc-list");
@@ -51,38 +58,41 @@ impl FontService {
         };
 
         if let Some(output) = output
-            && output.status.success() {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                for line in stdout.lines() {
-                    let line = line.trim();
-                    if !line.is_empty() && line.to_lowercase().contains("mono") {
-                        // Parse format: "/path/to/font.ttf: Font Name,Font Name Style:style=Style"
-                        if let Some(font_part) = line.split(':').nth(1) {
-                            let font_names = font_part.trim();
-                            // Split by comma to get individual font names
-                            for font_name in font_names.split(',') {
-                                let clean_name = font_name.trim();
-                                if !clean_name.is_empty() && 
-                                   !clean_name.to_lowercase().contains("light") &&
-                                   !clean_name.to_lowercase().contains("bold") &&
-                                   !clean_name.to_lowercase().contains("italic") &&
-                                   !clean_name.to_lowercase().contains("thin") &&
-                                   !clean_name.to_lowercase().contains("black") &&
-                                   !clean_name.to_lowercase().contains("medium") &&
-                                   !clean_name.to_lowercase().contains("ret") &&  // Retina
-                                   !clean_name.to_lowercase().contains("med") &&  // Medium
-                                   !clean_name.to_lowercase().contains("sembd") && // Semi Bold
-                                   !clean_name.to_lowercase().contains("cond") && // Condensed
-                                   !clean_name.to_lowercase().contains("ext") {  // Extended
-                                    if !fonts.iter().any(|f: &FontInfo| f.name == clean_name) {
-                                        fonts.push(FontInfo::new(clean_name.to_string(), false));
-                                    }
+            && output.status.success()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let line = line.trim();
+                if !line.is_empty() && line.to_lowercase().contains("mono") {
+                    // Parse format: "/path/to/font.ttf: Font Name,Font Name Style:style=Style"
+                    if let Some(font_part) = line.split(':').nth(1) {
+                        let font_names = font_part.trim();
+                        // Split by comma to get individual font names
+                        for font_name in font_names.split(',') {
+                            let clean_name = font_name.trim();
+                            if !clean_name.is_empty()
+                                    && !clean_name.to_lowercase().contains("light")
+                                    && !clean_name.to_lowercase().contains("bold")
+                                    && !clean_name.to_lowercase().contains("italic")
+                                    && !clean_name.to_lowercase().contains("thin")
+                                    && !clean_name.to_lowercase().contains("black")
+                                    && !clean_name.to_lowercase().contains("medium")
+                                    && !clean_name.to_lowercase().contains("ret") // Retina
+                                    && !clean_name.to_lowercase().contains("med") // Medium
+                                    && !clean_name.to_lowercase().contains("sembd") // Semi Bold
+                                    && !clean_name.to_lowercase().contains("cond") // Condensed
+                                    && !clean_name.to_lowercase().contains("ext")
+                            // Extended
+                            {
+                                if !fonts.iter().any(|f: &FontInfo| f.name == clean_name) {
+                                    fonts.push(FontInfo::new(clean_name.to_string(), false));
                                 }
                             }
                         }
                     }
                 }
             }
+        }
 
         // If we didn't find enough fonts, try a broader search
         let output = if fonts.len() < 5 {
@@ -99,31 +109,33 @@ impl FontService {
         };
 
         if let Some(output) = output
-            && output.status.success() {
-                    let stdout = String::from_utf8_lossy(&output.stdout);
-                    for line in stdout.lines() {
-                        let line = line.trim();
-                        if !line.is_empty() {
-                            // Parse format like "Font Name:style=Style" or "/path/to/font: Font Name:style=Style"
-                            let font_name = if line.contains('/') {
-                                // Extract font name from path format
-                                line.split(':').nth(1).unwrap_or("").trim()
-                            } else {
-                                // Extract font name from simple format
-                                line.split(':').next().unwrap_or("").trim()
-                            };
-                            
-                            // Check if this might be a monospace font and is not a style variant
-                            if (font_name.to_lowercase().contains("mono") ||
-                                font_name.to_lowercase().contains("code") ||
-                                font_name.to_lowercase().contains("console") ||
-                                font_name.to_lowercase().contains("terminal")) &&
-                               !fonts.iter().any(|f: &FontInfo| f.name == font_name) {
-                                fonts.push(FontInfo::new(font_name.to_string(), false));
-                            }
-                        }
+            && output.status.success()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            for line in stdout.lines() {
+                let line = line.trim();
+                if !line.is_empty() {
+                    // Parse format like "Font Name:style=Style" or "/path/to/font: Font Name:style=Style"
+                    let font_name = if line.contains('/') {
+                        // Extract font name from path format
+                        line.split(':').nth(1).unwrap_or("").trim()
+                    } else {
+                        // Extract font name from simple format
+                        line.split(':').next().unwrap_or("").trim()
+                    };
+
+                    // Check if this might be a monospace font and is not a style variant
+                    if (font_name.to_lowercase().contains("mono")
+                        || font_name.to_lowercase().contains("code")
+                        || font_name.to_lowercase().contains("console")
+                        || font_name.to_lowercase().contains("terminal"))
+                        && !fonts.iter().any(|f: &FontInfo| f.name == font_name)
+                    {
+                        fonts.push(FontInfo::new(font_name.to_string(), false));
                     }
                 }
+            }
+        }
 
         // Add common font aliases that are not installed but map to available fonts
         let common_aliases = vec![
@@ -141,7 +153,7 @@ impl FontService {
 
         // Sort fonts alphabetically (aliases will be mixed in)
         fonts.sort_by(|a, b| a.name.cmp(&b.name));
-        
+
         // If no fonts were detected, fall back to common monospace fonts
         if fonts.is_empty() {
             fonts.extend_from_slice(&[
@@ -168,6 +180,14 @@ impl FontService {
     }
 
     /// Get the best monospace font match for a given font family.
+    ///
+    /// # Arguments
+    ///
+    /// * `font_family` - Font family name to find match for
+    ///
+    /// # Returns
+    ///
+    /// * `String` - Matched font family name or "Monospace" fallback
     pub fn get_best_monospace_match(&self, font_family: &str) -> String {
         let output = {
             let mut cmd = Command::new("fc-match");
@@ -181,14 +201,15 @@ impl FontService {
         };
 
         if let Some(output) = output
-            && output.status.success() {
-                let stdout = String::from_utf8_lossy(&output.stdout);
-                let font_family = stdout.trim();
-                if !font_family.is_empty() {
-                    return font_family.to_string();
-                }
+            && output.status.success()
+        {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let font_family = stdout.trim();
+            if !font_family.is_empty() {
+                return font_family.to_string();
             }
-        
+        }
+
         // Fallback to "Monospace" if nothing matches
         "Monospace".to_string()
     }

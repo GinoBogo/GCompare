@@ -472,7 +472,8 @@ impl GOptionsDialog {
     ///
     /// # Arguments
     ///
-    /// * `callback` - Function to call with dialog result (font family, font size, color config) or None if cancelled
+    /// * `callback` - Function to call with dialog result (font family, font
+    ///              size, color config) or None if cancelled
     pub fn show(
         &self,
         callback: impl Fn(Option<(String, f64, crate::libs::state::AppConfig)>) + 'static,

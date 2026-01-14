@@ -23,6 +23,17 @@ pub struct ControlPanelWidget {
 
 impl ControlPanelWidget {
     /// Create a new control panel widget.
+    ///
+    /// # Arguments
+    ///
+    /// * `primary_bg` - Background color for primary buttons
+    /// * `primary_fg` - Foreground color for primary buttons
+    /// * `highlight_bg` - Background color for highlight buttons
+    /// * `highlight_fg` - Foreground color for highlight buttons
+    ///
+    /// # Returns
+    ///
+    /// New ControlPanelWidget instance
     pub fn new(primary_bg: &str, primary_fg: &str, highlight_bg: &str, highlight_fg: &str) -> Self {
         let container = Box::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -79,6 +90,14 @@ impl ControlPanelWidget {
     }
 
     /// Update all button colors from config.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - Application configuration containing color settings
+    ///
+    /// # Returns
+    ///
+    /// Unit type ()
     pub fn update_button_colors(&self, config: &crate::libs::state::AppConfig) {
         self.load_button
             .set_custom_colors(&config.button_primary_bg, &config.button_primary_fg);
@@ -97,6 +116,10 @@ impl ControlPanelWidget {
     }
 
     /// Get the container widget.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the GTK Box container
     pub fn container(&self) -> &Box {
         &self.container
     }

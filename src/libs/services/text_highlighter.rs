@@ -19,6 +19,16 @@ impl TextHighlighter {
     }
 
     /// Apply line-based highlighting to text buffers based on diff results.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer_a` - Text buffer for panel A
+    /// * `buffer_b` - Text buffer for panel B
+    /// * `changed_lines_a` - Line numbers with changes in panel A
+    /// * `changed_lines_b` - Line numbers with changes in panel B
+    /// * `empty_lines_a` - Empty line numbers in panel A
+    /// * `empty_lines_b` - Empty line numbers in panel B
+    /// * `config` - Application configuration with color settings
     pub fn apply_line_highlighting(
         &self,
         buffer_a: &gtk::TextBuffer,
@@ -81,6 +91,14 @@ impl TextHighlighter {
     }
 
     /// Apply a specific tag to a text range.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - Text buffer to apply tag to
+    /// * `start` - Start iterator for the range
+    /// * `end` - End iterator for the range
+    /// * `tag_name` - Name of the tag to apply
+    /// * `config` - Application configuration with color settings
     fn apply_tag_to_range(
         &self,
         buffer: &gtk::TextBuffer,
@@ -97,6 +115,12 @@ impl TextHighlighter {
     }
 
     /// Ensure a text tag exists in the buffer's tag table.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - Text buffer to ensure tag exists in
+    /// * `tag_name` - Name of the tag to ensure exists
+    /// * `config` - Application configuration with color settings
     fn ensure_tag_exists(&self, buffer: &gtk::TextBuffer, tag_name: &str, config: &AppConfig) {
         if buffer.tag_table().lookup(tag_name).is_none() {
             let tag = gtk::TextTag::new(Some(tag_name));
@@ -134,6 +158,10 @@ impl TextHighlighter {
     }
 
     /// Clear all diff highlighting from a buffer.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - Text buffer to clear highlighting from
     pub fn clear_all_highlighting(&self, buffer: &gtk::TextBuffer) {
         let start_iter = buffer.start_iter();
         let end_iter = buffer.end_iter();
@@ -144,6 +172,13 @@ impl TextHighlighter {
     }
 
     /// Update highlighting for a single line (efficient for real-time).
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer_a` - Text buffer for panel A
+    /// * `buffer_b` - Text buffer for panel B
+    /// * `line_number` - Line number to update
+    /// * `config` - Application configuration with color settings
     #[allow(dead_code)]
     pub fn update_line_highlighting(
         &self,
@@ -219,6 +254,15 @@ impl TextHighlighter {
     }
 
     /// Get content of a specific line.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - Text buffer to get line content from
+    /// * `line_number` - Line number to get content from
+    ///
+    /// # Returns
+    ///
+    /// * `String` - Content of the specified line
     #[allow(dead_code)]
     fn get_line_content(buffer: &gtk::TextBuffer, line_number: usize) -> String {
         if let Some(start_iter) = buffer.iter_at_line(line_number as i32) {
@@ -231,6 +275,11 @@ impl TextHighlighter {
     }
 
     /// Clear highlighting from a specific line.
+    ///
+    /// # Arguments
+    ///
+    /// * `buffer` - Text buffer to clear highlighting from
+    /// * `line_number` - Line number to clear highlighting from
     #[allow(dead_code)]
     fn clear_line_highlighting(&self, buffer: &gtk::TextBuffer, line_number: usize) {
         if let Some(start_iter) = buffer.iter_at_line(line_number as i32) {

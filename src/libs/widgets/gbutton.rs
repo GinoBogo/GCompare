@@ -63,6 +63,10 @@ impl GButton {
     /// # Arguments
     ///
     /// * `label` - Button label text.
+    ///
+    /// # Returns
+    ///
+    /// New GButton instance
     pub fn new(label: &str) -> Self {
         glib::Object::builder().property("label", label).build()
     }

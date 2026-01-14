@@ -92,6 +92,7 @@ mod imp {
             &SIGNALS
         }
 
+        /// Initialize widget when constructed.
         fn constructed(&self) {
             self.parent_constructed();
             let obj = self.obj();
@@ -185,6 +186,10 @@ glib::wrapper! {
 
 impl GMiniMap {
     /// Create a new GMiniMap widget.
+    ///
+    /// # Returns
+    ///
+    /// New GMiniMap instance
     pub fn new() -> Self {
         glib::Object::builder().build()
     }
@@ -195,7 +200,7 @@ impl GMiniMap {
     ///
     /// * `panel` - Panel identifier (A or B)
     /// * `upper_line` - Upper visible line number
-    /// * `total_lines` - Total number of lines in the file
+    /// * `total_lines` - Total number of lines in file
     /// * `visible_lines` - Number of visible lines
     pub fn update_text_info(
         &self,
@@ -249,6 +254,13 @@ impl GMiniMap {
     }
 
     /// Batch update both diff and empty lines with single redraw
+    ///
+    /// # Arguments
+    ///
+    /// * `lines_a` - Line numbers with differences in panel A
+    /// * `lines_b` - Line numbers with differences in panel B
+    /// * `empty_a` - Empty line numbers in panel A
+    /// * `empty_b` - Empty line numbers in panel B
     pub fn set_all_diff_lines(
         &self,
         lines_a: Vec<usize>,
@@ -276,6 +288,10 @@ impl GMiniMap {
     }
 
     /// Check if there are any differences recorded.
+    ///
+    /// # Returns
+    ///
+    /// Boolean indicating if differences exist
     pub fn has_differences(&self) -> bool {
         let imp = self.imp();
         !imp.diff_lines_a.borrow().is_empty()
@@ -285,6 +301,14 @@ impl GMiniMap {
     }
 
     /// Navigate to the next difference and return the line number to scroll to
+    ///
+    /// # Arguments
+    ///
+    /// * `current_line` - Current line number to start searching from
+    ///
+    /// # Returns
+    ///
+    /// Option containing the next difference line number or None
     pub fn next_difference(&self, current_line: usize) -> Option<usize> {
         let imp = self.imp();
         let lines_a = imp.diff_lines_a.borrow();
@@ -315,6 +339,14 @@ impl GMiniMap {
     }
 
     /// Navigate to the previous difference and return the line number to scroll to
+    ///
+    /// # Arguments
+    ///
+    /// * `current_line` - Current line number to start searching from
+    ///
+    /// # Returns
+    ///
+    /// Option containing the previous difference line number or None
     pub fn previous_difference(&self, current_line: usize) -> Option<usize> {
         let imp = self.imp();
         let lines_a = imp.diff_lines_a.borrow();
@@ -344,6 +376,17 @@ impl GMiniMap {
         all_diff_lines.last().copied()
     }
 
+    /// Draw the diff visualization on the minimap.
+    ///
+    /// Renders background, separator line, and diff indicators for both panels
+    /// showing additions, deletions, and empty lines.
+    ///
+    /// # Arguments
+    ///
+    /// * `_da` - Drawing area widget reference
+    /// * `cr` - Cairo drawing context
+    /// * `width` - Available drawing width
+    /// * `height` - Available drawing height
     fn draw_diff_lines(
         &self,
         _da: &DrawingArea,
@@ -434,6 +477,10 @@ impl GMiniMap {
         }
     }
 
+    /// Update the cursor size based on current viewport and text information.
+    ///
+    /// Calculates and updates the cursor rectangle dimensions to represent
+    /// the visible portion of text in the minimap.
     fn update_cursor_size(&self) {
         let imp = self.imp();
 

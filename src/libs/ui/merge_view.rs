@@ -28,6 +28,18 @@ pub struct GMergeView {
 }
 
 impl GMergeView {
+    /// Create a new merge view window for resolving file conflicts.
+    ///
+    /// # Arguments
+    ///
+    /// * `_parent` - The parent application window
+    /// * `text_a` - Content of file A (original file)
+    /// * `text_b` - Content of file B (modified file)  
+    /// * `config_service` - Configuration service for settings
+    ///
+    /// # Returns
+    ///
+    /// New GMergeView instance
     pub fn new(
         _parent: &ApplicationWindow,
         text_a: &str,
@@ -714,6 +726,10 @@ impl GMergeView {
     }
 
     /// Display the merge view window to the user.
+    ///
+    /// # Returns
+    ///
+    /// Unit type ()
     pub fn show(&self) {
         self.window.present();
     }

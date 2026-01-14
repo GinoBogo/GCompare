@@ -20,7 +20,7 @@ impl ColorParseResult {
     }
 }
 
-/// Parse hex color string to RGBA with comprehensive format support.
+/// Parse color string in various formats (hex, rgba, etc).
 ///
 /// Supports:
 /// - 6-digit hex: "#RRGGBB" or "RRGGBB"
@@ -58,6 +58,17 @@ pub fn parse_color_comprehensive(color_str: &str) -> Result<ColorParseResult, St
 }
 
 /// Parse hex color string (without # prefix) to RGBA.
+///
+/// Supports 3-digit and 6-digit hex formats.
+///
+/// # Arguments
+///
+/// * `hex` - Hex color string without # prefix
+///
+/// # Returns
+///
+/// * `Ok(ColorParseResult)` - Successfully parsed color
+/// * `Err(String)` - Error message for invalid hex format
 fn parse_hex_color(hex: &str) -> Result<ColorParseResult, String> {
     let cleaned = hex
         .chars()
@@ -112,13 +123,31 @@ fn parse_hex_color(hex: &str) -> Result<ColorParseResult, String> {
     Ok(ColorParseResult::new(rgba, a as f64 / 255.0))
 }
 
-/// Expand a single hex digit to two digits (e.g., 'F' -> "FF").
+/// Expand a single hex digit to two digits (e.g., 'F' -> 'FF').
+///
+/// # Arguments
+///
+/// * `digit` - Single hexadecimal character to expand
+///
+/// # Returns
+///
+/// * `Ok(u8)` - Expanded byte value
+/// * `Err(String)` - Error for invalid hex digit
 fn expand_hex_digit(digit: char) -> Result<u8, String> {
     let hex_str = format!("{}{}", digit, digit);
     u8::from_str_radix(&hex_str, 16).map_err(|_| format!("Invalid hex digit: {}", digit))
 }
 
 /// Parse rgba() format string to RGBA.
+///
+/// # Arguments
+///
+/// * `rgba_str` - RGBA format string (e.g., "rgba(255, 255, 255, 0.8)")
+///
+/// # Returns
+///
+/// * `Ok(ColorParseResult)` - Successfully parsed color
+/// * `Err(String)` - Error message for invalid RGBA format
 fn parse_rgba_color(rgba_str: &str) -> Result<ColorParseResult, String> {
     if !rgba_str.starts_with("rgba(") || !rgba_str.ends_with(')') {
         return Err("Invalid rgba() format".to_string());
@@ -161,16 +190,17 @@ fn parse_rgba_color(rgba_str: &str) -> Result<ColorParseResult, String> {
     Ok(ColorParseResult::new(rgba, a))
 }
 
-/// Convenience function to parse color and return only RGBA (for backward compatibility).
+/// Convenience function to parse color and return only RGBA
+/// (for backward compatibility).
 ///
-/// This function provides fallback values for common use cases where you just need RGBA
-/// and want sensible defaults on parsing failure.
+/// This function provides fallback values for common use cases
+/// where you just need RGBA and want sensible defaults on parsing failure.
 ///
 /// # Arguments
 ///
 /// * `color_str` - Color string to parse
 /// * `fallback_r` - Red component fallback (0-255)
-/// * `fallback_g` - Green component fallback (0-255)  
+/// * `fallback_g` - Green component fallback (0-255)
 /// * `fallback_b` - Blue component fallback (0-255)
 /// * `fallback_a` - Alpha component fallback (0.0-1.0)
 ///

@@ -42,8 +42,13 @@ pub struct AppController {
 
 impl AppController {
     /// Create a new application controller.
+    ///
+    /// # Returns
+    ///
+    /// New AppController instance
     pub fn new() -> Self {
-        // Initialize theme first to ensure CSS provider is ready for default config values
+        // Initialize theme first to ensure CSS provider is ready for default
+        // config values
         let css_provider = Rc::new(theme::init());
 
         let config_service = ConfigService::new();
@@ -69,6 +74,12 @@ impl AppController {
     }
 
     /// Initialize the application UI.
+    ///
+    /// # Arguments
+    ///
+    /// * `app` - The GTK application instance
+    /// * `file_a_path` - Optional path to file A
+    /// * `file_b_path` - Optional path to file B
     pub fn initialize_ui(
         &mut self,
         app: &Application,
@@ -218,6 +229,13 @@ impl AppController {
     }
 
     /// Setup all signal handlers for the application.
+    ///
+    /// # Arguments
+    ///
+    /// * `window` - The main application window
+    /// * `control_panel` - Control panel widget reference
+    /// * `comparison_panels` - Comparison panels widget reference
+    /// * `status_bar` - Status bar widget
     fn setup_signal_handlers(
         &self,
         window: &ApplicationWindow,

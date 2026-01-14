@@ -111,6 +111,15 @@ pub struct ApplicationState {
 
 impl ApplicationState {
     /// Create a new application state with the given configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The application configuration to initialize with
+    ///
+    /// # Returns
+    ///
+    /// Returns a new `ApplicationState` instance containing the provided
+    /// configuration
     pub fn new(config: AppConfig) -> Self {
         Self {
             config: std::cell::RefCell::new(config),
@@ -118,16 +127,34 @@ impl ApplicationState {
     }
 
     /// Get current configuration.
+    ///
+    /// # Returns
+    ///
+    /// Returns a reference to the current `AppConfig`
     pub fn config(&self) -> std::cell::Ref<'_, AppConfig> {
         self.config.borrow()
     }
 
     /// Update the configuration.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - The new configuration to set
     pub fn update_config(&self, config: AppConfig) {
         *self.config.borrow_mut() = config;
     }
 
     /// Update configuration from UI state.
+    ///
+    /// # Arguments
+    ///
+    /// * `window` - Application window reference
+    /// * `path_combo_a` - Combo box for file A path
+    /// * `path_combo_b` - Combo box for file B path
+    ///
+    /// # Returns
+    ///
+    /// Returns updated `AppConfig` with current UI state
     pub fn update_config_from_ui(
         &self,
         window: &ApplicationWindow,

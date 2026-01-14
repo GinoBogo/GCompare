@@ -10,13 +10,14 @@ use std::rc::Rc;
 
 use crate::libs::services::color_parser::parse_color_comprehensive;
 
-/// Color picker widget with label, color button, and transparency slider for alpha control.
+/// Color picker widget with label, color button, and transparency slider for
+/// alpha control.
 pub struct GColorPicker {
     container: Box,
     pub color_button: ColorButton,
     alpha_scale: Option<Scale>,
     label: String,
-    alpha_cell: Option<Rc<std::cell::Cell<f64>>>, // Store the alpha cell for the closure
+    alpha_cell: Option<Rc<std::cell::Cell<f64>>>,
 }
 
 impl GColorPicker {
@@ -27,6 +28,10 @@ impl GColorPicker {
     /// * `label` - Label text for the color picker
     /// * `color` - Initial color as hex string (6 or 8 digit)
     /// * `with_alpha` - Whether to include alpha slider
+    ///
+    /// # Returns
+    ///
+    /// New GColorPicker instance
     pub fn new(label: &str, color: &str, with_alpha: bool) -> Self {
         let container = Box::new(Orientation::Horizontal, 10);
         container.set_halign(gtk::Align::Start);
@@ -108,16 +113,33 @@ impl GColorPicker {
     }
 
     /// Create a new color picker without transparency (legacy compatibility).
+    ///
+    /// # Arguments
+    ///
+    /// * `label` - Label text for the color picker
+    /// * `color` - Initial color as hex string (6 digit)
+    ///
+    /// # Returns
+    ///
+    /// New GColorPicker instance
     pub fn new_simple(label: &str, color: &str) -> Self {
         Self::new(label, color, false)
     }
 
     /// Get the container widget.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the GTK Box container
     pub fn container(&self) -> &Box {
         &self.container
     }
 
-    /// Get the current color as hex string (6 or 8 digit depending on alpha support).
+    /// Get current color as hex string (6 or 8 digit depending on alpha support).
+    ///
+    /// # Returns
+    ///
+    /// Color as hex string
     pub fn get_color(&self) -> String {
         let rgba = self.color_button.rgba();
 
@@ -144,6 +166,14 @@ impl GColorPicker {
 
     /// Parse hex color string to RGBA and alpha using centralized parser.
     /// Supports both 6-digit (#RRGGBB) and 8-digit (#RRGGBBAA) formats.
+    ///
+    /// # Arguments
+    ///
+    /// * `hex` - Hex color string to parse
+    ///
+    /// # Returns
+    ///
+    /// Result containing (RGBA, alpha) tuple or error
     fn parse_hex_color(hex: &str) -> Result<(gtk::gdk::RGBA, f64), ()> {
         parse_color_comprehensive(hex)
             .map(|result| (result.rgba, result.alpha))
@@ -152,6 +182,11 @@ impl GColorPicker {
 }
 
 impl Clone for GColorPicker {
+    /// Clone the color picker widget.
+    ///
+    /// # Returns
+    ///
+    /// New cloned GColorPicker instance
     fn clone(&self) -> Self {
         let color = self.get_color();
         let with_alpha = self.alpha_scale.is_some();

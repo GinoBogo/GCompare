@@ -28,6 +28,10 @@ impl ConfigService {
     }
 
     /// Load configuration from file (called only once at startup).
+    ///
+    /// # Returns
+    ///
+    /// * `AppConfig` - Loaded configuration or default if file doesn't exist
     fn load_from_file() -> AppConfig {
         File::open(CONFIG_FILE)
             .ok()
@@ -36,16 +40,30 @@ impl ConfigService {
     }
 
     /// Get current configuration (in-memory, no file I/O).
+    ///
+    /// # Returns
+    ///
+    /// * `AppConfig` - Current configuration clone
     pub fn get_config(&self) -> AppConfig {
         self.config.lock().unwrap().clone()
     }
 
     /// Update configuration in memory (no file I/O).
+    ///
+    /// # Arguments
+    ///
+    /// * `new_config` - New configuration to set in memory
     pub fn update_config(&self, new_config: AppConfig) {
         *self.config.lock().unwrap() = new_config;
     }
 
     /// Update specific fields in the configuration in memory.
+    ///
+    /// # Arguments
+    ///
+    /// * `width` - Window width in pixels
+    /// * `height` - Window height in pixels
+    /// * `maximized` - Whether window is maximized
     pub fn update_merge_window_geometry(&self, width: i32, height: i32, maximized: bool) {
         let mut config = self.config.lock().unwrap();
         config.merge_window_width = width;
@@ -54,6 +72,9 @@ impl ConfigService {
     }
 
     /// Save configuration to file (called only once at shutdown).
+    ///
+    /// Writes the current in-memory configuration to gcompare.json file.
+    /// Handles file creation, JSON serialization, and error reporting.
     pub fn save_config(&self) {
         let config = self.config.lock().unwrap();
         match File::create(CONFIG_FILE) {

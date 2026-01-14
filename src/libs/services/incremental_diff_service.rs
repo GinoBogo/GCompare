@@ -26,6 +26,16 @@ impl IncrementalDiffService {
 
     /// Compute line-by-line differences with efficient change tracking.
     /// Returns line numbers that have differences.
+    ///
+    /// # Arguments
+    ///
+    /// * `text_a` - Original text content
+    /// * `text_b` - Modified text content
+    ///
+    /// # Returns
+    ///
+    /// * `IncrementalDiffResult` - Structure containing changed and
+    ///   empty line numbers
     pub fn compute_line_diff(&self, text_a: &str, text_b: &str) -> IncrementalDiffResult {
         let _lines_a: Vec<&str> = text_a.lines().collect();
         let _lines_b: Vec<&str> = text_b.lines().collect();
@@ -79,7 +89,20 @@ impl IncrementalDiffService {
         }
     }
 
-    /// Compute diff for a specific line range only (more efficient for real-time).
+    /// Compute diff for a specific line range only (more efficient for
+    /// real-time).
+    ///
+    /// # Arguments
+    ///
+    /// * `text_a` - Original text content
+    /// * `text_b` - Modified text content
+    /// * `line_range` - Optional tuple of (start_line, end_line) to limit
+    ///   computation
+    ///
+    /// # Returns
+    ///
+    /// * `IncrementalDiffResult` - Structure containing changed and
+    ///   empty line numbers
     #[allow(dead_code)]
     pub fn compute_line_range_diff(
         &self,
@@ -127,6 +150,11 @@ impl IncrementalDiffService {
     }
 
     /// Fast check if two strings differ (without computing full diff).
+    ///
+    /// # Arguments
+    ///
+    /// * `text_a` - First text content to compare
+    /// * `text_b` - Second text content to compare
     #[allow(dead_code)]
     pub fn quick_differ(&self, text_a: &str, text_b: &str) -> bool {
         text_a != text_b

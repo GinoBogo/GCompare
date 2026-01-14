@@ -23,6 +23,14 @@ pub struct ComparisonPanelsWidget {
 
 impl ComparisonPanelsWidget {
     /// Create a new comparison panels widget.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - Application configuration containing settings
+    ///
+    /// # Returns
+    ///
+    /// Tuple of (Self, GMiniMap) containing the widget and minimap
     pub fn new(config: &AppConfig) -> (Self, GMiniMap) {
         let container = Box::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -66,56 +74,104 @@ impl ComparisonPanelsWidget {
     }
 
     /// Get the container widget.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the GTK Box container
     pub fn container(&self) -> &Box {
         &self.container
     }
 
     /// Get panel A text view.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel A's text view widget
     pub fn panel_a_text_view(&self) -> &GTextView {
         &self.panel_a.text_view
     }
 
     /// Get panel A path combo box.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel A's path combo box
     pub fn panel_a_path_combo(&self) -> &ComboBoxText {
         &self.panel_a.path_combo
     }
 
     /// Get panel B text view.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel B's text view widget
     pub fn panel_b_text_view(&self) -> &GTextView {
         &self.panel_b.text_view
     }
 
     /// Get panel B path combo box.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel B's path combo box
     pub fn panel_b_path_combo(&self) -> &ComboBoxText {
         &self.panel_b.path_combo
     }
 
     /// Get panel A open button.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel A's open button
     pub fn panel_a_open_button(&self) -> &GButton {
         &self.panel_a.open_button
     }
 
     /// Get panel B open button.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel B's open button
     pub fn panel_b_open_button(&self) -> &GButton {
         &self.panel_b.open_button
     }
 
     /// Get panel A save button.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel A's save button
     pub fn panel_a_save_button(&self) -> &GButton {
         &self.panel_a.save_button
     }
 
     /// Get panel B save button.
+    ///
+    /// # Returns
+    ///
+    /// Reference to panel B's save button
     pub fn panel_b_save_button(&self) -> &GButton {
         &self.panel_b.save_button
     }
 
     /// Get minimap reference.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the minimap widget
     pub fn minimap(&self) -> &GMiniMap {
         &self.minimap
     }
 
     /// Update all button colors from config.
+    ///
+    /// # Arguments
+    ///
+    /// * `config` - Application configuration containing color settings
+    ///
+    /// # Returns
+    ///
+    /// Unit type ()
     pub fn update_button_colors(&self, config: &crate::libs::state::AppConfig) {
         // File A uses remove colors
         self.panel_a
@@ -147,6 +203,19 @@ pub struct FilePanelWidget {
 
 impl FilePanelWidget {
     /// Create a new file panel widget.
+    ///
+    /// # Arguments
+    ///
+    /// * `title` - Panel title string
+    /// * `history` - Slice of file path history strings
+    /// * `bg_color` - Background color string
+    /// * `fg_color` - Foreground color string
+    /// * `font_family` - Font family string
+    /// * `font_size` - Font size as f64
+    ///
+    /// # Returns
+    ///
+    /// New FilePanelWidget instance
     fn new(
         title: &str,
         history: &[String],
@@ -195,6 +264,17 @@ impl FilePanelWidget {
     }
 
     /// Build the path control bar for a file panel.
+    ///
+    /// # Arguments
+    ///
+    /// * `history` - Slice of file path history strings
+    /// * `bg_color` - Background color string
+    /// * `fg_color` - Foreground color string
+    ///
+    /// # Returns
+    ///
+    /// Tuple of (gtk::Box, GButton, GButton, ComboBoxText) containing
+    /// the control bar and its components
     fn build_path_control_bar(
         history: &[String],
         bg_color: &str,

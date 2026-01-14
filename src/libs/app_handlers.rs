@@ -24,6 +24,22 @@ use crate::libs::widgets::gstatusbar::GStatusBar;
 use crate::libs::widgets::gtextview::GTextView;
 
 /// Setup the compare button interaction.
+///
+/// # Arguments
+///
+/// * `window` - The main application window
+/// * `button` - Compare button widget
+/// * `panel_a` - Text view for panel A
+/// * `panel_b` - Text view for panel B
+/// * `panel_a_combo` - Combo box for panel A
+/// * `panel_b_combo` - Combo box for panel B
+/// * `minimap` - Minimap widget
+/// * `status_bar` - Status bar widget
+/// * `state` - Application state
+/// * `diff_service` - Diff service instance
+/// * `incremental_diff_service` - Incremental diff service instance
+/// * `text_highlighter` - Text highlighter instance
+/// * `is_loading` - Loading state flag
 pub fn setup_compare_interaction(
     window: &ApplicationWindow,
     button: &GButton,
@@ -272,6 +288,20 @@ pub fn setup_compare_interaction(
 }
 
 /// Setup the options button interaction.
+///
+/// # Arguments
+///
+/// * `button` - Options button widget
+/// * `window` - The main application window
+/// * `state` - Application state
+/// * `config_service` - Configuration service
+/// * `panel_a` - Text view for panel A
+/// * `panel_b` - Text view for panel B
+/// * `css_provider` - CSS provider for styling
+/// * `minimap` - Minimap widget
+/// * `sync_enabled` - Scroll synchronization flag
+/// * `control_panel` - Control panel widget
+/// * `comparison_panels` - Comparison panels widget
 pub fn setup_options_interaction(
     button: &GButton,
     window: &ApplicationWindow,
@@ -399,6 +429,14 @@ pub fn setup_options_interaction(
 }
 
 /// Setup navigation buttons (Previous/Next) interaction.
+///
+/// # Arguments
+///
+/// * `window` - The main application window
+/// * `prev_button` - Previous navigation button
+/// * `next_button` - Next navigation button
+/// * `panel_a` - Text view for panel A
+/// * `minimap` - Minimap widget
 pub fn setup_navigation_interaction(
     window: &ApplicationWindow,
     prev_button: &GButton,

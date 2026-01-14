@@ -53,7 +53,6 @@ mod imp {
             obj.set_spacing(5);
 
             // Create gutter (line numbers) components
-
             let gutter_view = TextView::builder()
                 .editable(false)
                 .cursor_visible(false)
@@ -90,7 +89,6 @@ mod imp {
                 .build();
 
             // Create content (text) components
-
             let content_view = TextView::builder()
                 .hexpand(true)
                 .vexpand(true)
@@ -113,17 +111,14 @@ mod imp {
                 .build();
 
             // Configure scrolling synchronization
-
             let vadjustment = content_scrolled_window.vadjustment();
             gutter_scrolled_window.set_vadjustment(Some(&vadjustment));
 
             // Assemble widget hierarchy
-
             obj.append(&gutter_scrolled_window);
             obj.append(&content_scrolled_window);
 
             // Setup line number update mechanism
-
             let gutter_view_clone = gutter_view.clone();
             let gutter_scrolled_window_clone = gutter_scrolled_window.clone();
 
@@ -206,7 +201,6 @@ mod imp {
                 });
 
             // Store component references
-
             self.gutter_view.set(gutter_view).unwrap();
             self.gutter_scrolled_window
                 .set(gutter_scrolled_window)
@@ -316,7 +310,6 @@ fn update_line_numbers(
         || has_blocks;
 
     // Full Update Strategy (large changes)
-
     if needs_full_update {
         let mut line_numbers = String::with_capacity(new_line_count * (new_digit_count + 1));
         if has_blocks {
@@ -392,7 +385,6 @@ fn update_line_numbers(
     }
 
     // Adjust gutter width if digit count changed
-
     if new_digit_count != old_digit_count {
         let new_width = (new_digit_count as i32 * 8) + 12;
         gutter_view.set_width_request(new_width);
@@ -401,11 +393,19 @@ fn update_line_numbers(
 
 impl GTextView {
     /// Create a new GTextView widget.
+    ///
+    /// # Returns
+    ///
+    /// New GTextView instance
     pub fn new() -> Self {
         glib::Object::builder().build()
     }
 
     /// Get reference to gutter text view.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the TextView used for gutter
     pub fn gutter_view(&self) -> TextView {
         self.imp()
             .gutter_view
@@ -415,6 +415,10 @@ impl GTextView {
     }
 
     /// Get reference to content text view.
+    ///
+    /// # Returns
+    ///
+    /// Reference to the TextView used for content
     pub fn content_view(&self) -> TextView {
         self.imp()
             .content_view
@@ -485,6 +489,10 @@ impl GTextView {
     }
 
     /// Get current text content.
+    ///
+    /// # Returns
+    ///
+    /// String containing the current text content
     pub fn get_text(&self) -> String {
         let content_view = self.content_view();
         let buffer = content_view.buffer();
@@ -495,6 +503,7 @@ impl GTextView {
     }
 
     /// Clear text content.
+    ///
     pub fn clear(&self) {
         self.set_text("");
     }
@@ -552,6 +561,7 @@ impl GTextView {
             0,     // Force full update
             &imp.numbering_blocks.borrow(),
         );
+
         // Update cache to prevent immediate redundant updates
         imp.line_count_cache.set(count);
 
@@ -595,6 +605,9 @@ impl GTextView {
     }
 
     /// Update CSS styles for font synchronization.
+    /// # Returns
+    ///
+    /// Unit type ()
     fn update_font_css(&self) {
         let imp = self.imp();
         let family = imp.font_family.borrow();
