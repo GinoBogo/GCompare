@@ -97,7 +97,22 @@ impl AppController {
         window.set_child(Some(&main_grid));
 
         // Create UI components
-        let mut control_panel = ControlPanelWidget::new();
+        let (button_primary_bg, button_primary_fg, button_highlight_bg, button_highlight_fg) = {
+            let config = self.state.config();
+            (
+                config.button_primary_bg.clone(),
+                config.button_primary_fg.clone(),
+                config.button_highlight_bg.clone(),
+                config.button_highlight_fg.clone(),
+            )
+        };
+
+        let mut control_panel = ControlPanelWidget::new(
+            &button_primary_bg,
+            &button_primary_fg,
+            &button_highlight_bg,
+            &button_highlight_fg,
+        );
         let (comparison_panels, minimap) = ComparisonPanelsWidget::new(&self.state.config());
         let status_bar = GStatusBar::new();
 
@@ -1029,6 +1044,9 @@ impl AppController {
         );
 
         // Options button click handler
+        let control_panel_rc = std::rc::Rc::new(control_panel.clone());
+        let comparison_panels_rc = std::rc::Rc::new(comparison_panels.clone());
+
         app_handlers::setup_options_interaction(
             &control_panel.options_button,
             window,
@@ -1039,6 +1057,8 @@ impl AppController {
             self.css_provider.clone(),
             &minimap,
             sync_enabled.clone(),
+            control_panel_rc,
+            comparison_panels_rc,
         );
     }
 

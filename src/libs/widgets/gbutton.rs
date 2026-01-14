@@ -91,4 +91,37 @@ impl GButton {
             ButtonTheme::Action3 => self.add_css_class("gbutton-action_3"),
         }
     }
+
+    /// Set custom background and foreground colors.
+    ///
+    /// # Arguments
+    ///
+    /// * `bg_color` - Background color in hex format (e.g., "#ffcccc").
+    /// * `fg_color` - Foreground color in hex format (e.g., "#000000").
+    pub fn set_custom_colors(&self, bg_color: &str, fg_color: &str) {
+        // Remove existing theme classes
+        self.remove_css_class("gbutton-default");
+        self.remove_css_class("gbutton-primary");
+        self.remove_css_class("gbutton-secondary");
+        self.remove_css_class("gbutton-highlight");
+        self.remove_css_class("gbutton-action_1");
+        self.remove_css_class("gbutton-action_2");
+        self.remove_css_class("gbutton-action_3");
+
+        // Add a custom class for targeting
+        self.add_css_class("gbutton-custom");
+
+        // Create CSS provider for custom colors
+        let css_provider = gtk::CssProvider::new();
+        let css = format!(
+            ".gbutton-custom {{ background: {}; color: {}; border: 1px solid #cccccc; }}",
+            bg_color, fg_color
+        );
+
+        css_provider.load_from_data(&css);
+
+        // Apply the style context
+        let style_context = self.style_context();
+        style_context.add_provider(&css_provider, gtk::STYLE_PROVIDER_PRIORITY_APPLICATION);
+    }
 }

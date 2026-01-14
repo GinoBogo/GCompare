@@ -282,6 +282,8 @@ pub fn setup_options_interaction(
     css_provider: Rc<gtk::CssProvider>,
     minimap: &GMiniMap,
     sync_enabled: Rc<Cell<bool>>,
+    control_panel: std::rc::Rc<crate::libs::ui::control_panel::ControlPanelWidget>,
+    comparison_panels: std::rc::Rc<crate::libs::ui::comparison_panels::ComparisonPanelsWidget>,
 ) {
     let window_clone = window.clone();
     let state_clone = state;
@@ -309,6 +311,8 @@ pub fn setup_options_interaction(
         let css_provider_apply = css_provider_clone.clone();
         let minimap_apply = minimap.clone();
         let sync_enabled_apply = sync_enabled.clone();
+        let control_panel_apply = control_panel.clone();
+        let comparison_panels_apply = comparison_panels.clone();
         dialog.show({
             let panel_a_text_view = panel_a_text_view.clone();
             let panel_b_text_view = panel_b_text_view.clone();
@@ -369,8 +373,12 @@ pub fn setup_options_interaction(
                     theme::update_text_tag_colors(&[&buffer_a, &buffer_b], &updated_config);
 
                     // Update in-memory config and save to disk
-                    config_service_apply.update_config(updated_config);
+                    config_service_apply.update_config(updated_config.clone());
                     config_service_apply.save_config();
+
+                    // Update button colors
+                    control_panel_apply.update_button_colors(&updated_config);
+                    comparison_panels_apply.update_button_colors(&updated_config);
                 }
             }
         });

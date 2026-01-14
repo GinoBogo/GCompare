@@ -5,7 +5,7 @@
 //! * Version: 1.0
 
 use crate::libs::services::font_service::{FontInfo, FontService};
-use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
+use crate::libs::widgets::gbutton::GButton;
 use crate::libs::widgets::gcolorpicker::GColorPicker;
 use crate::libs::widgets::gcomboboxfont::GComboBoxFont;
 use gtk::prelude::*;
@@ -41,6 +41,15 @@ pub struct GOptionsDialog {
     minimap_diff_add_picker: GColorPicker,
     minimap_diff_empty_picker: GColorPicker,
     minimap_cursor_bg_picker: GColorPicker,
+    // Button color pickers
+    button_default_bg_picker: GColorPicker,
+    button_default_fg_picker: GColorPicker,
+    button_primary_bg_picker: GColorPicker,
+    button_primary_fg_picker: GColorPicker,
+    button_secondary_bg_picker: GColorPicker,
+    button_secondary_fg_picker: GColorPicker,
+    button_highlight_bg_picker: GColorPicker,
+    button_highlight_fg_picker: GColorPicker,
 }
 
 impl GOptionsDialog {
@@ -344,6 +353,48 @@ impl GOptionsDialog {
             GColorPicker::new("Cursor Background", &config.minimap_cursor_bg, true);
         colors_grid.attach(minimap_cursor_bg_picker.container(), 0, 18, 1, 1);
 
+        // Buttons section
+        let buttons_label = Label::new(Some("Buttons"));
+        buttons_label.set_halign(gtk::Align::Start);
+        buttons_label.set_markup("<b>Buttons</b>");
+        colors_grid.attach(&buttons_label, 0, 19, 2, 1);
+
+        // Default button colors
+        let button_default_bg_picker =
+            GColorPicker::new_simple("Default Background", &config.button_default_bg);
+        colors_grid.attach(button_default_bg_picker.container(), 0, 20, 1, 1);
+
+        let button_default_fg_picker =
+            GColorPicker::new_simple("Default Text", &config.button_default_fg);
+        colors_grid.attach(button_default_fg_picker.container(), 0, 21, 1, 1);
+
+        // Primary button colors
+        let button_primary_bg_picker =
+            GColorPicker::new_simple("Primary Background", &config.button_primary_bg);
+        colors_grid.attach(button_primary_bg_picker.container(), 0, 22, 1, 1);
+
+        let button_primary_fg_picker =
+            GColorPicker::new_simple("Primary Text", &config.button_primary_fg);
+        colors_grid.attach(button_primary_fg_picker.container(), 0, 23, 1, 1);
+
+        // Secondary button colors
+        let button_secondary_bg_picker =
+            GColorPicker::new_simple("Secondary Background", &config.button_secondary_bg);
+        colors_grid.attach(button_secondary_bg_picker.container(), 0, 24, 1, 1);
+
+        let button_secondary_fg_picker =
+            GColorPicker::new_simple("Secondary Text", &config.button_secondary_fg);
+        colors_grid.attach(button_secondary_fg_picker.container(), 0, 25, 1, 1);
+
+        // Highlight button colors
+        let button_highlight_bg_picker =
+            GColorPicker::new_simple("Highlight Background", &config.button_highlight_bg);
+        colors_grid.attach(button_highlight_bg_picker.container(), 0, 26, 1, 1);
+
+        let button_highlight_fg_picker =
+            GColorPicker::new_simple("Highlight Text", &config.button_highlight_fg);
+        colors_grid.attach(button_highlight_fg_picker.container(), 0, 27, 1, 1);
+
         // Create scrolled window for colors tab
         let colors_scrolled = ScrolledWindow::new();
         colors_scrolled.set_policy(gtk::PolicyType::Automatic, gtk::PolicyType::Automatic);
@@ -362,10 +413,10 @@ impl GOptionsDialog {
 
         let apply_button = GButton::new("Apply");
         apply_button.set_tooltip_text(Some("Apply settings and close dialog"));
-        apply_button.set_theme(ButtonTheme::Primary);
+        apply_button.set_custom_colors("#007bff", "#ffffff");
         let cancel_button = GButton::new("Cancel");
         cancel_button.set_tooltip_text(Some("Cancel changes and close dialog"));
-        cancel_button.set_theme(ButtonTheme::Secondary);
+        cancel_button.set_custom_colors("#6c757d", "#ffffff");
 
         button_grid.attach(&apply_button, 0, 0, 1, 1);
         button_grid.attach(&cancel_button, 1, 0, 1, 1);
@@ -400,6 +451,14 @@ impl GOptionsDialog {
             minimap_diff_add_picker,
             minimap_diff_empty_picker,
             minimap_cursor_bg_picker,
+            button_default_bg_picker,
+            button_default_fg_picker,
+            button_primary_bg_picker,
+            button_primary_fg_picker,
+            button_secondary_bg_picker,
+            button_secondary_fg_picker,
+            button_highlight_bg_picker,
+            button_highlight_fg_picker,
         }
     }
 
@@ -437,6 +496,14 @@ impl GOptionsDialog {
         let minimap_diff_add_picker = self.minimap_diff_add_picker.clone();
         let minimap_diff_empty_picker = self.minimap_diff_empty_picker.clone();
         let minimap_cursor_bg_picker = self.minimap_cursor_bg_picker.clone();
+        let button_default_bg_picker = self.button_default_bg_picker.clone();
+        let button_default_fg_picker = self.button_default_fg_picker.clone();
+        let button_primary_bg_picker = self.button_primary_bg_picker.clone();
+        let button_primary_fg_picker = self.button_primary_fg_picker.clone();
+        let button_secondary_bg_picker = self.button_secondary_bg_picker.clone();
+        let button_secondary_fg_picker = self.button_secondary_fg_picker.clone();
+        let button_highlight_bg_picker = self.button_highlight_bg_picker.clone();
+        let button_highlight_fg_picker = self.button_highlight_fg_picker.clone();
 
         let callback = std::sync::Arc::new(callback);
 
@@ -485,6 +552,15 @@ impl GOptionsDialog {
                 minimap_diff_add: minimap_diff_add_picker.get_color(),
                 minimap_diff_empty: minimap_diff_empty_picker.get_color(),
                 minimap_cursor_bg: minimap_cursor_bg_picker.get_color(),
+                // Button color settings - using values from color pickers
+                button_default_bg: button_default_bg_picker.get_color(),
+                button_default_fg: button_default_fg_picker.get_color(),
+                button_primary_bg: button_primary_bg_picker.get_color(),
+                button_primary_fg: button_primary_fg_picker.get_color(),
+                button_secondary_bg: button_secondary_bg_picker.get_color(),
+                button_secondary_fg: button_secondary_fg_picker.get_color(),
+                button_highlight_bg: button_highlight_bg_picker.get_color(),
+                button_highlight_fg: button_highlight_fg_picker.get_color(),
                 // Merge window geometry - not updated in this dialog
                 merge_window_width: 0,
                 merge_window_height: 0,

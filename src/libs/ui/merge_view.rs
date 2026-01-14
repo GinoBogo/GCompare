@@ -17,7 +17,7 @@ use crate::libs::services::config_service::ConfigService;
 use crate::libs::services::merge_service::{
     MergeSegment, MergeService, MergeStrategy, SegmentType,
 };
-use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
+use crate::libs::widgets::gbutton::GButton;
 use crate::libs::widgets::gminimap::GMiniMap;
 use crate::libs::widgets::gtextview::GTextView;
 
@@ -58,27 +58,27 @@ impl GMergeView {
 
         let btn_ours = GButton::new("Accept File A");
         btn_ours.set_tooltip_text(Some("Accept all changes from File A for the entire merge"));
-        btn_ours.set_theme(ButtonTheme::Primary);
+        btn_ours.set_custom_colors(&config.button_primary_bg, &config.button_primary_fg);
         size_group.add_widget(&btn_ours);
 
         let btn_theirs = GButton::new("Accept File B");
         btn_theirs.set_tooltip_text(Some("Accept all changes from File B for the entire merge"));
-        btn_theirs.set_theme(ButtonTheme::Primary);
+        btn_theirs.set_custom_colors(&config.button_primary_bg, &config.button_primary_fg);
         size_group.add_widget(&btn_theirs);
 
         let btn_union = GButton::new("Union");
         btn_union.set_tooltip_text(Some("Include both versions in the merge result"));
-        btn_union.set_theme(ButtonTheme::Primary);
+        btn_union.set_custom_colors(&config.button_primary_bg, &config.button_primary_fg);
         size_group.add_widget(&btn_union);
 
         let btn_conflicts = GButton::new("Mark Conflicts");
         btn_conflicts.set_tooltip_text(Some("Mark conflicts with standard conflict markers"));
-        btn_conflicts.set_theme(ButtonTheme::Primary);
+        btn_conflicts.set_custom_colors(&config.button_primary_bg, &config.button_primary_fg);
         size_group.add_widget(&btn_conflicts);
 
         let save_button = GButton::new("Save As...");
         save_button.set_tooltip_text(Some("Save the merged result to a file"));
-        save_button.set_theme(ButtonTheme::Highlight);
+        save_button.set_custom_colors(&config.button_highlight_bg, &config.button_highlight_fg);
         size_group.add_widget(&save_button);
 
         toolbar.append(&btn_ours);
@@ -122,20 +122,21 @@ impl GMergeView {
         // Bottom Bar
         let bottom_bar = Box::new(Orientation::Horizontal, 6);
         bottom_bar.set_halign(gtk::Align::Center);
-        let resolve_a_button = GButton::new("Accept Current A");
+        let resolve_a_button = GButton::new("Accept Block A");
         resolve_a_button
             .set_tooltip_text(Some("Accept changes from File A for the current conflict"));
-        resolve_a_button.set_theme(ButtonTheme::Action2);
-        let resolve_b_button = GButton::new("Accept Current B");
+        resolve_a_button
+            .set_custom_colors(&config.text_diff_remove_bg, &config.text_diff_remove_fg);
+        let resolve_b_button = GButton::new("Accept Block B");
         resolve_b_button
             .set_tooltip_text(Some("Accept changes from File B for the current conflict"));
-        resolve_b_button.set_theme(ButtonTheme::Action1);
+        resolve_b_button.set_custom_colors(&config.text_diff_add_bg, &config.text_diff_add_fg);
         let previous_button = GButton::new(" Prev ▲");
         previous_button.set_tooltip_text(Some("Navigate to previous conflict"));
-        previous_button.set_theme(ButtonTheme::Highlight);
+        previous_button.set_custom_colors(&config.button_highlight_bg, &config.button_highlight_fg);
         let next_button = GButton::new(" Next ▼");
         next_button.set_tooltip_text(Some("Navigate to next conflict"));
-        next_button.set_theme(ButtonTheme::Highlight);
+        next_button.set_custom_colors(&config.button_highlight_bg, &config.button_highlight_fg);
 
         bottom_bar.append(&resolve_a_button);
         bottom_bar.append(&resolve_b_button);

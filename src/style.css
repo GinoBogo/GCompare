@@ -55,45 +55,6 @@
     background: #f6f6ae;
 }
 
-.gbutton-action_1 {
-    background: #add8e6;
-    color: #000000;
-}
-
-.gbutton-action_1:hover {
-    background: #9acbdd;
-}
-
-.gbutton-action_1:active {
-    background: #87c0d4;
-}
-
-.gbutton-action_2 {
-    background: #90ee90;
-    color: #000000;
-}
-
-.gbutton-action_2:hover {
-    background: #80e080;
-}
-
-.gbutton-action_2:active {
-    background: #70d270;
-}
-
-.gbutton-action_3 {
-    background: #ffcccc;
-    color: #000000;
-}
-
-.gbutton-action_3:hover {
-    background: #ff9999;
-}
-
-.gbutton-action_3:active {
-    background: #ff6666;
-}
-
 /* GTextView Styles */
 .text-diff-remove {
     background-color: #ffcccc;

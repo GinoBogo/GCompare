@@ -8,15 +8,16 @@ use gtk::prelude::*;
 use gtk::{Box, ComboBoxText, Frame};
 
 use crate::libs::state::AppConfig;
-use crate::libs::widgets::gbutton::{ButtonTheme, GButton};
+use crate::libs::widgets::gbutton::GButton;
 use crate::libs::widgets::gminimap::GMiniMap;
 use crate::libs::widgets::gtextview::GTextView;
 
 /// Widget containing file comparison panels and minimap.
+#[derive(Clone)]
 pub struct ComparisonPanelsWidget {
     container: Box,
-    panel_a: FilePanelWidget,
-    panel_b: FilePanelWidget,
+    pub panel_a: FilePanelWidget,
+    pub panel_b: FilePanelWidget,
     minimap: GMiniMap,
 }
 
@@ -32,7 +33,8 @@ impl ComparisonPanelsWidget {
         let panel_a = FilePanelWidget::new(
             "File A",
             &config.file_a_history,
-            ButtonTheme::Action2,
+            &config.text_diff_remove_bg,
+            &config.text_diff_remove_fg,
             &config.font_family,
             config.font_size as f64,
         );
@@ -40,7 +42,8 @@ impl ComparisonPanelsWidget {
         let panel_b = FilePanelWidget::new(
             "File B",
             &config.file_b_history,
-            ButtonTheme::Action1,
+            &config.text_diff_add_bg,
+            &config.text_diff_add_fg,
             &config.font_family,
             config.font_size as f64,
         );
@@ -111,15 +114,35 @@ impl ComparisonPanelsWidget {
     pub fn minimap(&self) -> &GMiniMap {
         &self.minimap
     }
+
+    /// Update all button colors from config.
+    pub fn update_button_colors(&self, config: &crate::libs::state::AppConfig) {
+        // File A uses remove colors
+        self.panel_a
+            .open_button
+            .set_custom_colors(&config.text_diff_remove_bg, &config.text_diff_remove_fg);
+        self.panel_a
+            .save_button
+            .set_custom_colors(&config.text_diff_remove_bg, &config.text_diff_remove_fg);
+
+        // File B uses add colors
+        self.panel_b
+            .open_button
+            .set_custom_colors(&config.text_diff_add_bg, &config.text_diff_add_fg);
+        self.panel_b
+            .save_button
+            .set_custom_colors(&config.text_diff_add_bg, &config.text_diff_add_fg);
+    }
 }
 
 /// Individual file panel widget.
-struct FilePanelWidget {
+#[derive(Clone)]
+pub struct FilePanelWidget {
     container: Frame,
     text_view: GTextView,
-    path_combo: ComboBoxText,
-    open_button: GButton,
-    save_button: GButton,
+    pub path_combo: ComboBoxText,
+    pub open_button: GButton,
+    pub save_button: GButton,
 }
 
 impl FilePanelWidget {
@@ -127,7 +150,8 @@ impl FilePanelWidget {
     fn new(
         title: &str,
         history: &[String],
-        button_theme: ButtonTheme,
+        bg_color: &str,
+        fg_color: &str,
         font_family: &str,
         font_size: f64,
     ) -> Self {
@@ -144,7 +168,7 @@ impl FilePanelWidget {
         // Create components
         let text_view = GTextView::new();
         let (path_control_bar, open_button, save_button, path_combo) =
-            Self::build_path_control_bar(history, button_theme);
+            Self::build_path_control_bar(history, bg_color, fg_color);
 
         // Assemble panel
         panel_grid.attach(&path_control_bar, 0, 0, 1, 1);
@@ -173,7 +197,8 @@ impl FilePanelWidget {
     /// Build the path control bar for a file panel.
     fn build_path_control_bar(
         history: &[String],
-        button_theme: ButtonTheme,
+        bg_color: &str,
+        fg_color: &str,
     ) -> (gtk::Box, GButton, GButton, ComboBoxText) {
         let path_control_bar = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -198,7 +223,7 @@ impl FilePanelWidget {
         open_button.set_tooltip_text(Some("Open a file for comparison"));
         open_button.set_width_request(60);
         open_button.set_height_request(30);
-        open_button.set_theme(button_theme);
+        open_button.set_custom_colors(bg_color, fg_color);
         path_control_bar.append(&open_button);
 
         // Save button
@@ -206,7 +231,7 @@ impl FilePanelWidget {
         save_button.set_tooltip_text(Some("Save the current file content"));
         save_button.set_width_request(60);
         save_button.set_height_request(30);
-        save_button.set_theme(button_theme);
+        save_button.set_custom_colors(bg_color, fg_color);
         path_control_bar.append(&save_button);
 
         (path_control_bar, open_button, save_button, path_combo)
