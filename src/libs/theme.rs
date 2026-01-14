@@ -256,7 +256,7 @@ pub fn get_background_color(class_name: &str) -> gdk::RGBA {
 }
 
 /// Get background color from a CSS class and return as hex string.
-pub fn get_background_color_hex(class_name: &str) -> String {
+pub fn get_background_color_rgb(class_name: &str) -> String {
     let rgba = get_background_color(class_name);
     format!(
         "#{:02x}{:02x}{:02x}",
@@ -266,14 +266,39 @@ pub fn get_background_color_hex(class_name: &str) -> String {
     )
 }
 
+/// Get background color from a CSS class and return as hex string with alpha channel.
+pub fn get_background_color_rgba(class_name: &str) -> String {
+    let rgba = get_background_color(class_name);
+    format!(
+        "#{:02x}{:02x}{:02x}{:02x}",
+        (rgba.red() * 255.0) as u8,
+        (rgba.green() * 255.0) as u8,
+        (rgba.blue() * 255.0) as u8,
+        (rgba.alpha() * 255.0) as u8
+    )
+}
+
 /// Get foreground color from a CSS class and return as hex string.
-pub fn get_color_hex(class_name: &str) -> String {
+pub fn get_color_rgb(class_name: &str) -> String {
     let rgba = get_color(class_name);
     format!(
         "#{:02x}{:02x}{:02x}",
         (rgba.red() * 255.0) as u8,
         (rgba.green() * 255.0) as u8,
         (rgba.blue() * 255.0) as u8
+    )
+}
+
+/// Get foreground color from a CSS class and return as hex string with alpha channel.
+#[allow(dead_code)]
+pub fn get_color_rgba(class_name: &str) -> String {
+    let rgba = get_color(class_name);
+    format!(
+        "#{:02x}{:02x}{:02x}{:02x}",
+        (rgba.red() * 255.0) as u8,
+        (rgba.green() * 255.0) as u8,
+        (rgba.blue() * 255.0) as u8,
+        (rgba.alpha() * 255.0) as u8
     )
 }
 

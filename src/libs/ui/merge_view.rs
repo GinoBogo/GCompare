@@ -40,6 +40,7 @@ impl GMergeView {
             .title("Merge Result")
             .default_width(config.merge_window_width)
             .default_height(config.merge_window_height)
+            .maximized(config.merge_window_maximized)
             .build();
 
         // Minimap

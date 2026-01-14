@@ -349,6 +349,19 @@ pub fn setup_options_interaction(
                     updated_config.minimap_diff_empty = color_config.minimap_diff_empty;
                     updated_config.minimap_cursor_bg = color_config.minimap_cursor_bg;
 
+                    // Update button color settings
+                    updated_config.button_default_bg = color_config.button_default_bg;
+                    updated_config.button_default_fg = color_config.button_default_fg;
+                    updated_config.button_primary_bg = color_config.button_primary_bg;
+                    updated_config.button_primary_fg = color_config.button_primary_fg;
+                    updated_config.button_secondary_bg = color_config.button_secondary_bg;
+                    updated_config.button_secondary_fg = color_config.button_secondary_fg;
+                    updated_config.button_highlight_bg = color_config.button_highlight_bg;
+                    updated_config.button_highlight_fg = color_config.button_highlight_fg;
+
+                    // Note: merge window geometry is preserved from current
+                    // config (not overridden)
+
                     // Update the state in memory
                     state_clone_apply.update_config(updated_config.clone());
 

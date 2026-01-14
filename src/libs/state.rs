@@ -4,7 +4,7 @@
 //! * License: MIT
 //! * Version: 1.0
 
-use crate::libs::theme::{get_background_color_hex, get_color_hex};
+use crate::libs::theme::{get_background_color_rgb, get_background_color_rgba, get_color_rgb};
 use gtk::prelude::*;
 use gtk::{ApplicationWindow, ComboBoxText, Entry};
 use serde::{Deserialize, Serialize};
@@ -71,31 +71,31 @@ impl Default for AppConfig {
             ignore_whitespace: false,
             show_line_numbers: true,
             // Color settings - using CSS-based theme functions
-            text_diff_remove_bg: get_background_color_hex("text-diff-remove"),
-            text_diff_remove_fg: get_color_hex("text-diff-remove"),
-            text_diff_add_bg: get_background_color_hex("text-diff-add"),
-            text_diff_add_fg: get_color_hex("text-diff-add"),
-            text_diff_empty_bg: get_background_color_hex("text-diff-empty"),
-            text_diff_empty_fg: get_color_hex("text-diff-empty"),
-            merge_conflict_bg: get_background_color_hex("merge-conflict"),
-            merge_conflict_fg: get_color_hex("merge-conflict"),
-            gutter_numbers_bg: get_background_color_hex("gutter-numbers"),
-            gutter_numbers_fg: get_color_hex("gutter-numbers"),
-            minimap_bg: get_background_color_hex("minimap"),
-            minimap_fg: get_color_hex("minimap"),
-            minimap_diff_remove: get_color_hex("minimap-diff-remove"),
-            minimap_diff_add: get_color_hex("minimap-diff-add"),
-            minimap_diff_empty: get_background_color_hex("minimap-diff-empty"),
-            minimap_cursor_bg: get_background_color_hex("minimap-cursor"),
+            text_diff_remove_bg: get_background_color_rgb("text-diff-remove"),
+            text_diff_remove_fg: get_color_rgb("text-diff-remove"),
+            text_diff_add_bg: get_background_color_rgb("text-diff-add"),
+            text_diff_add_fg: get_color_rgb("text-diff-add"),
+            text_diff_empty_bg: get_background_color_rgb("text-diff-empty"),
+            text_diff_empty_fg: get_color_rgb("text-diff-empty"),
+            merge_conflict_bg: get_background_color_rgb("merge-conflict"),
+            merge_conflict_fg: get_color_rgb("merge-conflict"),
+            gutter_numbers_bg: get_background_color_rgb("gutter-numbers"),
+            gutter_numbers_fg: get_color_rgb("gutter-numbers"),
+            minimap_bg: get_background_color_rgb("minimap"),
+            minimap_fg: get_color_rgb("minimap"),
+            minimap_diff_remove: get_color_rgb("minimap-diff-remove"),
+            minimap_diff_add: get_color_rgb("minimap-diff-add"),
+            minimap_diff_empty: get_background_color_rgb("minimap-diff-empty"),
+            minimap_cursor_bg: get_background_color_rgba("minimap-cursor"),
             // Button color settings - using CSS-based theme functions
-            button_default_bg: get_background_color_hex("gbutton-default"),
-            button_default_fg: get_color_hex("gbutton-default"),
-            button_primary_bg: get_background_color_hex("gbutton-primary"),
-            button_primary_fg: get_color_hex("gbutton-primary"),
-            button_secondary_bg: get_background_color_hex("gbutton-secondary"),
-            button_secondary_fg: get_color_hex("gbutton-secondary"),
-            button_highlight_bg: get_background_color_hex("gbutton-highlight"),
-            button_highlight_fg: get_color_hex("gbutton-highlight"),
+            button_default_bg: get_background_color_rgb("gbutton-default"),
+            button_default_fg: get_color_rgb("gbutton-default"),
+            button_primary_bg: get_background_color_rgb("gbutton-primary"),
+            button_primary_fg: get_color_rgb("gbutton-primary"),
+            button_secondary_bg: get_background_color_rgb("gbutton-secondary"),
+            button_secondary_fg: get_color_rgb("gbutton-secondary"),
+            button_highlight_bg: get_background_color_rgb("gbutton-highlight"),
+            button_highlight_fg: get_color_rgb("gbutton-highlight"),
             // Merge window geometry defaults
             merge_window_width: 800,
             merge_window_height: 600,
