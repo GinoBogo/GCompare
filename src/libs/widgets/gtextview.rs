@@ -605,9 +605,6 @@ impl GTextView {
     }
 
     /// Update CSS styles for font synchronization.
-    /// # Returns
-    ///
-    /// Unit type ()
     fn update_font_css(&self) {
         let imp = self.imp();
         let family = imp.font_family.borrow();

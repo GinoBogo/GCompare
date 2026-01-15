@@ -6,7 +6,10 @@
 
 use gtk::prelude::*;
 use gtk::subclass::prelude::*;
-use gtk::{Box, DrawingArea, Fixed, Frame, GestureDrag, Overlay, glib};
+use gtk::{
+    Box, DrawingArea, EventControllerScroll, EventControllerScrollFlags, Fixed, Frame, GestureDrag,
+    Overlay, glib,
+};
 use once_cell::sync::Lazy;
 use std::cell::{Cell, RefCell};
 
@@ -139,7 +142,15 @@ mod imp {
                     imp.drag_start_y.set(cursor_size.y);
                     obj.set_cursor_from_name(Some("move"));
                 } else {
-                    gesture.set_state(gtk::EventSequenceState::Denied);
+                    // Click outside cursor: Move cursor to click position
+                    // (centered)
+                    let target_y = start_y - (cursor_size.h / 2.0);
+                    let clamped_y = obj.move_cursor_to_y(target_y);
+
+                    imp.is_dragging.set(true);
+                    imp.drag_start_y.set(clamped_y);
+                    obj.set_cursor_from_name(Some("move"));
+                    gesture.set_state(gtk::EventSequenceState::Claimed);
                 }
             }));
             drag.connect_drag_update(glib::clone!(@weak obj => move |_, _, offset_y| {
@@ -157,6 +168,14 @@ mod imp {
                 }
             }));
             obj.add_controller(drag);
+
+            // Setup Scroll Controller
+            let scroll = EventControllerScroll::new(EventControllerScrollFlags::VERTICAL);
+            scroll.connect_scroll(glib::clone!(@weak obj => @default-return glib::Propagation::Proceed, move |_, _, dy| {
+                obj.handle_scroll(dy);
+                glib::Propagation::Stop
+            }));
+            obj.add_controller(scroll);
 
             fixed.put(&cursor, 0.0, 0.0);
             obj.set_child(Some(&overlay));
@@ -229,30 +248,6 @@ impl GMiniMap {
         self.update_cursor_size();
     }
 
-    /// Set the diff line numbers for both panels.
-    ///
-    /// # Arguments
-    ///
-    /// * `lines_a` - Line numbers with differences in panel A
-    /// * `lines_b` - Line numbers with differences in panel B
-    pub fn set_diff_lines(&self, lines_a: Vec<usize>, lines_b: Vec<usize>) {
-        let imp = self.imp();
-        *imp.diff_lines_a.borrow_mut() = lines_a;
-        *imp.diff_lines_b.borrow_mut() = lines_b;
-    }
-
-    /// Set the empty line numbers for both panels.
-    ///
-    /// # Arguments
-    ///
-    /// * `empty_a` - Empty line numbers in panel A
-    /// * `empty_b` - Empty line numbers in panel B
-    pub fn set_empty_lines(&self, empty_a: Vec<usize>, empty_b: Vec<usize>) {
-        let imp = self.imp();
-        *imp.empty_lines_a.borrow_mut() = empty_a;
-        *imp.empty_lines_b.borrow_mut() = empty_b;
-    }
-
     /// Batch update both diff and empty lines with single redraw
     ///
     /// # Arguments
@@ -280,6 +275,30 @@ impl GMiniMap {
         {
             drawing_area.queue_draw();
         }
+    }
+
+    /// Set the diff line numbers for both panels.
+    ///
+    /// # Arguments
+    ///
+    /// * `lines_a` - Line numbers with differences in panel A
+    /// * `lines_b` - Line numbers with differences in panel B
+    pub fn set_diff_lines(&self, lines_a: Vec<usize>, lines_b: Vec<usize>) {
+        let imp = self.imp();
+        *imp.diff_lines_a.borrow_mut() = lines_a;
+        *imp.diff_lines_b.borrow_mut() = lines_b;
+    }
+
+    /// Set the empty line numbers for both panels.
+    ///
+    /// # Arguments
+    ///
+    /// * `empty_a` - Empty line numbers in panel A
+    /// * `empty_b` - Empty line numbers in panel B
+    pub fn set_empty_lines(&self, empty_a: Vec<usize>, empty_b: Vec<usize>) {
+        let imp = self.imp();
+        *imp.empty_lines_a.borrow_mut() = empty_a;
+        *imp.empty_lines_b.borrow_mut() = empty_b;
     }
 
     /// Clear all diff lines from the map
@@ -374,6 +393,75 @@ impl GMiniMap {
 
         // Wrap around to last difference if no previous found
         all_diff_lines.last().copied()
+    }
+
+    /// Update the cursor size based on current viewport and text information.
+    ///
+    /// Calculates and updates the cursor rectangle dimensions to represent
+    /// the visible portion of text in the minimap.
+    fn update_cursor_size(&self) {
+        let imp = self.imp();
+
+        if imp.is_dragging.get() {
+            return;
+        }
+
+        let info = imp.text_info.get();
+        let last_updated = imp.last_updated_panel.get();
+
+        let width = self.width() as f64;
+        let height = self.height() as f64;
+        let mut cursor_size = CursorSize::default();
+
+        let (upper_line, visible_lines) = match last_updated {
+            PanelId::A => (info.a.upper_line, info.a.visible_lines),
+            PanelId::B => (info.b.upper_line, info.b.visible_lines),
+        };
+
+        let max_total_lines = info.a.total_lines.max(info.b.total_lines).max(1);
+
+        let gap = 5.0;
+        let map_width = (width - 2.0 * gap).max(0.0);
+        let map_height = (height - 2.0 * gap).max(0.0);
+
+        if (max_total_lines <= 1) || (visible_lines >= max_total_lines) {
+            cursor_size.x = gap;
+            cursor_size.y = gap;
+            cursor_size.w = map_width;
+            cursor_size.h = map_height;
+        } else {
+            // Calculate vertical position ratio
+            let ratio_y = upper_line as f64 / max_total_lines as f64;
+            let ratio_h = visible_lines as f64 / max_total_lines as f64;
+
+            cursor_size.x = gap;
+            cursor_size.y = gap + (map_height * ratio_y);
+            cursor_size.w = map_width;
+            cursor_size.h = (map_height * ratio_h).max(5.0).min(map_height);
+        }
+
+        if let Some(overlay) = self.child().and_downcast::<Overlay>() {
+            let mut child = overlay.first_child();
+            while let Some(widget) = child {
+                if let Some(fixed) = widget.downcast_ref::<Fixed>() {
+                    if let Some(cursor) = fixed.first_child() {
+                        fixed.move_(&cursor, cursor_size.x, cursor_size.y);
+                        cursor.set_size_request(cursor_size.w as i32, cursor_size.h as i32);
+                    }
+                    break;
+                }
+                child = widget.next_sibling();
+            }
+        }
+
+        let draw_info = DrawInfo {
+            canvas_size: CanvasSize {
+                w: width,
+                h: height,
+            },
+            cursor_size,
+        };
+        imp.draw_info.set(draw_info);
     }
 
     /// Draw the diff visualization on the minimap.
@@ -477,80 +565,18 @@ impl GMiniMap {
         }
     }
 
-    /// Update the cursor size based on current viewport and text information.
+    /// Moves the cursor to a specific Y position (clamped) and emits scroll
+    /// signal.
     ///
-    /// Calculates and updates the cursor rectangle dimensions to represent
-    /// the visible portion of text in the minimap.
-    fn update_cursor_size(&self) {
+    /// # Arguments
+    ///
+    /// * `y` - The target Y position.
+    ///
+    /// # Returns
+    ///
+    /// The clamped Y position.
+    fn move_cursor_to_y(&self, y: f64) -> f64 {
         let imp = self.imp();
-
-        if imp.is_dragging.get() {
-            return;
-        }
-
-        let info = imp.text_info.get();
-        let last_updated = imp.last_updated_panel.get();
-
-        let width = self.width() as f64;
-        let height = self.height() as f64;
-        let mut cursor_size = CursorSize::default();
-
-        let (upper_line, visible_lines) = match last_updated {
-            PanelId::A => (info.a.upper_line, info.a.visible_lines),
-            PanelId::B => (info.b.upper_line, info.b.visible_lines),
-        };
-
-        let max_total_lines = info.a.total_lines.max(info.b.total_lines).max(1);
-
-        let gap = 5.0;
-        let map_width = (width - 2.0 * gap).max(0.0);
-        let map_height = (height - 2.0 * gap).max(0.0);
-
-        if (max_total_lines <= 1) || (visible_lines >= max_total_lines) {
-            cursor_size.x = gap;
-            cursor_size.y = gap;
-            cursor_size.w = map_width;
-            cursor_size.h = map_height;
-        } else {
-            // Calculate vertical position ratio
-            let ratio_y = upper_line as f64 / max_total_lines as f64;
-            let ratio_h = visible_lines as f64 / max_total_lines as f64;
-
-            cursor_size.x = gap;
-            cursor_size.y = gap + (map_height * ratio_y);
-            cursor_size.w = map_width;
-            cursor_size.h = (map_height * ratio_h).max(5.0).min(map_height);
-        }
-
-        if let Some(overlay) = self.child().and_downcast::<Overlay>() {
-            let mut child = overlay.first_child();
-            while let Some(widget) = child {
-                if let Some(fixed) = widget.downcast_ref::<Fixed>() {
-                    if let Some(cursor) = fixed.first_child() {
-                        fixed.move_(&cursor, cursor_size.x, cursor_size.y);
-                        cursor.set_size_request(cursor_size.w as i32, cursor_size.h as i32);
-                    }
-                    break;
-                }
-                child = widget.next_sibling();
-            }
-        }
-
-        let draw_info = DrawInfo {
-            canvas_size: CanvasSize {
-                w: width,
-                h: height,
-            },
-            cursor_size,
-        };
-        imp.draw_info.set(draw_info);
-    }
-
-    fn handle_drag_update(&self, offset_y: f64) {
-        let imp = self.imp();
-        let start_y = imp.drag_start_y.get();
-        let new_y = start_y + offset_y;
-
         let height = self.height() as f64;
         let gap = 5.0;
         let map_height = (height - 2.0 * gap).max(0.0);
@@ -559,7 +585,7 @@ impl GMiniMap {
         if map_height > 0.0 {
             // Calculate valid Y range for the cursor top
             let max_y = gap + map_height - cursor_h;
-            let clamped_y = new_y.max(gap).min(max_y);
+            let clamped_y = y.max(gap).min(max_y);
 
             // Move cursor visually immediately to avoid vibration
             if let Some(overlay) = self.child().and_downcast::<Overlay>() {
@@ -582,6 +608,48 @@ impl GMiniMap {
                 let ratio = (clamped_y - gap) / scrollable_height;
                 self.emit_by_name::<()>("scroll-to", &[&ratio]);
             }
+
+            return clamped_y;
+        }
+        y
+    }
+
+    /// Handles the drag update event by moving the cursor.
+    ///
+    /// # Arguments
+    ///
+    /// * `offset_y` - The vertical offset from the drag start position.
+    fn handle_drag_update(&self, offset_y: f64) {
+        let imp = self.imp();
+        let start_y = imp.drag_start_y.get();
+        let new_y = start_y + offset_y;
+        self.move_cursor_to_y(new_y);
+    }
+
+    /// Handles the scroll event by moving the cursor.
+    ///
+    /// # Arguments
+    ///
+    /// * `dy` - The vertical scroll delta.
+    fn handle_scroll(&self, dy: f64) {
+        let imp = self.imp();
+        let info = imp.text_info.get();
+        let max_total_lines = info.a.total_lines.max(info.b.total_lines).max(1) as f64;
+
+        // Scroll speed: 3 lines per scroll unit
+        let lines_per_scroll = 3.0;
+        let delta_lines = dy * lines_per_scroll;
+
+        let height = self.height() as f64;
+        let gap = 5.0;
+        let map_height = (height - 2.0 * gap).max(0.0);
+        let cursor_h = imp.draw_info.get().cursor_size.h;
+        let scrollable_height = (map_height - cursor_h).max(0.0);
+
+        if scrollable_height > 0.0 {
+            let current_y = imp.draw_info.get().cursor_size.y;
+            let delta_y = (delta_lines / max_total_lines) * scrollable_height;
+            self.move_cursor_to_y(current_y + delta_y);
         }
     }
 }

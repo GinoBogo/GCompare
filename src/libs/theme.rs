@@ -126,10 +126,6 @@ pub fn init() -> CssProvider {
 ///
 /// * `provider` - CSS provider to update with new colors
 /// * `config` - Application configuration containing color settings
-///
-/// # Returns
-///
-/// Updates the provider in-place with new color values
 pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs::state::AppConfig) {
     // Parse CSS into structured rules
     let mut rules = parse_css_rules(get_css_content());
@@ -264,10 +260,6 @@ pub fn update_provider_with_config(provider: &CssProvider, config: &crate::libs:
 ///
 /// * `text_buffers` - Slice of text buffer references to update
 /// * `config` - Application configuration with color settings
-///
-/// # Returns
-///
-/// Updates the text buffers' tag colors in-place
 pub fn update_text_tag_colors(
     text_buffers: &[&gtk::TextBuffer],
     config: &crate::libs::state::AppConfig,
